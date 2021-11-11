@@ -1,0 +1,9 @@
+{
+    "development": {
+        "username": "root",
+        "password": "Alexito@01#99@12",
+        "database": "database_blockchain",
+        "host": "127.0.0.1",
+        "dialect": "mysql"
+    }
+}
