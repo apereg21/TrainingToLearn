@@ -2,7 +2,6 @@ module.exports = (sequelize, DataTypes) => {
     const Logropines = sequelize.define('Logropines', {
         id: {
             allowNull: false,
-            autoIncrement: true,
             primaryKey: true,
             type: DataTypes.INTEGER,
         },
@@ -10,10 +9,14 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.STRING,
         },
-        addressLP: {
-            allowNull: false,
+        descriptionLP: {
+            allowNull: true,
             type: DataTypes.STRING,
         },
+        imageLP: {
+            allowNull: true,
+            type: DataTypes.STRING,
+        }
     }, {});
     Logropines.associate = function(models) {
 
