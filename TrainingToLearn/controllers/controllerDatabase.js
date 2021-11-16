@@ -4,30 +4,58 @@ module.exports = {
     allBlocks(res) {
         return db.Blockchain.findAll();
     },
+    getLastBlockIndex(res) {
+        return db.Blockchain
+            .count()
+            .then((result) => {
+                //res.sendStatus(200)
+                return result
+            })
+            .catch((error) => res.status(400).send(error));
+    },
     createBlock(req, res) {
         return db.Blockchain.create({
-            index: req.lastIndex() - 1,
+            index: req.index,
             timestamp: Date.now(),
-            logroPin: req.getLastBlock().logroPin,
-            data: JSON.stringify(req.getLastBlock().data),
-            hash: req.getLastBlock().hash,
-            hashPrev: req.getLastBlock().hashPrev
+            logroPin: req.logroPin,
+            data: JSON.stringify(req.data),
+            hash: req.hash,
+            hashPrev: req.hashPrev
         }).then(() => {
             res.send("Creado");
         })
     },
+    getHashLastBlock(lastIndex, res) {
+        console.log("Buenas: " + lastIndex)
+        return db.Blockchain.findOne({
+            where: {
+                index: lastIndex
+            }
+        }).then(result => {
+            if (!result) {
+                console.log("No encontrado"),
+                    res.status(400).send(error)
+            } else {
+                console.log("Encontrado")
+                return result.hash
+            }
+
+        })
+    },
     createLogroPin(req, res, indexLast) {
-        const promise1 = Promise.resolve(indexLast);
-        promise1.then((value) => {
-            return db.Logropines.create({
-                id: value,
+        console.log("Aqui el último soy" + indexLast)
+        return db.Logropines
+            .create({
+                id: indexLast,
                 nameLP: req.body.nameLP,
                 descriptionLP: req.body.descriptionLP,
                 imageLP: req.body.imageLP,
                 UsuarioId: req.body.UsuarioId,
                 MonederoId: req.body.MonederoId
+            }).then(data => {
+                console.log(data);
+                return data
             })
-        });
     },
     crearUsuario(req, res) {
         db.Usuarios.create({
@@ -135,8 +163,8 @@ module.exports = {
     },
     async findLogroPin(idLP, res) {
         console.log("db.Logropines.findByPk(" + idLP + ")")
-        return db.Logropines
-            .findOne({ where: { id: (idLP) }, raw: true })
+        db.Logropines
+            .findOne({ where: { id: idLP }, raw: true })
             .then(buscaPin => {
                 if (!buscaPin) {
                     console.log("No encontrado"),
@@ -149,7 +177,13 @@ module.exports = {
             })
             .catch((error) => res.status(400).send(error));
     },
-    idLatestLogroPin() {
-        return db.Logropines.count()
+    idLatestLogroPin(res) {
+        return db.Logropines
+            .count()
+            .then((result) => {
+                //res.sendStatus(200)
+                return result
+            })
+            .catch((error) => res.status(400).send(error));
     }
 }

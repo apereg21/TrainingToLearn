@@ -9,17 +9,21 @@ router.get('/', (req, res) => {
     res.send('Buenas!')
 });
 
-router.post('/crearNuevoNFT', async function(req, res) {
-    let simCoin = new Blockchain();
-    simCoin.chain = await controllerDB.allBlocks(res);
-    let lengthLogroPines = await controllerDB.idLatestLogroPin() + 1
-    console.log("Id es: " + lengthLogroPines)
-    controllerDB.createLogroPin(req, res, lengthLogroPines)
-    var buscaPin = await controllerDB.findLogroPin(lengthLogroPines - 1, res)
-    console.log("Soy Logropin: " + buscaPin)
-    simCoin.addBlock(new Block(simCoin.lastIndex(), new Date(), buscaPin, { amount: 1 }, "0"))
-    console.log(simCoin.getLastBlock())
-    controllerDB.createBlock(simCoin, res)
+router.post('/createNuevoNFT', async function(req, res) {
+    let lastIndex = await controllerDB.getLastBlockIndex(res)
+    console.log(lastIndex)
+    if (lastIndex == 0) {
+        var genesisBlock = new Block(lastIndex, new Date(), {}, {}, "0")
+        controllerDB.createBlock(genesisBlock, res)
+    } else {
+        let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1, res)
+        console.log(prevHash)
+        let lengthLogroPines = await controllerDB.idLatestLogroPin(res) + 1
+        let logroPin = await controllerDB.createLogroPin(req, res, lengthLogroPines)
+        let newBlock = new Block(lastIndex, new Date(), logroPin, { amount: 1 }, prevHash)
+        controllerDB.createBlock(newBlock, res)
+    }
+
 });
 
 router.post('/crearUsuario', function(req, res) {
