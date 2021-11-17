@@ -8,54 +8,70 @@ module.exports = {
         return db.Blockchain
             .count()
             .then((result) => {
-                //res.sendStatus(200)
+                console.log("LastBlock in blockchain found it: " + result)
                 return result
             })
             .catch((error) => res.status(400).send(error));
     },
     createBlock(req, res) {
-        return db.Blockchain.create({
-            index: req.index,
-            timestamp: Date.now(),
-            logroPin: req.logroPin,
-            data: JSON.stringify(req.data),
-            hash: req.hash,
-            hashPrev: req.hashPrev
-        }).then(() => {
-            res.send("Creado");
-        })
+        console.log((req.index) + (req.timestamp) + (req.logroPin) + (req.data) + (req.hash) + (req.hashPrev))
+        if ((req.index != null) && (req.timestamp != null) && (req.logroPin != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
+            return db.Blockchain.create({
+                index: req.index,
+                timestamp: Date.now(),
+                logroPin: req.logroPin,
+                data: JSON.stringify(req.data),
+                hash: req.hash,
+                hashPrev: req.hashPrev
+            }).then(() => {
+                res.send("Creado");
+            })
+        } else {
+            console.log("Error in createBlock")
+            res.json({ ok: false, error: "NotCorrectReqParameters" })
+        }
     },
     getHashLastBlock(lastIndex, res) {
-        console.log("Buenas: " + lastIndex)
-        return db.Blockchain.findOne({
-            where: {
-                index: lastIndex
-            }
-        }).then(result => {
-            if (!result) {
-                console.log("No encontrado"),
-                    res.status(400).send(error)
-            } else {
-                console.log("Encontrado")
-                return result.hash
-            }
+        console.log("Last index is: " + lastIndex)
+        if (lastIndex >= 0 && lastIndex != null) {
+            return db.Blockchain.findOne({
+                where: {
+                    index: lastIndex
+                }
+            }).then(result => {
+                if (!result) {
+                    console.log("Not found HashLastBlock")
+                        //res.sendStatus(404)
+                } else {
+                    console.log("Found HashLastBlock")
+                    return result.hash
+                }
 
-        })
+            })
+        } else {
+            console.log("Error in getHashLastBlock")
+            res.json({ ok: false, error: "WrongLastIndexBlock" })
+        }
+
     },
     createLogroPin(req, res, indexLast) {
-        console.log("Aqui el último soy" + indexLast)
-        return db.Logropines
-            .create({
-                id: indexLast,
-                nameLP: req.body.nameLP,
-                descriptionLP: req.body.descriptionLP,
-                imageLP: req.body.imageLP,
-                UsuarioId: req.body.UsuarioId,
-                MonederoId: req.body.MonederoId
-            }).then(data => {
-                console.log(data);
-                return data
-            })
+        if (!(indexLast < 0) && ((req.body.nameLP != null && req.body.nameLP.length > 0)) && (req.body.UsuarioId != null) && (req.body.MonederoId != null)) {
+            return db.Logropines
+                .create({
+                    id: indexLast,
+                    nameLP: req.body.nameLP,
+                    descriptionLP: req.body.descriptionLP,
+                    imageLP: req.body.imageLP,
+                    UsuarioId: req.body.UsuarioId,
+                    MonederoId: req.body.MonederoId
+                }).then(data => {
+                    console.log(data);
+                    return data
+                })
+        } else {
+            console.log("Error in createLogroPin")
+            res.json({ ok: false, error: "NotCorrectReqParameters" })
+        }
     },
     crearUsuario(req, res) {
         db.Usuarios.create({
@@ -162,28 +178,34 @@ module.exports = {
         });
     },
     async findLogroPin(idLP, res) {
-        console.log("db.Logropines.findByPk(" + idLP + ")")
-        db.Logropines
-            .findOne({ where: { id: idLP }, raw: true })
-            .then(buscaPin => {
-                if (!buscaPin) {
-                    console.log("No encontrado"),
-                        res.status(400).send(error)
-                } else {
-                    console.log("Encontrado")
-                    return buscaPin
-                }
+        if (idLP != null || idLP < 0) {
+            console.log("db.Logropines.findByPk(" + idLP + ")")
+            db.Logropines
+                .findOne({ where: { id: idLP }, raw: true })
+                .then(buscaPin => {
+                    if (!buscaPin) {
+                        console.log("Not found LogroPin"),
+                            res.status(400).send(error)
+                    } else {
+                        console.log("Found LogroPin")
+                        return buscaPin
+                    }
 
-            })
-            .catch((error) => res.status(400).send(error));
+                })
+                .catch((error) => res.status(400).send(error).end());
+        } else {
+            console.log("Error in FindLogroPin")
+            res.status(400).json({ ok: false, error: "WrongLastIndexLogroPin" })
+        }
+
     },
     idLatestLogroPin(res) {
         return db.Logropines
             .count()
             .then((result) => {
-                //res.sendStatus(200)
+                console.log("Count Logropins return is: " + result)
                 return result
             })
-            .catch((error) => res.status(400).send(error));
+            .catch((error) => res.status(400).send(error).end());
     }
 }

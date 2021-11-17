@@ -11,16 +11,17 @@ router.get('/', (req, res) => {
 
 router.post('/createNuevoNFT', async function(req, res) {
     let lastIndex = await controllerDB.getLastBlockIndex(res)
-    console.log(lastIndex)
     if (lastIndex == 0) {
         var genesisBlock = new Block(lastIndex, new Date(), {}, {}, "0")
         controllerDB.createBlock(genesisBlock, res)
     } else {
+        console.log("Find logroPin in position: " + lastIndex)
         let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1, res)
-        console.log(prevHash)
         let lengthLogroPines = await controllerDB.idLatestLogroPin(res) + 1
         let logroPin = await controllerDB.createLogroPin(req, res, lengthLogroPines)
         let newBlock = new Block(lastIndex, new Date(), logroPin, { amount: 1 }, prevHash)
+        newBlock.hash = newBlock.calcularHash()
+        console.log(newBlock.hash)
         controllerDB.createBlock(newBlock, res)
     }
 
