@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {});
     Logropines.associate = function(models) {
-
+        Logropines.hasMany(models.Transactions)
     };
     return Logropines;
 };

@@ -1,36 +1,33 @@
 module.exports = (sequelize, DataTypes) => {
-    const Monederos = sequelize.define('Monederos', {
+    const Transactions = sequelize.define('Transactions', {
         id: {
             allowNull: false,
             autoIncrement: true,
             primaryKey: true,
             type: DataTypes.INTEGER,
         },
-        publicKey: {
+        fromAddress: {
             allowNull: false,
             type: DataTypes.STRING
         },
-        privateKey: {
+        toAddress: {
             allowNull: false,
             type: DataTypes.STRING
         },
-        money: {
-            allowNull: true,
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
-
-        },
-        idsLogroPins: {
+        amount: {
             allowNull: false,
-            type: DataTypes.JSON,
-            defaultValue: []
+            type: DataTypes.INTEGER
+        },
+        signature: {
+            allowNull: false,
+            type: DataTypes.STRING
         }
     }, {
         createdAt: false,
         updatedAt: false
     });
-    Monederos.associate = function(models) {
-        Monederos.hasMany(models.Logropines)
+    Transactions.associate = function(models) {
+
     };
-    return Monederos;
+    return Transactions;
 };

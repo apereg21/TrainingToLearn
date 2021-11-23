@@ -2,7 +2,6 @@ module.exports = (sequelize, DataTypes) => {
     const Blockchain = sequelize.define('Blockchain', {
         index: {
             allowNull: false,
-            autoIncrement: true,
             primaryKey: true,
             type: DataTypes.INTEGER
         },
@@ -16,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         data: {
             allowNull: true,
-            type: DataTypes.STRING
+            type: DataTypes.JSON
         },
         hash: {
             allowNull: false,

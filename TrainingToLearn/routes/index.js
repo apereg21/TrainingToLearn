@@ -1,8 +1,10 @@
 const Block = require('../block')
 const Blockchain = require('../blockchain')
+const Wallet = require('../wallet');
 var models = require('../models');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
+
 var router = express.Router();
 var pendingTransacitons = [];
 router.get('/', (req, res) => {
@@ -12,18 +14,15 @@ router.get('/', (req, res) => {
 router.post('/createNuevoNFT', async function(req, res) {
     let lastIndex = await controllerDB.getLastBlockIndex(res)
     if (lastIndex == 0) {
-        //Initial Block
+        //There aren't blocks in the blockchain --> Adding the genesisBlock
         var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
-        controllerDB.createBlock(genesisBlock, res)
-        newBlock.hash = newBlock.calcularHash()
-        console.log(newBlock.hash)
-        controllerDB.createBlock(newBlock, res)
+        genesisBlock.hash = genesisBlock.calcularHash()
+        await controllerDB.createBlock(genesisBlock, res)
         lastIndex++
     }
     let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1, res)
     let lengthLogroPines = await controllerDB.idLatestLogroPin(res) + 1
     let logroPin = await controllerDB.createLogroPin(req, res, lengthLogroPines)
-    console.log(findTransactions)
         //Waiting petitions for the block
     await sleep(20000)
         //console.log(pendingTransacitons)
@@ -32,6 +31,8 @@ router.post('/createNuevoNFT', async function(req, res) {
     newBlock.hash = newBlock.calcularHash()
     console.log(newBlock.hash)
     controllerDB.createBlock(newBlock, res)
+    //Assing to a Wallet with the req.body.Id
+    controllerDB.modificarMonedero(req.body.UsuarioId,logroPin.id,res)
 
 
 });
@@ -83,14 +84,9 @@ router.post('/modificarUsuario', function(req, res) {
 });
 
 router.post('/crearMonedero', function(req, res) {
-    models.Monederos.create({
-        address: req.body.address,
-        UsuarioId: req.body.UsuarioId
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val });
-    });
+    const newWallet = new Wallet(req.body.ownerId)
+    controllerDB.crearMonedero(newWallet,res)
+    
 });
 
 router.post('/eliminarMonedero', function(req, res) {

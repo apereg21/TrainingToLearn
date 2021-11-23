@@ -13,7 +13,7 @@ module.exports = {
             })
             .catch((error) => res.status(400).send(error));
     },
-    createBlock(req, res) {
+    async createBlock(req, res) {
         console.log((req.index) + (req.timestamp) + (req.logroPin) + (req.data) + (req.hash) + (req.hashPrev))
         if ((req.index != null) && (req.timestamp != null) && (req.logroPin != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
             return db.Blockchain.create({
@@ -24,7 +24,6 @@ module.exports = {
                 hash: req.hash,
                 hashPrev: req.hashPrev
             }).then(() => {
-                res.send("Creado");
             })
         } else {
             console.log("Error in createBlock")
@@ -112,9 +111,10 @@ module.exports = {
     },
 
     crearMonedero(req, res) {
-        db.Monederos.create({
-            address: req.body.address,
-            UsuarioId: req.body.UsuarioId
+        return db.Monederos.create({
+            publicKey: req.keyPublic,
+            privateKey: req.keyPrivate,
+            UsuarioId: req.owner
         }).then(() => {
             res.json({ ok: true });
         }).catch((val) => {
@@ -134,19 +134,28 @@ module.exports = {
         });
     },
 
-    modificarMonedero(req, res) {
-        db.Monederos.update({
-            address: req.body.addressNuevo,
-            UsuarioId: req.body.UsuarioIdNuevo
-        }, {
-            where: {
-                id: req.body.id
+    modificarMonedero(idMonedero,idLogroPin,res) {
+        db.Monederos.findOne(
+            {
+                where:{
+                    id:idMonedero
+                }
             }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
+        ).then((result) => {
+            console.log(result.idsLogroPins)
+            result.idsLogroPins.push(idLogroPin)
+            db.Monederos.update({
+                idsLogroPins:result.idsLogroPins
+            }, {
+                where: {
+                    id: idMonedero
+                }
+            }).then((result2) => {
+                console.log(result2.idsLogroPins)
+            })
+        })
+        
+        
     },
 
     eliminarLogroPin(req, res) {
