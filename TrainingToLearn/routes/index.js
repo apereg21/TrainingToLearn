@@ -4,6 +4,7 @@ const Wallet = require('../wallet');
 var models = require('../models');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
+const Transaction = require('../transaction');
 
 var router = express.Router();
 var pendingTransacitons = [];
@@ -27,21 +28,25 @@ router.post('/createNuevoNFT', async function(req, res) {
     await sleep(20000)
         //console.log(pendingTransacitons)
         //console.log(pendingTransacitons[1])
-    let newBlock = new Block(lastIndex, new Date(), logroPin, pendingTransacitons, prevHash)
+    console.log(JSON.stringify(pendingTransacitons))
+    let newBlock = new Block(lastIndex, new Date(), logroPin, { transactions: pendingTransacitons }, prevHash)
     newBlock.hash = newBlock.calcularHash()
     console.log(newBlock.hash)
-    controllerDB.createBlock(newBlock, res)
-    //Assing to a Wallet with the req.body.Id
-    controllerDB.modificarMonedero(req.body.UsuarioId,logroPin.id,res)
+    await controllerDB.createBlock(newBlock, res)
+        //Assing LogroPin to the Wallet with the id --> req.body.Id
+    controllerDB.modificarMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, res)
 
 
 });
 
-router.post('/createNewTransaction', function(req, res) {
-    let json = {
-        amount: req.body.amount
-    }
-    addPendingTransaction(json)
+router.post('/createNewTransaction', async function(req, res) {
+    let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
+    let privKey = await controllerDB.obtainPrivateKeyId(req.body.UsuarioId)
+    console.log(privKey)
+    newTransac.signTransaction(privKey)
+    let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
+    console.log("Soy " + jsonTransaction)
+    addPendingTransaction(jsonTransaction)
     res.send({ ok: true })
 });
 
@@ -85,8 +90,8 @@ router.post('/modificarUsuario', function(req, res) {
 
 router.post('/crearMonedero', function(req, res) {
     const newWallet = new Wallet(req.body.ownerId)
-    controllerDB.crearMonedero(newWallet,res)
-    
+    controllerDB.crearMonedero(newWallet, res)
+
 });
 
 router.post('/eliminarMonedero', function(req, res) {

@@ -23,8 +23,7 @@ module.exports = {
                 data: JSON.stringify(req.data),
                 hash: req.hash,
                 hashPrev: req.hashPrev
-            }).then(() => {
-            })
+            }).then(() => {})
         } else {
             console.log("Error in createBlock")
             res.json({ ok: false, error: "NotCorrectReqParameters" })
@@ -134,28 +133,33 @@ module.exports = {
         });
     },
 
-    modificarMonedero(idMonedero,idLogroPin,res) {
-        db.Monederos.findOne(
-            {
-                where:{
-                    id:idMonedero
-                }
-            }
-        ).then((result) => {
-            console.log(result.idsLogroPins)
-            result.idsLogroPins.push(idLogroPin)
-            db.Monederos.update({
-                idsLogroPins:result.idsLogroPins
-            }, {
+    async modificarMonedero(idUsuario, idLogroPin, privateKey, res) {
+        let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
+        console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
+        if (privateKey == privateKeyId) {
+            console.log("Private Key is correct")
+            db.Monederos.findOne({
                 where: {
-                    id: idMonedero
+                    UsuarioId: idUsuario
                 }
-            }).then((result2) => {
-                console.log(result2.idsLogroPins)
+            }).then((result) => {
+                console.log(result.idsLogroPins)
+                result.idsLogroPins.push(idLogroPin)
+                db.Monederos.update({
+                    idsLogroPins: result.idsLogroPins
+                }, {
+                    where: {
+                        UsuarioId: idUsuario
+                    }
+                }).then((result2) => {
+                    console.log(result2.idsLogroPins)
+                    res.json({ ok: true });
+                })
             })
-        })
-        
-        
+        } else {
+            console.log("Private Key isn't correct")
+            res.json({ ok: false, error: "Key isn't correct" })
+        }
     },
 
     eliminarLogroPin(req, res) {
@@ -216,5 +220,37 @@ module.exports = {
                 return result
             })
             .catch((error) => res.status(400).send(error).end());
+    },
+    async obtainPrivateKeyId(id) {
+        return db.Monederos.findOne({
+            where: {
+                UsuarioId: id
+            }
+        }).then((result) => {
+            return result.privateKey
+        })
+    },
+    async obtainDataField(index) {
+        return db.Blockchain.findOne({
+            where: {
+                index: index
+            }
+        }).then((result) => {
+            console.log(result.data)
+            return result.data
+        })
+    },
+    async createTransaction(transaction, res) {
+        return db.Transactions.create({
+            fromAddress: transaction.fromAddress,
+            toAddress: transaction.toAddress,
+            amount: transaction.amount,
+            signature: transaction.signatureC,
+            LogropineId: transaction.LogroPinId
+        }).then((result) => {
+            console.log("Transaction Created")
+            return result
+
+        }).catch((val) => {});
     }
 }
