@@ -6,15 +6,26 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
             type: DataTypes.INTEGER
         },
-        username: {
+        name: {
             allowNull: false,
             type: DataTypes.STRING
         },
         fullSurname: {
             allowNull: false,
             type: DataTypes.STRING
+        },
+        username: {
+            allowNull: false,
+            type: DataTypes.STRING
+        },
+        password: {
+            allowNull: false,
+            type: DataTypes.STRING
         }
-    }, {});
+    }, {
+        createdAt: false,
+        updatedAt: false
+    });
     Usuarios.associate = function(models) {
         Usuarios.hasOne(models.Monederos);
         Usuarios.hasOne(models.Logropines);

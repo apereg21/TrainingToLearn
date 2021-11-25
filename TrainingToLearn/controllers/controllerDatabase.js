@@ -1,6 +1,7 @@
 const db = require('../models')
 
 module.exports = {
+    //Blockchain Functions
     allBlocks(res) {
         return db.Blockchain.findAll();
     },
@@ -52,16 +53,27 @@ module.exports = {
         }
 
     },
-    createLogroPin(req, res, indexLast) {
-        if (!(indexLast < 0) && ((req.body.nameLP != null && req.body.nameLP.length > 0)) && (req.body.UsuarioId != null) && (req.body.MonederoId != null)) {
+    async obtainDataField(index) {
+        return db.Blockchain.findOne({
+            where: {
+                index: index
+            }
+        }).then((result) => {
+            console.log(result.data)
+            return result.data
+        })
+    },
+
+    //LogroPins functions
+    async createLogroPin(req, res) {
+        if (((req.body.nameLP != null && req.body.nameLP.length > 0)) && (req.body.UsuarioId != null)) {
             return db.Logropines
                 .create({
-                    id: indexLast,
                     nameLP: req.body.nameLP,
                     descriptionLP: req.body.descriptionLP,
                     imageLP: req.body.imageLP,
                     UsuarioId: req.body.UsuarioId,
-                    MonederoId: req.body.MonederoId
+                    MonederoId: await this.obtainMonederoId(req.body.UsuarioId)
                 }).then(data => {
                     console.log(data);
                     return data
@@ -71,98 +83,7 @@ module.exports = {
             res.json({ ok: false, error: "NotCorrectReqParameters" })
         }
     },
-    crearUsuario(req, res) {
-        db.Usuarios.create({
-            username: req.body.username,
-            fullSurname: req.body.fullSurname,
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val });
-        });
-    },
-
-    eliminarUsuario(req, res) {
-        db.Usuarios.destroy({
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
-    },
-
-    modificarUsuario(req, res) {
-        db.Usuarios.update({
-            username: req.body.usernameNuevo,
-            fullSurname: req.body.fullSurnameNuevo,
-        }, {
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
-    },
-
-    crearMonedero(req, res) {
-        return db.Monederos.create({
-            publicKey: req.keyPublic,
-            privateKey: req.keyPrivate,
-            UsuarioId: req.owner
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val });
-        });
-    },
-
-    eliminarMonedero(req, res) {
-        db.Monederos.destroy({
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
-    },
-
-    async modificarMonedero(idUsuario, idLogroPin, privateKey, res) {
-        let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
-        console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
-        if (privateKey == privateKeyId) {
-            console.log("Private Key is correct")
-            db.Monederos.findOne({
-                where: {
-                    UsuarioId: idUsuario
-                }
-            }).then((result) => {
-                console.log(result.idsLogroPins)
-                result.idsLogroPins.push(idLogroPin)
-                db.Monederos.update({
-                    idsLogroPins: result.idsLogroPins
-                }, {
-                    where: {
-                        UsuarioId: idUsuario
-                    }
-                }).then((result2) => {
-                    console.log(result2.idsLogroPins)
-                    res.json({ ok: true });
-                })
-            })
-        } else {
-            console.log("Private Key isn't correct")
-            res.json({ ok: false, error: "Key isn't correct" })
-        }
-    },
-
-    eliminarLogroPin(req, res) {
+    deleteLogroPin(req, res) {
         db.Logropines.destroy({
             where: {
                 id: req.body.id
@@ -173,13 +94,10 @@ module.exports = {
             res.json({ ok: false, error: val.name });
         });
     },
-
-    modificarUsuario(req, res) {
+    updateLogroPin(req, res) {
         db.Logropines.update({
-            nameLP: req.body.nameLPNuevo,
-            addressLP: req.body.addressLPNuevo,
-            UsuarioId: req.body.UsuarioIdNuevo,
-            MonederoId: req.body.MonederoIdNuevo
+            username: req.body.usernameNuevo,
+            fullSurname: req.body.fullSurnameNuevo,
         }, {
             where: {
                 id: req.body.id
@@ -212,14 +130,111 @@ module.exports = {
         }
 
     },
-    idLatestLogroPin(res) {
-        return db.Logropines
-            .count()
-            .then((result) => {
-                console.log("Count Logropins return is: " + result)
-                return result
+
+    //Usuario Functions
+    crearUsuario(req, res) {
+        db.Usuarios.create({
+            name:req.body.name,
+            fullSurname: req.body.fullSurname,
+            username: req.body.username,
+            password: req.body.password
+        }).then(() => {
+            res.json({ ok: true });
+        }).catch((val) => {
+            res.json({ ok: false, error: val });
+        });
+    },
+    eliminarUsuario(req, res) {
+        db.Usuarios.destroy({
+            where: {
+                id: req.body.id
+            }
+        }).then(() => {
+            res.json({ ok: true });
+        }).catch((val) => {
+            res.json({ ok: false, error: val.name });
+        });
+    },
+    modificarUsuario(req, res) {
+        db.Usuarios.update({
+            username: req.body.usernameNuevo,
+            fullSurname: req.body.fullSurnameNuevo,
+        }, {
+            where: {
+                id: req.body.id
+            }
+        }).then(() => {
+            res.json({ ok: true });
+        }).catch((val) => {
+            res.json({ ok: false, error: val.name });
+        });
+    },  
+    async obtainUserPassword(id){
+        return db.Usuarios.findOne({
+            where: {
+                id: id
+            }
+        }).then((result) => {
+            console.log(result.password)
+            return result.password
+        })
+    },
+    
+    //Monedero functions
+    crearMonedero(req, res) {
+        return db.Monederos.create({
+            publicKey: req.keyPublic,
+            privateKey: req.keyPrivate,
+            UsuarioId: req.owner
+        }).then(() => {
+            res.json({ ok: true });
+        }).catch((val) => {
+            res.json({ ok: false, error: val });
+        });
+    },
+    eliminarMonedero(req, res) {
+        db.Monederos.destroy({
+            where: {
+                id: req.body.id
+            }
+        }).then(() => {
+            res.json({ ok: true });
+        }).catch((val) => {
+            res.json({ ok: false, error: val.name });
+        });
+    },
+    updateMonedero(req,res){
+
+    },
+    async updateIdArrayMonedero(idUsuario, idLogroPin, privateKey, password, res) {
+        let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
+        let userpassword = await this.obtainUserPassword(idUsuario)
+        console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
+        console.log("Compare if " + userpassword + " is equals to " + password)
+        if (privateKey == privateKeyId && userpassword == password) {
+            console.log("Private Key is correct")
+            db.Monederos.findOne({
+                where: {
+                    UsuarioId: idUsuario
+                }
+            }).then((result) => {
+                console.log(result.idsLogroPins)
+                result.idsLogroPins.push(idLogroPin)
+                db.Monederos.update({
+                    idsLogroPins: result.idsLogroPins
+                }, {
+                    where: {
+                        UsuarioId: idUsuario
+                    }
+                }).then((result2) => {
+                    console.log(result2.idsLogroPins)
+                    res.json({ ok: true });
+                })
             })
-            .catch((error) => res.status(400).send(error).end());
+        } else {
+            console.log("Private Key isn't correct")
+            res.json({ ok: false, error: "Key isn't correct" })
+        }
     },
     async obtainPrivateKeyId(id) {
         return db.Monederos.findOne({
@@ -227,19 +242,22 @@ module.exports = {
                 UsuarioId: id
             }
         }).then((result) => {
+            console.log("Find private key: "+result.private)
             return result.privateKey
         })
     },
-    async obtainDataField(index) {
-        return db.Blockchain.findOne({
+    async obtainMonederoId(idUsu) {
+        return db.Monederos.findOne({
             where: {
-                index: index
+                id: idUsu
             }
         }).then((result) => {
-            console.log(result.data)
-            return result.data
+            console.log("Getting idMonedero own by idUsuario: "+result.id)
+            return result.id
         })
     },
+
+    //Transactions functions
     async createTransaction(transaction, res) {
         return db.Transactions.create({
             fromAddress: transaction.fromAddress,
@@ -252,5 +270,5 @@ module.exports = {
             return result
 
         }).catch((val) => {});
-    }
+    },
 }
