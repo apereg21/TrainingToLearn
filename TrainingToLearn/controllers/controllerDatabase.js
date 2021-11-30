@@ -139,9 +139,9 @@ module.exports = {
             username: req.body.username,
             password: req.body.password
         }).then(() => {
-            res.json({ ok: true });
+            console.log("Created")
         }).catch((val) => {
-            res.json({ ok: false, error: val });
+            console.log("Something go wrong with user creation: "+ val);
         });
     },
     eliminarUsuario(req, res) {
@@ -178,6 +178,39 @@ module.exports = {
             console.log(result.password)
             return result.password
         })
+    }, 
+    async obtainUserId(usName,usPass){
+        return db.Usuarios.findOne({
+            where: {
+                username:usName,
+                password:usPass
+            }
+        }).then((result) => {
+            if(result!=null){
+                console.log("User find it")
+                return result.id
+            } else{
+                console.log("User not find it")
+            }
+        })
+    },
+    async isUserCreated(req,res){
+        return db.Usuarios.findOne({
+            where: {
+                name:req.body.name,
+                fullSurname:req.body.fullSurname,
+                username:req.body.username,
+                password:req.body.password
+            }
+        }).then((result) => {
+            if(result!=null){
+                console.log("User find it")
+                return true
+            } else{
+                console.log("User not find it")
+                return false
+            }
+        }) 
     },
     
     //Monedero functions
@@ -254,6 +287,21 @@ module.exports = {
         }).then((result) => {
             console.log("Getting idMonedero own by idUsuario: "+result.id)
             return result.id
+        })
+    },
+    async userHasWallet(idUsu){
+        return db.Monederos.findOne({
+            where: {
+                id: idUsu
+            }
+        }).then((result) => {
+            if(result!=null){
+                console.log("idUsuario: "+result.id+" has a wallet")
+                return true
+            }else{
+                console.log("idUsuario: "+result.id+" hasn't a wallet")
+                return false
+            }
         })
     },
 

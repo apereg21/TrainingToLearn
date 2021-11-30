@@ -1,15 +1,18 @@
+//Imports
 const Block = require('../block')
-const Blockchain = require('../blockchain')
 const Wallet = require('../wallet');
+const Transaction = require('../transaction');
 var models = require('../models');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
-const Transaction = require('../transaction');
 
+//Configuration zone
 var router = express.Router();
 var pendingTransactions = [];
 
-//Default Route
+/*
+* Default Route
+*/
 
 router.get('/', (req, res) => {
     res.send('Hey!')
@@ -59,19 +62,21 @@ router.post('/createNewNFT', async function(req, res) {
     let logroPin = await controllerDB.createLogroPin(req, res)
         //Waiting petitions for the block
     await sleep(20000)
-        //console.log(pendingTransacitons)
-        //console.log(pendingTransacitons[1])
-    console.log(JSON.stringify(pendingTransactions))
-    let newBlock = new Block(lastIndex, new Date(), logroPin, { transactions: pendingTransactions }, prevHash)
-    newBlock.hash = newBlock.calcularHash()
-    console.log(newBlock.hash)
-    await controllerDB.createBlock(newBlock, res)
+    if(prevHash==null ||logroPin==null ||logroPin.id==null ||logroPin.nameLP==null || logroPin.descriptionLP==null ||logroPin.imageLP ==null ||logroPin.UsuarioId==null||logroPin.MonederoId==null){
+        console.log("Something with the data gone wrong")
+        res.send({ ok: false })
+    }else{
+         let newBlock = new Block(lastIndex, new Date(), logroPin, { transactions: pendingTransactions }, prevHash)
+        newBlock.hash = newBlock.calcularHash()
+        console.log(newBlock.hash)
+        await controllerDB.createBlock(newBlock, res)
         //Assing LogroPin to the Wallet with the id --> req.body.Id
-    controllerDB.updateIdArrayMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, req.body.userPassword, res)
+        controllerDB.updateIdArrayMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, req.body.userPassword, res)
+    }
 });
 
 //This router is used for create a new Transaction and add this object to an array called pendingTransactions
-//The LogroPin is passed in form of body parameters in the petition (req field)
+//The Transaction is passed in form of body parameters in the petition (req field)
 //Parameters are
 /**  
 *  @param {string} fromAddress
@@ -81,7 +86,7 @@ router.post('/createNewNFT', async function(req, res) {
 *  @param {number} logroPinId
 */
 /* We create a new Trasaction object with the parameters of the petition: fromAddress, toAddress, amount, and logroPin
-*  We need to obtain a the privateKey from the user, to signing the transaction. ONce we sign the transaction, we can create
+*  We need to obtain a the privateKey from the user, to signing the transaction. Once we sign the transaction, we can create
 *  the object in the DB. The createTransaction function return an object, this object is what we add to the pendingTransaction array
 *  calling the function addPendingTransaction 
 */
@@ -90,21 +95,78 @@ router.post('/createNewTransaction', async function(req, res) {
     let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
     let privKey = await controllerDB.obtainPrivateKeyId(req.body.UsuarioId)
     newTransac.signTransaction(privKey)
-    let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
-    console.log("Soy " + jsonTransaction)
-    addPendingTransaction(jsonTransaction)
-    res.send({ ok: true })
+    if(newTransac.fromAddress==null || newTransac.toAddress==null || newTransac.amount==null || newTransac.logroPinId==null ||newTransac.signatureC==null){
+        console.log("Something with the data gone wrong")
+        res.send({ ok: false })
+    }else{
+        let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
+        addPendingTransaction(jsonTransaction)
+        res.send({ ok: true })
+    }
 });
 
-router.post('/createUser', function(req, res) {
-    controllerDB.crearUsuario(req,res)
+//This router is used for create a new User to the DB. //The User is passed in form of 
+//body parameters in the petition (req field)
+//Parameters are
+/**  
+*  @param {string} name
+*  @param {string} fullSurname
+*  @param {string} username
+*  @param {string} password
+*/
+/* The only thing we need to do is create the user, if the object exists we need to comunicate
+* to the user
+*
+*/
+
+router.post('/createUser', async function(req, res) {
+    let userAlreadyCreated = await controllerDB.isUserCreated(req,res)
+    console.log(userAlreadyCreated)
+    if(userAlreadyCreated==false){
+        controllerDB.crearUsuario(req,res)
+        console.log("User created correctly")
+        res.send("User created correctly")
+    }
+    else{
+        console.log("User dont created, the user alredy exists")
+        res.send("User dont created, the user alredy exists")
+    }
+    
 });
 
-router.post('/crearMonedero', function(req, res) {
-    const newWallet = new Wallet(req.body.ownerId)
-    controllerDB.crearMonedero(newWallet, res)
+//This router is used for create a new Monedero to the DB. //The Monedero is passed in form of 
+//body parameters in the petition (req field)
+//Parameters are
+/**  
+*  @param {number} ownerId
+*/
+/* The only thing we need to do is create the object from the class Monedero from this project
+*The class fild all the elements from the object, like the public and private key
+* to the user
+*/
 
+router.post('/createMonedero', async function(req, res) {
+    const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    if(ownerId!=null){
+        const newWallet = new Wallet(ownerId)
+        const hasWallet = await controllerDB.userHasWallet(ownerId)
+        if(!hasWallet){
+            controllerDB.crearMonedero(newWallet, res)
+        }else{
+            console.log("The user has a Wallet already. Can't create wallet")
+            res.send("The user has a Wallet already. Can't create wallet")
+        }
+    }
+    else{
+        console.log("The user with username and password introduced, are not correct. Can't create wallet")
+        res.send("The user with username and password introduced, are not correct. Can't create wallet")
+    }
+    
 });
+
+/*
+* Routes Modify Object
+*/
 
 router.post('/modificarUsuario', function(req, res) {
     models.Usuarios.update({
@@ -153,6 +215,10 @@ router.post('/modificarUsuario', function(req, res) {
     });
 
 });
+
+/*
+* Routes Delete Object
+*/
 
 router.post('/eliminarLogroPin', function(req, res) {
     models.Logropines.destroy({
