@@ -132,22 +132,24 @@ module.exports = {
     },
 
     //Usuario Functions
-    crearUsuario(req, res) {
+    createUser(req, res) {
         db.Usuarios.create({
-            name:req.body.name,
+            name: req.body.name,
             fullSurname: req.body.fullSurname,
             username: req.body.username,
             password: req.body.password
         }).then(() => {
             console.log("Created")
         }).catch((val) => {
-            console.log("Something go wrong with user creation: "+ val);
+            console.log("Something go wrong with user creation: " + val);
         });
     },
-    eliminarUsuario(req, res) {
+    deleteUser(req, res) {
         db.Usuarios.destroy({
             where: {
-                id: req.body.id
+                id: req.body.id,
+                password: req.body.password,
+                username: req.body.username
             }
         }).then(() => {
             res.json({ ok: true });
@@ -155,21 +157,25 @@ module.exports = {
             res.json({ ok: false, error: val.name });
         });
     },
-    modificarUsuario(req, res) {
+    updateUser(req, res) {
         db.Usuarios.update({
-            username: req.body.usernameNuevo,
-            fullSurname: req.body.fullSurnameNuevo,
+            name: req.body.nameNew,
+            fullSurname: req.body.fullSurnameNew,
+            username: req.body.usernameNew,
+            password: req.body.passwordNew,
         }, {
             where: {
-                id: req.body.id
+                id: req.body.id,
+                password: req.body.password,
+                username: req.body.username
             }
         }).then(() => {
             res.json({ ok: true });
         }).catch((val) => {
             res.json({ ok: false, error: val.name });
         });
-    },  
-    async obtainUserPassword(id){
+    },
+    async obtainUserPassword(id) {
         return db.Usuarios.findOne({
             where: {
                 id: id
@@ -178,41 +184,56 @@ module.exports = {
             console.log(result.password)
             return result.password
         })
-    }, 
-    async obtainUserId(usName,usPass){
+    },
+    async userIdExists(id) {
         return db.Usuarios.findOne({
             where: {
-                username:usName,
-                password:usPass
+                id: id
             }
         }).then((result) => {
-            if(result!=null){
+            if (result != null) {
+                console.log("User id exists")
+                return true
+            } else {
+                console.log("User id dosent exists")
+                return false
+            }
+        })
+    },
+    async obtainUserId(usName, usPass) {
+        return db.Usuarios.findOne({
+            where: {
+                username: usName,
+                password: usPass
+            }
+        }).then((result) => {
+            if (result != null) {
                 console.log("User find it")
                 return result.id
-            } else{
+            } else {
                 console.log("User not find it")
             }
         })
     },
-    async isUserCreated(req,res){
+    async isUserCreated(req, res) {
         return db.Usuarios.findOne({
             where: {
-                name:req.body.name,
-                fullSurname:req.body.fullSurname,
-                username:req.body.username,
-                password:req.body.password
+                name: req.body.name,
+                fullSurname: req.body.fullSurname,
+                username: req.body.username,
+                password: req.body.password
             }
         }).then((result) => {
-            if(result!=null){
+            if (result != null) {
                 console.log("User find it")
                 return true
-            } else{
+            } else {
                 console.log("User not find it")
                 return false
             }
-        }) 
+        })
     },
-    
+
     //Monedero functions
     crearMonedero(req, res) {
         return db.Monederos.create({
@@ -236,8 +257,20 @@ module.exports = {
             res.json({ ok: false, error: val.name });
         });
     },
-    updateMonedero(req,res){
-
+    updateMonedero(req, res) {
+        return db.Monederos.update({
+            publicKey: req.keyPublic,
+            privateKey: req.keyPrivate,
+            UsuarioId: req.owner
+        }, {
+            where: {
+                id: req.body.id
+            }
+        }).then(() => {
+            res.json({ ok: true });
+        }).catch((val) => {
+            res.json({ ok: false, error: val });
+        });
     },
     async updateIdArrayMonedero(idUsuario, idLogroPin, privateKey, password, res) {
         let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
@@ -269,14 +302,19 @@ module.exports = {
             res.json({ ok: false, error: "Key isn't correct" })
         }
     },
-    async obtainPrivateKeyId(id) {
+    obtainPrivateKeyId(id) {
         return db.Monederos.findOne({
             where: {
                 UsuarioId: id
             }
         }).then((result) => {
-            console.log("Find private key: "+result.private)
-            return result.privateKey
+            if (result != null) {
+                console.log("PrivateKey associated to id:" + id + " found it: " + result.privateKey)
+                return result.privateKey
+            } else {
+                console.log("PrivateKey associated to id:" + id + " not found")
+            }
+
         })
     },
     async obtainMonederoId(idUsu) {
@@ -285,21 +323,21 @@ module.exports = {
                 id: idUsu
             }
         }).then((result) => {
-            console.log("Getting idMonedero own by idUsuario: "+result.id)
+            console.log("Getting idMonedero own by idUsuario: " + result.id)
             return result.id
         })
     },
-    async userHasWallet(idUsu){
+    async userHasWallet(idUsu) {
         return db.Monederos.findOne({
             where: {
-                id: idUsu
+                UsuarioId: idUsu
             }
         }).then((result) => {
-            if(result!=null){
-                console.log("idUsuario: "+result.id+" has a wallet")
+            if (result != null) {
+                console.log("idUsuario: " + idUsu + " has a wallet")
                 return true
-            }else{
-                console.log("idUsuario: "+result.id+" hasn't a wallet")
+            } else {
+                console.log("idUsuario: " + idUsu + " hasn't a wallet")
                 return false
             }
         })
