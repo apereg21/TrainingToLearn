@@ -94,11 +94,9 @@ router.post('/createNewReward', async function(req, res) {
 router.post('/createNewTransaction', async function(req, res) {
     let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
     let privKey = await controllerDB.obtainPrivateKeyId(req.body.UsuarioId)
-    console.log("Los datos son:\n" + newTransac.fromAddress + "\n" + newTransac.toAddress + "\n" + newTransac.amount + "\n" + newTransac.logroPinId + "\n" + privKey)
     newTransac.signTransaction(privKey)
-    console.log("The signature is: " + newTransac.signatureC)
     if (newTransac.fromAddress == null || newTransac.toAddress == null || newTransac.amount == null || newTransac.LogroPinId == null || newTransac.signatureC == null) {
-        console.log("Something with the data gone wrong")
+        console.log("Something with the data in createNewTransaction gone wrong")
         res.send({ ok: false })
     } else {
         let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
@@ -123,7 +121,6 @@ router.post('/createNewTransaction', async function(req, res) {
 
 router.post('/createNewUser', async function(req, res) {
     let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
-    console.log(userAlreadyCreated)
     if (userAlreadyCreated == false) {
         controllerDB.createUser(req, res)
         console.log("User created correctly")
@@ -170,50 +167,14 @@ router.post('/createWallet', async function(req, res) {
  */
 
 router.post('/modificarUsuario', function(req, res) {
-    models.Usuarios.update({
-        username: req.body.usernameNuevo,
-        fullSurname: req.body.fullSurnameNuevo,
-    }, {
-        where: {
-            id: req.body.id
-        }
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val.name });
-    });
+
 });
 
 router.post('/modificarMonedero', function(req, res) {
-    models.Monederos.update({
-        address: req.body.addressNuevo,
-        UsuarioId: req.body.UsuarioIdNuevo
-    }, {
-        where: {
-            id: req.body.id
-        }
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val.name });
-    });
+
 });
 
 router.post('/modificarUsuario', function(req, res) {
-    models.Logropines.update({
-        nameLP: req.body.nameLPNuevo,
-        addressLP: req.body.addressLPNuevo,
-        UsuarioId: req.body.UsuarioIdNuevo,
-        MonederoId: req.body.MonederoIdNuevo
-    }, {
-        where: {
-            id: req.body.id
-        }
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val.name });
-    });
 
 });
 
@@ -222,39 +183,15 @@ router.post('/modificarUsuario', function(req, res) {
  */
 
 router.post('/eliminarLogroPin', function(req, res) {
-    models.Logropines.destroy({
-        where: {
-            id: req.body.id
-        }
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val.name });
-    });
+
 });
 
 router.post('/eliminarUsuario', function(req, res) {
-    models.Usuarios.destroy({
-        where: {
-            id: req.body.id
-        }
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val.name });
-    });
+
 });
 
 router.post('/eliminarMonedero', function(req, res) {
-    models.Monederos.destroy({
-        where: {
-            id: req.body.id
-        }
-    }).then(() => {
-        res.json({ ok: true });
-    }).catch((val) => {
-        res.json({ ok: false, error: val.name });
-    });
+
 });
 
 /* 

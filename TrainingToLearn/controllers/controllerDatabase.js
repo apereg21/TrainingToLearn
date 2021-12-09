@@ -201,19 +201,24 @@ module.exports = {
         })
     },
     async obtainUserId(usName, usPass) {
-        return db.Usuarios.findOne({
-            where: {
-                username: usName,
-                password: usPass
-            }
-        }).then((result) => {
-            if (result != null) {
-                console.log("User find it")
-                return result.id
-            } else {
-                console.log("User not find it")
-            }
-        })
+        if (typeof usName == 'string' && typeof usName == 'string') {
+            return db.Usuarios.findOne({
+                where: {
+                    username: usName,
+                    password: usPass
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("User find it")
+                    return result.id
+                } else {
+                    console.log("User not find it")
+                }
+            })
+        } else {
+            console.log("Id to obtain WalletId isnt a number")
+        }
+
     },
     async isUserCreated(req, res) {
         return db.Usuarios.findOne({
@@ -236,48 +241,64 @@ module.exports = {
 
     //Monedero functions
     crearMonedero(req, res) {
-        return db.Monederos.create({
-            publicKey: req.keyPublic,
-            privateKey: req.keyPrivate,
-            UsuarioId: req.owner
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val });
-        });
+        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
+            return db.Monederos.create({
+                publicKey: req.keyPublic,
+                privateKey: req.keyPrivate,
+                UsuarioId: req.owner
+            }).then(() => {
+                res.json({ ok: true });
+            }).catch((val) => {
+                res.json({ ok: false, error: val });
+            });
+        } else {
+
+        }
+
     },
     eliminarMonedero(req, res) {
-        db.Monederos.destroy({
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
+        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
+            db.Monederos.destroy({
+                where: {
+                    id: req.body.id
+                }
+            }).then(() => {
+                res.json({ ok: true });
+            }).catch((val) => {
+                res.json({ ok: false, error: val.name });
+            });
+        } else {
+
+        }
+
     },
     updateMonedero(req, res) {
-        return db.Monederos.update({
-            publicKey: req.keyPublic,
-            privateKey: req.keyPrivate,
-            UsuarioId: req.owner
-        }, {
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val });
-        });
+        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
+            return db.Monederos.update({
+                publicKey: req.keyPublic,
+                privateKey: req.keyPrivate,
+                UsuarioId: req.owner
+            }, {
+                where: {
+                    id: req.body.id
+                }
+            }).then(() => {
+                res.json({ ok: true });
+            }).catch((val) => {
+                res.json({ ok: false, error: val });
+            });
+        } else {
+
+        }
+
     },
     async updateIdArrayMonedero(idUsuario, idLogroPin, privateKey, password, res) {
         let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
         let userpassword = await this.obtainUserPassword(idUsuario)
         console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
         console.log("Compare if " + userpassword + " is equals to " + password)
-        if (privateKey == privateKeyId && userpassword == password) {
+        if (privateKey == privateKeyId && userpassword == password && (typeof idUsuario == 'number' && typeof idLogroPin == 'number' &&
+                typeof privateKey == 'string' && typeof password == 'string')) {
             console.log("Private Key is correct")
             db.Monederos.findOne({
                 where: {
@@ -298,49 +319,62 @@ module.exports = {
                 })
             })
         } else {
-            console.log("Private Key isn't correct")
+            console.log("Something with the data isn't correct")
             res.json({ ok: false, error: "Key isn't correct" })
         }
     },
     obtainPrivateKeyId(id) {
-        return db.Monederos.findOne({
-            where: {
-                UsuarioId: id
-            }
-        }).then((result) => {
-            if (result != null) {
-                console.log("PrivateKey associated to id:" + id + " found it: " + result.privateKey)
-                return result.privateKey
-            } else {
-                console.log("PrivateKey associated to id:" + id + " not found")
-            }
+        if (typeof id == 'number') {
+            return db.Monederos.findOne({
+                where: {
+                    UsuarioId: id
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("PrivateKey associated to id:" + id + " found it: " + result.privateKey)
+                    return result.privateKey
+                } else {
+                    console.log("PrivateKey associated to id:" + id + " not found")
+                }
 
-        })
+            })
+        } else {
+            console.log("Id to obtain WalletId isnt a number")
+        }
     },
     async obtainMonederoId(idUsu) {
-        return db.Monederos.findOne({
-            where: {
-                id: idUsu
-            }
-        }).then((result) => {
-            console.log("Getting idMonedero own by idUsuario: " + result.id)
-            return result.id
-        })
+        if (typeof idUsu == 'number') {
+            return db.Monederos.findOne({
+                where: {
+                    id: idUsu
+                }
+            }).then((result) => {
+                console.log("Getting idMonedero own by idUsuario: " + result.id)
+                return result.id
+            })
+        } else {
+            console.log("Id to obtain WalletId isnt a number")
+        }
     },
     async userHasWallet(idUsu) {
-        return db.Monederos.findOne({
-            where: {
-                UsuarioId: idUsu
-            }
-        }).then((result) => {
-            if (result != null) {
-                console.log("idUsuario: " + idUsu + " has a wallet")
-                return true
-            } else {
-                console.log("idUsuario: " + idUsu + " hasn't a wallet")
-                return false
-            }
-        })
+        if (typeof idUsu == 'number') {
+            return db.Monederos.findOne({
+                where: {
+                    UsuarioId: idUsu
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("idUsuario: " + idUsu + " has a wallet")
+                    return true
+                } else {
+                    console.log("idUsuario: " + idUsu + " hasn't a wallet")
+                    return false
+                }
+            })
+        } else {
+            console.log("Id to comprobate if User has wallet isnt a number")
+        }
+
     },
 
     //Transactions functions
