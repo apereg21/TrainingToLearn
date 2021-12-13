@@ -16,7 +16,8 @@ module.exports = {
     },
     async createBlock(req, res) {
         console.log((req.index) + (req.timestamp) + (req.logroPin) + (req.data) + (req.hash) + (req.hashPrev))
-        if ((req.index != null) && (req.timestamp != null) && (req.logroPin != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
+        if ((typeof req.index == 'number' && typeof req.hash == 'string' && typeof req.hashPrev == 'string') &&
+            (req.index != null) && (req.timestamp != null) && (req.logroPin != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
             return db.Blockchain.create({
                 index: req.index,
                 timestamp: Date.now(),
@@ -32,7 +33,7 @@ module.exports = {
     },
     getHashLastBlock(lastIndex, res) {
         console.log("Last index is: " + lastIndex)
-        if (lastIndex >= 0 && lastIndex != null) {
+        if (lastIndex >= 0 && lastIndex != null && typeof lastIndex == 'number') {
             return db.Blockchain.findOne({
                 where: {
                     index: lastIndex
@@ -130,6 +131,47 @@ module.exports = {
         }
 
     },
+    async existLogroPin(id) {
+        return db.Logropines.findOne({
+            where: {
+                id: id
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("LogroPin with id:" + id + " Find it")
+                return true
+            } else {
+                console.log("LogroPin with id:" + id + " Not Find it")
+                return false
+            }
+        })
+    },
+    async obtainUserIdLP(idLogroPin) {
+        return db.Logropines.findOne({
+                where: {
+                    id: idLogroPin
+                }
+            })
+            .then((result) => {
+                if (result != null) {
+                    console.log("LogroPin with id:" + idLogroPin + " Find it")
+                    return result.UsuarioId
+                } else {
+                    console.log("LogroPin with id:" + idLogroPin + " Not Find it")
+                }
+            })
+    },
+    async ownableLogroPin(idLogroPin, username, userPassword) {
+        const idUser = await this.obtainUserId(username, userPassword)
+        const idUserLP = await this.obtainUserIdLP(idLogroPin)
+        if (idUser == idUserLP) {
+            console.log("User " + username + " has de own property for LogroPin with Id:" + idLogroPin)
+            return true
+        } else {
+            console.log("User " + username + " hasn`t the own property for LogroPin with Id:" + idLogroPin)
+            return false
+        }
+    },
 
     //Usuario Functions
     createUser(req, res) {
@@ -144,15 +186,13 @@ module.exports = {
             console.log("Something go wrong with user creation: " + val);
         });
     },
-    deleteUser(req, res) {
+    deleteUser(id) {
         db.Usuarios.destroy({
             where: {
-                id: req.body.id,
-                password: req.body.password,
-                username: req.body.username
+                id: id
             }
         }).then(() => {
-            res.json({ ok: true });
+            console.log("OK User with id:" + id + " eliminated")
         }).catch((val) => {
             res.json({ ok: false, error: val.name });
         });
@@ -221,26 +261,31 @@ module.exports = {
 
     },
     async isUserCreated(req, res) {
-        return db.Usuarios.findOne({
-            where: {
-                name: req.body.name,
-                fullSurname: req.body.fullSurname,
-                username: req.body.username,
-                password: req.body.password
-            }
-        }).then((result) => {
-            if (result != null) {
-                console.log("User find it")
-                return true
-            } else {
-                console.log("User not find it")
-                return false
-            }
-        })
+        if (typeof req.body.name == 'string' && typeof req.body.username == 'string' && typeof req.body.fullSurname == 'string' && req.body.fullSurname == 'string') {
+            return db.Usuarios.findOne({
+                where: {
+                    name: req.body.name,
+                    fullSurname: req.body.fullSurname,
+                    username: req.body.username,
+                    password: req.body.password
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("User find it")
+                    return true
+                } else {
+                    console.log("User not find it")
+                    return false
+                }
+            })
+        } else {
+            console.log("Something with the data isn't correct")
+        }
+
     },
 
     //Monedero functions
-    crearMonedero(req, res) {
+    createWallet(req, res) {
         if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
             return db.Monederos.create({
                 publicKey: req.keyPublic,
@@ -252,11 +297,11 @@ module.exports = {
                 res.json({ ok: false, error: val });
             });
         } else {
-
+            console.log("Something with the data isn't correct")
         }
 
     },
-    eliminarMonedero(req, res) {
+    deleteWallet(req, res) {
         if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
             db.Monederos.destroy({
                 where: {
@@ -268,7 +313,7 @@ module.exports = {
                 res.json({ ok: false, error: val.name });
             });
         } else {
-
+            console.log("Something with the data isn't correct")
         }
 
     },
@@ -288,7 +333,7 @@ module.exports = {
                 res.json({ ok: false, error: val });
             });
         } else {
-
+            console.log("Something with the data isn't correct")
         }
 
     },
@@ -296,7 +341,7 @@ module.exports = {
         let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
         let userpassword = await this.obtainUserPassword(idUsuario)
         console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
-        console.log("Compare if " + userpassword + " is equals to " + password)
+        console.log("Compare if " + userpassword + " is equals to " + userpassword)
         if (privateKey == privateKeyId && userpassword == password && (typeof idUsuario == 'number' && typeof idLogroPin == 'number' &&
                 typeof privateKey == 'string' && typeof password == 'string')) {
             console.log("Private Key is correct")

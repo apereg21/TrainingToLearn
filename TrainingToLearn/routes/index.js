@@ -71,7 +71,7 @@ router.post('/createNewReward', async function(req, res) {
         console.log(newBlock.hash)
         await controllerDB.createBlock(newBlock, res)
             //Assing LogroPin to the Wallet with the id --> req.body.Id
-        controllerDB.updateIdArrayMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, req.body.userPassword, res)
+        await controllerDB.updateIdArrayMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, req.body.userPassword, res)
     }
 });
 
@@ -144,20 +144,20 @@ router.post('/createNewUser', async function(req, res) {
  * to the user
  */
 
-router.post('/createWallet', async function(req, res) {
+router.post('/createNewWallet', async function(req, res) {
     const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
     if (ownerId != null) {
         const newWallet = new Wallet(ownerId)
         const hasWallet = await controllerDB.userHasWallet(ownerId)
         if (!hasWallet) {
-            controllerDB.crearMonedero(newWallet, res)
+            controllerDB.createWallet(newWallet, res)
         } else {
-            console.log("The user has a Wallet already. Can't create wallet")
-            res.send("The user has a Wallet already. Can't create wallet")
+            console.log("Can't create wallet - Reason: The user has a Wallet already")
+            res.send("Can't create wallet - Reason: The user has a Wallet already")
         }
     } else {
-        console.log("The user with username and password introduced, are not correct. Can't create wallet")
-        res.send("The user with username and password introduced, are not correct. Can't create wallet")
+        console.log("Can't create wallet - Reason: Username and password not corect")
+        res.send("Can't create wallet - Reason: Username and password not corect")
     }
 
 });
@@ -182,16 +182,47 @@ router.post('/modificarUsuario', function(req, res) {
  * Routes Delete Object
  */
 
-router.post('/eliminarLogroPin', function(req, res) {
-
+router.post('/deleteLogroPin', async function(req, res) {
+    const existLogroPin = await controllerDB.existLogroPin(req.body.id)
+    console.log(existLogroPin)
+    if (existLogroPin) {
+        const isLogroPinOwner = await controllerDB.ownableLogroPin(req.body.id, req.body.username, req.body.password)
+        if (isLogroPinOwner) {
+            //Elimination moment
+            controllerDB.deleteLogroPin(req, res)
+            res.send("OK - LogroPinEliminated")
+        } else {
+            console.log("The logroPin asociated to id:" + req.body.id + " can't be eliminated - Reason: Not correct User Owner")
+            res.send("The logroPin asociated to id:" + req.body.id + " can't be eliminated - Reason: Not correct User Owner")
+        }
+    } else {
+        console.log("The logroPin asociated to id:" + req.body.id + " can't be eliminated - Reason: Not Exist")
+        res.send("The logroPin asociated to id:" + req.body.id + " can't be eliminated - Reason: Not Exist")
+    }
 });
 
-router.post('/eliminarUsuario', function(req, res) {
-
+router.post('/deleteUser', async function(req, res) {
+    const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    console.log(idUser)
+    if (idUser != null) {
+        controllerDB.deleteUser(idUser)
+        res.send("OK - " + req.body.username + "'s data eliminated")
+    } else {
+        console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+        res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+    }
 });
 
-router.post('/eliminarMonedero', function(req, res) {
-
+router.post('/deleteMonedero', async function(req, res) {
+    const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    console.log(idUser)
+    if (idUser != null) {
+        controllerDB.deleteWallet(idUser)
+        res.send("OK - " + req.body.username + "'s data eliminated")
+    } else {
+        console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+        res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+    }
 });
 
 /* 
