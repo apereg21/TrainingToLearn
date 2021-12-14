@@ -59,7 +59,8 @@ router.post('/createNewReward', async function(req, res) {
         lastIndex++
     }
     let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1, res)
-    let logroPin = await controllerDB.createLogroPin(req, res)
+    let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    let logroPin = await controllerDB.createLogroPin(req,idUser, res)
         //Waiting petitions for the block
     await sleep(20000)
     if (prevHash == null || logroPin == null || (logroPin.nameLP == null || logroPin.descriptionLP == null || logroPin.imageLP == null || logroPin.UsuarioId == null || logroPin.MonederoId == null)) {
@@ -71,7 +72,7 @@ router.post('/createNewReward', async function(req, res) {
         console.log(newBlock.hash)
         await controllerDB.createBlock(newBlock, res)
             //Assing LogroPin to the Wallet with the id --> req.body.Id
-        await controllerDB.updateIdArrayMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, req.body.userPassword, res)
+        await controllerDB.updateIdArrayMonedero(idUser, logroPin.id, req.body.userPrivateKey, req.body.password, res)
         res.send("Reward created")
     }
 });
@@ -163,22 +164,6 @@ router.post('/createNewWallet', async function(req, res) {
 });
 
 /*
- * Routes Modify Object
- */
-
-router.post('/modificarUsuario', function(req, res) {
-
-});
-
-router.post('/modificarMonedero', function(req, res) {
-
-});
-
-router.post('/modificarUsuario', function(req, res) {
-
-});
-
-/*
  * Routes Delete Object
  */
 
@@ -216,8 +201,10 @@ router.post('/deleteUser', async function(req, res) {
 
 router.post('/deleteWallet', async function(req, res) {
     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    const privateKey = await controllerDB.obtainPrivateKeyId(idUser)
     console.log(idUser)
-    if (idUser != null) {
+    console.log(privateKey)
+    if (idUser != null && privateKey!=null && (privateKey == req.body.privateKey)) {
         controllerDB.deleteWallet(idUser)
         res.send("OK - " + req.body.username + "'s data eliminated")
     } else {

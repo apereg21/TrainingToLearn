@@ -66,15 +66,15 @@ module.exports = {
     },
 
     //LogroPins functions
-    async createLogroPin(req, res) {
-        if (((req.body.nameLP != null && req.body.nameLP.length > 0)) && (req.body.UsuarioId != null)) {
+    async createLogroPin(req, idUser, res) {
+        if (((req.body.nameLP != null && req.body.nameLP.length > 0))) {
             return db.Logropines
                 .create({
                     nameLP: req.body.nameLP,
                     descriptionLP: req.body.descriptionLP,
                     imageLP: req.body.imageLP,
-                    UsuarioId: req.body.UsuarioId,
-                    MonederoId: await this.obtainMonederoId(req.body.UsuarioId)
+                    UsuarioId: idUser,
+                    MonederoId: await this.obtainMonederoId(idUser)
                 }).then(data => {
                     console.log(data);
                     return data
@@ -241,7 +241,7 @@ module.exports = {
         })
     },
     async obtainUserId(usName, usPass) {
-        if (typeof usName == 'string' && typeof usName == 'string') {
+        if (typeof usName == 'string' && typeof usPass == 'string') {
             return db.Usuarios.findOne({
                 where: {
                     username: usName,
@@ -301,16 +301,16 @@ module.exports = {
         }
 
     },
-    deleteWallet(req, res) {
-        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
+    deleteWallet(idUser) {
+        if (typeof idUser == 'number') {
             db.Monederos.destroy({
                 where: {
-                    id: req.body.id
+                    id: idUser
                 }
             }).then(() => {
-                res.json({ ok: true });
+                console.log("Wallet eliminated")
             }).catch((val) => {
-                res.json({ ok: false, error: val.name });
+                console.log("Error: "+ val)
             });
         } else {
             console.log("Something with the data isn't correct")
@@ -390,7 +390,9 @@ module.exports = {
             }else{
                 console.log("Id isn't correct and can't be localizated")
             }
-        })
+        }).catch((val) => {
+            res.json({ ok: false, error: val });
+        });
     },
     obtainPrivateKeyId(id) {
         if (typeof id == 'number') {
@@ -415,7 +417,7 @@ module.exports = {
         if (typeof idUsu == 'number') {
             return db.Monederos.findOne({
                 where: {
-                    id: idUsu
+                    UsuarioId: idUsu
                 }
             }).then((result) => {
                 console.log("Getting idMonedero own by idUsuario: " + result.id)
