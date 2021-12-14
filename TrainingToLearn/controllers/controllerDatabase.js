@@ -90,7 +90,7 @@ module.exports = {
                 id: req.body.id
             }
         }).then(() => {
-            res.json({ ok: true });
+            console.log("LogroPin Eliminated")
         }).catch((val) => {
             res.json({ ok: false, error: val.name });
         });
@@ -261,7 +261,7 @@ module.exports = {
 
     },
     async isUserCreated(req, res) {
-        if (typeof req.body.name == 'string' && typeof req.body.username == 'string' && typeof req.body.fullSurname == 'string' && req.body.fullSurname == 'string') {
+        if (typeof req.body.name == 'string' && typeof req.body.username == 'string' && typeof req.body.fullSurname == 'string' && typeof req.body.password == 'string') {
             return db.Usuarios.findOne({
                 where: {
                     name: req.body.name,
@@ -286,7 +286,7 @@ module.exports = {
 
     //Monedero functions
     createWallet(req, res) {
-        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'string') {
+        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'number') {
             return db.Monederos.create({
                 publicKey: req.keyPublic,
                 privateKey: req.keyPrivate,
@@ -359,14 +359,38 @@ module.exports = {
                         UsuarioId: idUsuario
                     }
                 }).then((result2) => {
-                    console.log(result2.idsLogroPins)
-                    res.json({ ok: true });
+                    console.log("All is fine")
                 })
             })
         } else {
             console.log("Something with the data isn't correct")
             res.json({ ok: false, error: "Key isn't correct" })
         }
+    },
+    async takeLogroPinFromWallet(privKey,idLogroPin) {
+        return db.Monederos.findOne({
+            where: {
+                privateKey: privKey
+            }
+        }).then((result) => {
+            console.log(result.idsLogroPins)
+            const index = result.idsLogroPins.indexOf(idLogroPin);
+            console.log("The localitation of idLogroPin:"+idLogroPin+"is "+index)
+            if (index > -1) {
+                result.idsLogroPins.splice(index, 1) //Delete idLogroPin once in the array
+                db.Monederos.update({
+                    idsLogroPins: result.idsLogroPins
+                }, {
+                    where: {
+                        privateKey: privKey
+                    }
+                }).then((result2) => {
+                    console.log("All is fine")
+                })
+            }else{
+                console.log("Id isn't correct and can't be localizated")
+            }
+        })
     },
     obtainPrivateKeyId(id) {
         if (typeof id == 'number') {
@@ -402,7 +426,7 @@ module.exports = {
         }
     },
     async userHasWallet(idUsu) {
-        if (typeof idUsu == 'number') {
+        if (typeof idUsu == 'number' && idUsu!=null || idUsu!= undefined) {
             return db.Monederos.findOne({
                 where: {
                     UsuarioId: idUsu
@@ -433,7 +457,6 @@ module.exports = {
         }).then((result) => {
             console.log("Transaction Created")
             return result
-
         }).catch((val) => {});
     },
 }

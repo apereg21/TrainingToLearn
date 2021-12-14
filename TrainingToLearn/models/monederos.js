@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
         updatedAt: false
     });
     Monederos.associate = function(models) {
-        Monederos.hasMany(models.Logropines)
+        Monederos.hasMany(models.Logropines, { onDelete: 'cascade' })
     };
     return Monederos;
 };

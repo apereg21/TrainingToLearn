@@ -72,6 +72,7 @@ router.post('/createNewReward', async function(req, res) {
         await controllerDB.createBlock(newBlock, res)
             //Assing LogroPin to the Wallet with the id --> req.body.Id
         await controllerDB.updateIdArrayMonedero(req.body.UsuarioId, logroPin.id, req.body.userPrivateKey, req.body.userPassword, res)
+        res.send("Reward created")
     }
 });
 
@@ -159,7 +160,6 @@ router.post('/createNewWallet', async function(req, res) {
         console.log("Can't create wallet - Reason: Username and password not corect")
         res.send("Can't create wallet - Reason: Username and password not corect")
     }
-
 });
 
 /*
@@ -189,6 +189,7 @@ router.post('/deleteLogroPin', async function(req, res) {
         const isLogroPinOwner = await controllerDB.ownableLogroPin(req.body.id, req.body.username, req.body.password)
         if (isLogroPinOwner) {
             //Elimination moment
+            await controllerDB.takeLogroPinFromWallet(req.body.privateKey,req.body.id)
             controllerDB.deleteLogroPin(req, res)
             res.send("OK - LogroPinEliminated")
         } else {
@@ -213,7 +214,7 @@ router.post('/deleteUser', async function(req, res) {
     }
 });
 
-router.post('/deleteMonedero', async function(req, res) {
+router.post('/deleteWallet', async function(req, res) {
     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
     console.log(idUser)
     if (idUser != null) {

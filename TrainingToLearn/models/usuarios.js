@@ -27,8 +27,8 @@ module.exports = (sequelize, DataTypes) => {
         updatedAt: false
     });
     Usuarios.associate = function(models) {
-        Usuarios.hasOne(models.Monederos);
-        Usuarios.hasOne(models.Logropines);
+        Usuarios.hasOne(models.Monederos, { onDelete: 'cascade' });
+        Usuarios.hasOne(models.Logropines, { onDelete: 'cascade' });
     };
     return Usuarios;
 };

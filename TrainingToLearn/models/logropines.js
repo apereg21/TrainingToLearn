@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {});
     Logropines.associate = function(models) {
-        Logropines.hasMany(models.Transactions)
+        Logropines.hasMany(models.Transactions, { onDelete: 'cascade' })
     };
     return Logropines;
 };
