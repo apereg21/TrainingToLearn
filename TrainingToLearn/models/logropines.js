@@ -17,6 +17,11 @@ module.exports = (sequelize, DataTypes) => {
         imageLP: {
             allowNull: true,
             type: DataTypes.STRING,
+        },
+        deleted: {
+            allowNull: false,
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     }, {});
     Logropines.associate = function(models) {

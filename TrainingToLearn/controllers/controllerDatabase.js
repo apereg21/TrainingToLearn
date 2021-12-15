@@ -85,7 +85,9 @@ module.exports = {
         }
     },
     deleteLogroPin(req, res) {
-        db.Logropines.destroy({
+        db.Logropines.update({
+            deleted: true
+        }, {
             where: {
                 id: req.body.id
             }
@@ -187,7 +189,9 @@ module.exports = {
         });
     },
     deleteUser(id) {
-        db.Usuarios.destroy({
+        db.Usuarios.update({
+            deleted: true
+        }, {
             where: {
                 id: id
             }
@@ -214,6 +218,36 @@ module.exports = {
         }).catch((val) => {
             res.json({ ok: false, error: val.name });
         });
+    },
+    async obtainDeleteField(idObject, opc) {
+        if (opc == 0) {
+            return db.Usuarios.findOne({
+                where: {
+                    id: idObject
+                }
+            }).then((result) => {
+                console.log("Deleted field is: " + result.deleted)
+                return result.deleted
+            })
+        } else if (opc == 1) {
+            return db.Monederos.findOne({
+                where: {
+                    id: idObject
+                }
+            }).then((result) => {
+                console.log("Deleted field is: " + result.deleted)
+                return result.deleted
+            })
+        } else if (opc == 2) {
+            return db.Logropines.findOne({
+                where: {
+                    id: idObject
+                }
+            }).then((result) => {
+                console.log("Deleted field is: " + result.deleted)
+                return result.deleted
+            })
+        }
     },
     async obtainUserPassword(id) {
         return db.Usuarios.findOne({
@@ -261,13 +295,10 @@ module.exports = {
 
     },
     async isUserCreated(req, res) {
-        if (typeof req.body.name == 'string' && typeof req.body.username == 'string' && typeof req.body.fullSurname == 'string' && typeof req.body.password == 'string') {
+        if (typeof req.body.username == 'string' && req.body.username.length > 0) {
             return db.Usuarios.findOne({
                 where: {
-                    name: req.body.name,
-                    fullSurname: req.body.fullSurname,
-                    username: req.body.username,
-                    password: req.body.password
+                    username: req.body.username
                 }
             }).then((result) => {
                 if (result != null) {
@@ -303,14 +334,16 @@ module.exports = {
     },
     deleteWallet(idUser) {
         if (typeof idUser == 'number') {
-            db.Monederos.destroy({
+            db.Monederos.update({
+                deleted: true
+            }, {
                 where: {
                     id: idUser
                 }
             }).then(() => {
                 console.log("Wallet eliminated")
             }).catch((val) => {
-                console.log("Error: "+ val)
+                console.log("Error: " + val)
             });
         } else {
             console.log("Something with the data isn't correct")
@@ -367,7 +400,7 @@ module.exports = {
             res.json({ ok: false, error: "Key isn't correct" })
         }
     },
-    async takeLogroPinFromWallet(privKey,idLogroPin) {
+    async takeLogroPinFromWallet(privKey, idLogroPin) {
         return db.Monederos.findOne({
             where: {
                 privateKey: privKey
@@ -375,7 +408,7 @@ module.exports = {
         }).then((result) => {
             console.log(result.idsLogroPins)
             const index = result.idsLogroPins.indexOf(idLogroPin);
-            console.log("The localitation of idLogroPin:"+idLogroPin+"is "+index)
+            console.log("The localitation of idLogroPin:" + idLogroPin + "is " + index)
             if (index > -1) {
                 result.idsLogroPins.splice(index, 1) //Delete idLogroPin once in the array
                 db.Monederos.update({
@@ -387,7 +420,7 @@ module.exports = {
                 }).then((result2) => {
                     console.log("All is fine")
                 })
-            }else{
+            } else {
                 console.log("Id isn't correct and can't be localizated")
             }
         }).catch((val) => {
@@ -428,7 +461,7 @@ module.exports = {
         }
     },
     async userHasWallet(idUsu) {
-        if (typeof idUsu == 'number' && idUsu!=null || idUsu!= undefined) {
+        if (typeof idUsu == 'number' && idUsu != null || idUsu != undefined) {
             return db.Monederos.findOne({
                 where: {
                     UsuarioId: idUsu

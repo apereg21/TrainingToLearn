@@ -5,6 +5,7 @@ const Transaction = require('../transaction');
 const models = require('../models');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
+const { deleteLogroPin } = require('../controllers/controllerDatabase');
 
 //Configuration zone
 var router = express.Router();
@@ -60,7 +61,7 @@ router.post('/createNewReward', async function(req, res) {
     }
     let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1, res)
     let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    let logroPin = await controllerDB.createLogroPin(req,idUser, res)
+    let logroPin = await controllerDB.createLogroPin(req, idUser, res)
         //Waiting petitions for the block
     await sleep(20000)
     if (prevHash == null || logroPin == null || (logroPin.nameLP == null || logroPin.descriptionLP == null || logroPin.imageLP == null || logroPin.UsuarioId == null || logroPin.MonederoId == null)) {
@@ -169,12 +170,14 @@ router.post('/createNewWallet', async function(req, res) {
 
 router.post('/deleteLogroPin', async function(req, res) {
     const existLogroPin = await controllerDB.existLogroPin(req.body.id)
+    const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    const deletedLogroPin = await controllerDB.obtainDeleteField(idUser, 0)
     console.log(existLogroPin)
-    if (existLogroPin) {
+    if (existLogroPin && !deletedLogroPin) {
         const isLogroPinOwner = await controllerDB.ownableLogroPin(req.body.id, req.body.username, req.body.password)
         if (isLogroPinOwner) {
             //Elimination moment
-            await controllerDB.takeLogroPinFromWallet(req.body.privateKey,req.body.id)
+            await controllerDB.takeLogroPinFromWallet(req.body.privateKey, req.body.id)
             controllerDB.deleteLogroPin(req, res)
             res.send("OK - LogroPinEliminated")
         } else {
@@ -189,8 +192,8 @@ router.post('/deleteLogroPin', async function(req, res) {
 
 router.post('/deleteUser', async function(req, res) {
     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    console.log(idUser)
-    if (idUser != null) {
+    const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
+    if (idUser != null && (!deletedUser)) {
         controllerDB.deleteUser(idUser)
         res.send("OK - " + req.body.username + "'s data eliminated")
     } else {
@@ -202,9 +205,11 @@ router.post('/deleteUser', async function(req, res) {
 router.post('/deleteWallet', async function(req, res) {
     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
     const privateKey = await controllerDB.obtainPrivateKeyId(idUser)
+    const deletedWallet = await controllerDB.obtainDeleteField(idUser, 1)
+
     console.log(idUser)
     console.log(privateKey)
-    if (idUser != null && privateKey!=null && (privateKey == req.body.privateKey)) {
+    if (idUser != null && privateKey != null && (privateKey == req.body.privateKey) && !deletedWallet) {
         controllerDB.deleteWallet(idUser)
         res.send("OK - " + req.body.username + "'s data eliminated")
     } else {
