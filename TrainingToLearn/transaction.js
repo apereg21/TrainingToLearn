@@ -29,13 +29,15 @@ class Transaction {
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
         console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
         if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
-            throw new Error('Something gone wrong with the operations!');
+            console.log('Something gone wrong with the operations!');
+        }else{
+            const hashTx = this.calHashTransaction();
+            const sig = signingKeyInterna.sign(hashTx, 'base64');
+            var signature = sig.toDER('hex');
+            console.log("Firmado: " + signature)
+            this.signatureC = signature
         }
-        const hashTx = this.calHashTransaction();
-        const sig = signingKeyInterna.sign(hashTx, 'base64');
-        var signature = sig.toDER('hex');
-        console.log("Firmado: " + signature)
-        this.signatureC = signature
+        
     }
 
 
@@ -49,10 +51,12 @@ class Transaction {
     isValid() {
         if (this.fromAddress === null) return true;
         if (!this.signatureC || this.signatureC.length === 0) {
-            throw new Error('No signature in this transaction');
+            console.log('No signature in this transaction');
+        }else{
+            const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
+            return publicKey.verify(this.calHashTransaction(), this.signatureC);
         }
-        const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
-        return publicKey.verify(this.calHashTransaction(), this.signatureC);
+        
     }
 }
 module.exports = Transaction

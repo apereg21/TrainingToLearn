@@ -51,7 +51,7 @@ router.get('/', (req, res) => {
  */
 
 router.post('/createNewReward', async function(req, res) {
-    let lastIndex = await controllerDB.getLastBlockIndex(res)
+    let lastIndex = await controllerDB.getLastBlockIndex()
     if (lastIndex == 0) {
         //There aren't blocks in the blockchain --> Adding the genesisBlock
         var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
@@ -65,7 +65,7 @@ router.post('/createNewReward', async function(req, res) {
         //Waiting petitions for the block
     await sleep(20000)
     if (prevHash == null || logroPin == null || (logroPin.nameLP == null || logroPin.descriptionLP == null || logroPin.imageLP == null || logroPin.UsuarioId == null || logroPin.MonederoId == null)) {
-        console.log("Something with the logroPin gone wrong")
+        console.log("Something with the logroPin Data gone wrong")
         res.send({ ok: false })
     } else {
         let newBlock = new Block(lastIndex, new Date(), logroPin, { transactions: pendingTransactions }, prevHash)
@@ -73,7 +73,7 @@ router.post('/createNewReward', async function(req, res) {
         console.log(newBlock.hash)
         await controllerDB.createBlock(newBlock, res)
             //Assing LogroPin to the Wallet with the id --> req.body.Id
-        await controllerDB.updateIdArrayMonedero(idUser, logroPin.id, req.body.userPrivateKey, req.body.password, res)
+        await controllerDB.updateIdArrayWallet(idUser, logroPin.id, req.body.userPrivateKey, req.body.password, res)
         res.send("Reward created")
     }
 });
@@ -95,16 +95,21 @@ router.post('/createNewReward', async function(req, res) {
  */
 
 router.post('/createNewTransaction', async function(req, res) {
-    let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
-    let privKey = await controllerDB.obtainPrivateKeyId(req.body.UsuarioId)
-    newTransac.signTransaction(privKey)
-    if (newTransac.fromAddress == null || newTransac.toAddress == null || newTransac.amount == null || newTransac.LogroPinId == null || newTransac.signatureC == null) {
-        console.log("Something with the data in createNewTransaction gone wrong")
-        res.send({ ok: false })
-    } else {
-        let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
-        addPendingTransaction(jsonTransaction)
-        res.send({ ok: true })
+    let isTransactionCorrect = controllerDB.comprobateTransaction(req)
+    if(isTransactionCorrect){
+        let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
+        newTransac.signTransaction(privKey)
+        if (newTransac.fromAddress == null || newTransac.toAddress == null || newTransac.amount == null || newTransac.LogroPinId == null || newTransac.signatureC == null) {
+            console.log("Can't finish the Transaction - Reason: Parameters not correct")
+            res.send("Can't finish the Transaction - Reason: Parameters not correct")
+        } else {
+            let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
+            addPendingTransaction(jsonTransaction)
+            res.send("OK - Transaction finish")
+        }
+    }else{
+        console.log("Can't finish the Transaction - Reason: UserId dont exist")
+        res.send("Can't finish the Transaction - Reason: UserId dont exist")
     }
 });
 
@@ -125,9 +130,9 @@ router.post('/createNewTransaction', async function(req, res) {
 router.post('/createNewUser', async function(req, res) {
     let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
     if (userAlreadyCreated == false) {
-        controllerDB.createUser(req, res)
-        console.log("User created correctly")
-        res.send("User created correctly")
+            controllerDB.createUser(req, res)
+            console.log("User created correctly")
+            res.send("User created correctly")       
     } else {
         console.log("User dont created, the user alredy exists")
         res.send("User dont created, the user alredy exists")
@@ -152,7 +157,9 @@ router.post('/createNewWallet', async function(req, res) {
     if (ownerId != null) {
         const newWallet = new Wallet(ownerId)
         const hasWallet = await controllerDB.userHasWallet(ownerId)
-        if (!hasWallet) {
+        const idWallet = await controllerDB.obtainMonederoId(ownerId)
+        const deletedWallet = await controllerDB.obtainDeleteField(idWallet,1)
+        if (!hasWallet && !deletedWallet) {
             controllerDB.createWallet(newWallet, res)
         } else {
             console.log("Can't create wallet - Reason: The user has a Wallet already")
@@ -192,13 +199,21 @@ router.post('/deleteLogroPin', async function(req, res) {
 
 router.post('/deleteUser', async function(req, res) {
     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
-    if (idUser != null && (!deletedUser)) {
-        controllerDB.deleteUser(idUser)
-        res.send("OK - " + req.body.username + "'s data eliminated")
+    if (idUser != null) {
+        const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
+        const idWallet = await controllerDB.obtainMonederoId(idUser)
+        const deletedWallet = await controllerDB.obtainDeleteField(idWallet,1)  
+        if((!deletedUser) && ((!deletedWallet) || deletedWallet == null)){
+            controllerDB.deleteUser(idUser)
+            res.send("OK - " + req.body.username + "'s data eliminated")
+        }
+        else{
+            console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+            res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+        }
     } else {
-        console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
-        res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+        console.log(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
+        res.send(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
     }
 });
 
