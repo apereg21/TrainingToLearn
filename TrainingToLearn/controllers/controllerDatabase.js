@@ -12,7 +12,7 @@ module.exports = {
                 console.log("LastBlock in blockchain found it: " + result)
                 return result
             })
-            .catch((error) => console.log("Error: "+error));
+            .catch((error) => console.log("Error: " + error));
     },
     async createBlock(req, res) {
         console.log((req.index) + (req.timestamp) + (req.logroPin) + (req.data) + (req.hash) + (req.hashPrev))
@@ -205,7 +205,7 @@ module.exports = {
                 }
             }).then(() => {
                 console.log("OK Wallet with id:" + id + " eliminated")
-                
+
             }).catch((val) => {
                 res.json({ ok: false, error: val.name });
             });
@@ -238,10 +238,10 @@ module.exports = {
                     id: idObject
                 }
             }).then((result) => {
-                if(result!=null){
+                if (result != null) {
                     console.log("Deleted field is: " + result.deleted)
                     return result.deleted
-                }else{
+                } else {
                     console.log("Deleted field is: " + false)
                     return false
                 }
@@ -252,10 +252,10 @@ module.exports = {
                     id: idObject
                 }
             }).then((result) => {
-                if(result!=null){
+                if (result != null) {
                     console.log("Deleted field is: " + result.deleted)
                     return result.deleted
-                }else{
+                } else {
                     console.log("Deleted field is: " + false)
                     return false
                 }
@@ -266,10 +266,10 @@ module.exports = {
                     id: idObject
                 }
             }).then((result) => {
-                if(result!=null){
+                if (result != null) {
                     console.log("Deleted field is: " + result.deleted)
                     return result.deleted
-                }else{
+                } else {
                     console.log("Deleted field is: " + false)
                     return false
                 }
@@ -322,7 +322,9 @@ module.exports = {
 
     },
     async isUserCreated(req, res) {
-        if (typeof req.body.username == 'string' && req.body.username.length > 0) {
+        if ((typeof req.body.username == 'string' && typeof req.body.name == 'string' && typeof req.body.fullSurname == 'string' && typeof req.body.username == 'string') &&
+            req.body.username != null && req.body.name != null && req.body.fullSurname != null && req.body.password != null &&
+            req.body.username.length > 0 && req.body.name.length > 0 && req.body.fullSurname.length > 0 && req.body.password.length > 0) {
             return db.Usuarios.findOne({
                 where: {
                     username: req.body.username
@@ -330,10 +332,10 @@ module.exports = {
             }).then((result) => {
                 if (result != null) {
                     console.log("User find it")
-                    if(result.delete == true){
+                    if (result.delete == true) {
                         console.log("User can created")
                         return false
-                    }else{
+                    } else {
                         console.log("User can't created")
                         return true
                     }
@@ -354,7 +356,7 @@ module.exports = {
                     id: idUser
                 }
             }).then((result) => {
-                if (result==true) {
+                if (result == true) {
                     console.log("User is Deleted")
                     return true
                 } else {
@@ -378,7 +380,7 @@ module.exports = {
             }).then(() => {
                 console.log("Wallet Created")
             }).catch((val) => {
-                console.log("Error: "+val);
+                console.log("Error: " + val);
             });
         } else {
             console.log("Something with the data isn't correct")
@@ -424,7 +426,7 @@ module.exports = {
                     where: {
                         UsuarioId: idUsuario
                     }
-                }).then( 
+                }).then(
                     console.log("All is fine")
                 )
             })
@@ -436,8 +438,8 @@ module.exports = {
     async takeLogroPinFromWallet(privKey, idLogroPin) {
         const isWalletDeleted = this.isWalletDeletedPK(privKey)
         const isLogroPDeleted = this.isLogroPDeleted(idLogroPin)
-        if(typeof privKey =='string' && typeof idLogroPin == 'number'){
-            if(isWalletDeleted && isLogroPDeleted){
+        if (typeof privKey == 'string' && typeof idLogroPin == 'number') {
+            if (isWalletDeleted && isLogroPDeleted) {
                 return db.Monederos.findOne({
                     where: {
                         privateKey: privKey
@@ -461,9 +463,9 @@ module.exports = {
                         console.log("Id isn't correct and can't be localizated")
                     }
                 }).catch((val) => {
-                    console.log("Error: "+val);
+                    console.log("Error: " + val);
                 });
-            }else{
+            } else {
                 console.log("Cant remove LogroPin from Wallet - Reason: LogroPin or Wallet of parameters dosent exists")
             }
         } else {
@@ -490,16 +492,16 @@ module.exports = {
         }
     },
     async obtainMonederoId(idUsu) {
-        if (typeof idUsu == 'number' || idUsu!=null) {
+        if (typeof idUsu == 'number' || idUsu != null) {
             return db.Monederos.findOne({
                 where: {
                     UsuarioId: idUsu
                 }
             }).then((result) => {
-                if(result==null){
-                    console.log("No Wallet for User with id:"+idUsu)
+                if (result == null) {
+                    console.log("No Wallet for User with id:" + idUsu)
                     return null
-                }else{
+                } else {
                     console.log("Getting idMonedero own by idUsuario: " + result.id)
                     return result.id
                 }
@@ -508,7 +510,7 @@ module.exports = {
             console.log("Id to obtain WalletId isnt correct")
         }
     },
-    async isWalletDeletedPK(privKey){
+    async isWalletDeletedPK(privKey) {
         if (typeof privKey == 'string') {
             return db.Monederos.findOne({
                 where: {
@@ -522,7 +524,7 @@ module.exports = {
             console.log("Id to obtain WalletId isnt a number")
         }
     },
-    async isLogroPDeleted(idLogro){
+    async isLogroPDeleted(idLogro) {
         if (typeof idLogro == 'number') {
             return db.Logropines.findOne({
                 where: {
@@ -570,7 +572,7 @@ module.exports = {
             return result
         }).catch((val) => {});
     },
-    comprobateTransaction(transParameters){
+    comprobateTransaction(transParameters) {
         let userExistNoDel
         let walletExistNoDel
     }

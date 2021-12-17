@@ -96,7 +96,7 @@ router.post('/createNewReward', async function(req, res) {
 
 router.post('/createNewTransaction', async function(req, res) {
     let isTransactionCorrect = controllerDB.comprobateTransaction(req)
-    if(isTransactionCorrect){
+    if (isTransactionCorrect) {
         let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
         newTransac.signTransaction(privKey)
         if (newTransac.fromAddress == null || newTransac.toAddress == null || newTransac.amount == null || newTransac.LogroPinId == null || newTransac.signatureC == null) {
@@ -107,7 +107,7 @@ router.post('/createNewTransaction', async function(req, res) {
             addPendingTransaction(jsonTransaction)
             res.send("OK - Transaction finish")
         }
-    }else{
+    } else {
         console.log("Can't finish the Transaction - Reason: UserId dont exist")
         res.send("Can't finish the Transaction - Reason: UserId dont exist")
     }
@@ -130,12 +130,12 @@ router.post('/createNewTransaction', async function(req, res) {
 router.post('/createNewUser', async function(req, res) {
     let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
     if (userAlreadyCreated == false) {
-            controllerDB.createUser(req, res)
-            console.log("User created correctly")
-            res.send("User created correctly")       
+        controllerDB.createUser(req, res)
+        console.log("User created correctly")
+        res.send("User created correctly")
     } else {
-        console.log("User dont created, the user alredy exists")
-        res.send("User dont created, the user alredy exists")
+        console.log("User dont created, the user alredy exists or the data of parameters ins't correct")
+        res.send("User dont created, the user alredy exists or the data of parameters ins't correct")
     }
 
 });
@@ -158,9 +158,10 @@ router.post('/createNewWallet', async function(req, res) {
         const newWallet = new Wallet(ownerId)
         const hasWallet = await controllerDB.userHasWallet(ownerId)
         const idWallet = await controllerDB.obtainMonederoId(ownerId)
-        const deletedWallet = await controllerDB.obtainDeleteField(idWallet,1)
+        const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
         if (!hasWallet && !deletedWallet) {
             controllerDB.createWallet(newWallet, res)
+            res.send("OK - Wallet Created")
         } else {
             console.log("Can't create wallet - Reason: The user has a Wallet already")
             res.send("Can't create wallet - Reason: The user has a Wallet already")
@@ -202,12 +203,11 @@ router.post('/deleteUser', async function(req, res) {
     if (idUser != null) {
         const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
         const idWallet = await controllerDB.obtainMonederoId(idUser)
-        const deletedWallet = await controllerDB.obtainDeleteField(idWallet,1)  
-        if((!deletedUser) && ((!deletedWallet) || deletedWallet == null)){
+        const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
+        if ((!deletedUser) && ((!deletedWallet) || deletedWallet == null)) {
             controllerDB.deleteUser(idUser)
             res.send("OK - " + req.body.username + "'s data eliminated")
-        }
-        else{
+        } else {
             console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
             res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
         }
