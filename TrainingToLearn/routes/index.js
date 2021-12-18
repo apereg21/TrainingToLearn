@@ -155,11 +155,11 @@ router.post('/createNewUser', async function(req, res) {
 router.post('/createNewWallet', async function(req, res) {
     const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
     if (ownerId != null) {
-        const newWallet = new Wallet(ownerId)
         const hasWallet = await controllerDB.userHasWallet(ownerId)
         const idWallet = await controllerDB.obtainMonederoId(ownerId)
         const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
-        if (!hasWallet && !deletedWallet) {
+        if (!hasWallet && !deletedWallet && hasWallet != null && deletedWallet != null) {
+            const newWallet = new Wallet(ownerId)
             controllerDB.createWallet(newWallet, res)
             res.send("OK - Wallet Created")
         } else {
@@ -167,8 +167,14 @@ router.post('/createNewWallet', async function(req, res) {
             res.send("Can't create wallet - Reason: The user has a Wallet already")
         }
     } else {
-        console.log("Can't create wallet - Reason: Username and password not corect")
-        res.send("Can't create wallet - Reason: Username and password not corect")
+        if (typeof req.body.username != 'string' || typeof req.body.password != 'string') {
+            console.log("Can't create wallet - Reason: Username and password not corect types")
+            res.send("Can't create wallet - Reason: Username and password not corect types")
+        } else {
+            console.log("Can't create wallet - Reason: Username and password not corect")
+            res.send("Can't create wallet - Reason: Username and password not corect")
+        }
+
     }
 });
 

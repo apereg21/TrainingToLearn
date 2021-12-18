@@ -314,10 +314,12 @@ module.exports = {
                     return result.id
                 } else {
                     console.log("User not find it")
+                    return null
                 }
             })
         } else {
-            console.log("Id to obtain WalletId isnt a number")
+            console.log("Parameters to obatain Wallet isnt correct")
+            return null
         }
 
     },
@@ -555,6 +557,7 @@ module.exports = {
             })
         } else {
             console.log("Id to comprobate if User has wallet isnt a number")
+            return null
         }
 
     },
