@@ -5,7 +5,7 @@ const Transaction = require('../transaction');
 const models = require('../models');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
-const { deleteLogroPin } = require('../controllers/controllerDatabase');
+const { deleteLogroPin, obtainPrivateKeyId } = require('../controllers/controllerDatabase');
 
 //Configuration zone
 var router = express.Router();
@@ -74,7 +74,7 @@ router.post('/createNewReward', async function(req, res) {
         await controllerDB.createBlock(newBlock, res)
             //Assing LogroPin to the Wallet with the id --> req.body.Id
         await controllerDB.updateIdArrayWallet(idUser, logroPin.id, req.body.userPrivateKey, req.body.password, res)
-        res.send("Reward created")
+        res.send("OK - Reward created")
     }
 });
 
@@ -95,21 +95,30 @@ router.post('/createNewReward', async function(req, res) {
  */
 
 router.post('/createNewTransaction', async function(req, res) {
-    let isTransactionCorrect = controllerDB.comprobateTransaction(req)
+    let isTransactionCorrect = await controllerDB.proveTransactionParams(req)
     if (isTransactionCorrect) {
-        let newTransac = new Transaction(req.body.fromAddres, req.body.toAddress, req.body.amount, req.body.logroPinId)
-        newTransac.signTransaction(privKey)
-        if (newTransac.fromAddress == null || newTransac.toAddress == null || newTransac.amount == null || newTransac.LogroPinId == null || newTransac.signatureC == null) {
-            console.log("Can't finish the Transaction - Reason: Parameters not correct")
-            res.send("Can't finish the Transaction - Reason: Parameters not correct")
+        let userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        let isUserDeleted = await controllerDB.isUserDeleted(userId)
+        if (isUserDeleted != null && isUserDeleted == false) {
+            let privKey = await obtainPrivateKeyId(userId)
+            let newTransac = new Transaction(req.body.fromAddress, req.body.toAddress, req.body.amount, req.body.logroPinId)
+            newTransac.signTransaction(privKey)
+            if (newTransac.signatureC == null) {
+                console.log("Can't finish the Transaction - Reason: Signature not correct")
+                res.send("Can't finish the Transaction - Reason: Signature not correct")
+            } else {
+                let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
+                addPendingTransaction(jsonTransaction)
+                res.send("OK - Transaction finish")
+            }
         } else {
-            let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
-            addPendingTransaction(jsonTransaction)
-            res.send("OK - Transaction finish")
+            console.log("Can't finish the Transaction - Reason: User Dosent Exist")
+            res.send("Can't finish the Transaction - Reason: User Dosent Exists")
         }
+
     } else {
-        console.log("Can't finish the Transaction - Reason: UserId dont exist")
-        res.send("Can't finish the Transaction - Reason: UserId dont exist")
+        console.log("Can't finish the Transaction - Reason: Not correct parameters")
+        res.send("Can't finish the Transaction - Reason: Not correct paramaters")
     }
 });
 
@@ -131,11 +140,11 @@ router.post('/createNewUser', async function(req, res) {
     let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
     if (userAlreadyCreated == false) {
         controllerDB.createUser(req, res)
-        console.log("User created correctly")
-        res.send("User created correctly")
+        console.log("OK - User created correctly")
+        res.send("OK - User created correctly")
     } else {
-        console.log("User dont created, the user alredy exists or the data of parameters ins't correct")
-        res.send("User dont created, the user alredy exists or the data of parameters ins't correct")
+        console.log("User dont created - Reason: The user alredy exists or the data of parameters isn't correct")
+        res.send("User dont created- Reason: The user alredy exists or the data of parameters isn't correct")
     }
 
 });

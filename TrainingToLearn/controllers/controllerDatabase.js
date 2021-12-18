@@ -323,7 +323,7 @@ module.exports = {
         }
 
     },
-    async isUserCreated(req, res) {
+    async isUserCreated(req) {
         if ((typeof req.body.username == 'string' && typeof req.body.name == 'string' && typeof req.body.fullSurname == 'string' && typeof req.body.username == 'string') &&
             req.body.username != null && req.body.name != null && req.body.fullSurname != null && req.body.password != null &&
             req.body.username.length > 0 && req.body.name.length > 0 && req.body.fullSurname.length > 0 && req.body.password.length > 0) {
@@ -358,7 +358,7 @@ module.exports = {
                     id: idUser
                 }
             }).then((result) => {
-                if (result == true) {
+                if (result.delete == true) {
                     console.log("User is Deleted")
                     return true
                 } else {
@@ -368,6 +368,7 @@ module.exports = {
             })
         } else {
             console.log("idUser isn't a number")
+            return null
         }
 
     },
@@ -575,8 +576,45 @@ module.exports = {
             return result
         }).catch((val) => {});
     },
-    comprobateTransaction(transParameters) {
-        let userExistNoDel
-        let walletExistNoDel
+    async proveTransactionParams(req) {
+        //Prove Destination and From Addresses
+        if (req.body.fromAddress != null && req.body.toAddress != null && req.body.amount != null && req.body.logroPinId != null &&
+            typeof req.body.fromAddress == 'string' && typeof req.body.toAddress == 'string' && typeof req.body.amount == 'number' && typeof req.body.logroPinId == 'number' &&
+            req.body.fromAddress != req.body.toAddress) {
+            let isWalletFromAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.fromAddress)
+            let isWalletToAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.toAddress)
+            if (isWalletFromAddressExistNoDelete && isWalletToAddressExistNoDelete) {
+                console.log("All is correct in params of Transaction")
+                return true
+            } else {
+                console.log("User's transaction dont exist or User's transaction is deleted")
+                return false
+            }
+        } else {
+            console.log("Some isn't correct in params of Transaction")
+            return false
+        }
+
+    },
+    async existAndNoDeleteWallet(walletDirection) {
+        return db.Monederos.findOne({
+            where: {
+                publicKey: walletDirection
+            }
+        }).then((result) => {
+            if (result != null) {
+                if (result.delete == false) {
+                    console.log("WalletAdress is correct and Dont deleted")
+                    return true
+                } else {
+                    console.log("WalletAdress is correct but is Deleted")
+                    return false
+                }
+
+            } else {
+                console.log("WalletAdress isn't correct")
+                return false
+            }
+        }).catch((val) => {})
     }
 }
