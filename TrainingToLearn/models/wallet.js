@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const Monederos = sequelize.define('Monederos', {
+    const Wallets = sequelize.define('Wallets', {
         id: {
             allowNull: false,
             autoIncrement: true,
@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 0,
 
         },
-        idsLogroPins: {
+        idsUniRewards: {
             allowNull: false,
             type: DataTypes.JSON,
             defaultValue: []
@@ -34,8 +34,8 @@ module.exports = (sequelize, DataTypes) => {
         createdAt: false,
         updatedAt: false
     });
-    Monederos.associate = function(models) {
-        Monederos.hasMany(models.Logropines, { onDelete: 'cascade' })
+    Wallets.associate = function(models) {
+        Wallets.hasMany(models.UniRewards, { onDelete: 'cascade' })
     };
-    return Monederos;
+    return Wallets;
 };

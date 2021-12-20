@@ -15,13 +15,13 @@ module.exports = {
             .catch((error) => console.log("Error: " + error));
     },
     async createBlock(req, res) {
-        console.log((req.index) + (req.timestamp) + (req.logroPin) + (req.data) + (req.hash) + (req.hashPrev))
+        console.log((req.index) + (req.timestamp) + (req.uniReward) + (req.data) + (req.hash) + (req.hashPrev))
         if ((typeof req.index == 'number' && typeof req.hash == 'string' && typeof req.hashPrev == 'string') &&
-            (req.index != null) && (req.timestamp != null) && (req.logroPin != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
+            (req.index != null) && (req.timestamp != null) && (req.uniReward != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
             return db.Blockchain.create({
                 index: req.index,
                 timestamp: Date.now(),
-                logroPin: req.logroPin,
+                uniReward: req.uniReward,
                 data: JSON.stringify(req.data),
                 hash: req.hash,
                 hashPrev: req.hashPrev
@@ -65,40 +65,40 @@ module.exports = {
         })
     },
 
-    //LogroPins functions
-    async createLogroPin(req, idUser, res) {
-        if (((req.body.nameLP != null && req.body.nameLP.length > 0))) {
-            return db.Logropines
+    //uniRewards functions
+    async createUniReward(req, idUser, res) {
+        if (((req.body.nameUR != null && req.body.nameUR.length > 0))) {
+            return db.UniRewards
                 .create({
-                    nameLP: req.body.nameLP,
-                    descriptionLP: req.body.descriptionLP,
-                    imageLP: req.body.imageLP,
-                    UsuarioId: idUser,
-                    MonederoId: await this.obtainMonederoId(idUser)
+                    nameUR: req.body.nameUR,
+                    descriptionUR: req.body.descriptionUR,
+                    imageUR: req.body.imageUR,
+                    UserId: idUser,
+                    WalletId: await this.obtainWalletId(idUser)
                 }).then(data => {
                     console.log(data);
                     return data
                 })
         } else {
-            console.log("Error in createLogroPin")
+            console.log("Error in createUniReward")
             res.json({ ok: false, error: "NotCorrectReqParameters" })
         }
     },
-    deleteLogroPin(req, res) {
-        db.Logropines.update({
+    deleteUniReward(req, res) {
+        db.UniRewards.update({
             deleted: true
         }, {
             where: {
                 id: req.body.id
             }
         }).then(() => {
-            console.log("LogroPin Eliminated")
+            console.log("uniReward Eliminated")
         }).catch((val) => {
             res.json({ ok: false, error: val.name });
         });
     },
-    updateLogroPin(req, res) {
-        db.Logropines.update({
+    updateUniReward(req, res) {
+        db.UniRewards.update({
             username: req.body.usernameNuevo,
             fullSurname: req.body.fullSurnameNuevo,
         }, {
@@ -111,73 +111,73 @@ module.exports = {
             res.json({ ok: false, error: val.name });
         });
     },
-    async findLogroPin(idLP, res) {
-        if (idLP != null || idLP < 0) {
-            console.log("db.Logropines.findByPk(" + idLP + ")")
-            db.Logropines
-                .findOne({ where: { id: idLP }, raw: true })
+    async findUniReward(idUR, res) {
+        if (idUR != null || idUR < 0) {
+            console.log("db.UniRewards.findByPk(" + idUR + ")")
+            db.UniRewards
+                .findOne({ where: { id: idUR }, raw: true })
                 .then(buscaPin => {
                     if (!buscaPin) {
-                        console.log("Not found LogroPin"),
+                        console.log("Not found UniReward"),
                             res.status(400).send(error)
                     } else {
-                        console.log("Found LogroPin")
+                        console.log("Found UniReward")
                         return buscaPin
                     }
 
                 })
                 .catch((error) => res.status(400).send(error).end());
         } else {
-            console.log("Error in FindLogroPin")
-            res.status(400).json({ ok: false, error: "WrongLastIndexLogroPin" })
+            console.log("Error in FindUniReward")
+            res.status(400).json({ ok: false, error: "WrongLastIndexUniReward" })
         }
 
     },
-    async existLogroPin(id) {
-        return db.Logropines.findOne({
+    async existUniReward(id) {
+        return db.UniRewards.findOne({
             where: {
                 id: id
             }
         }).then((result) => {
             if (result != null) {
-                console.log("LogroPin with id:" + id + " Find it")
+                console.log("UniReward with id:" + id + " Find it")
                 return true
             } else {
-                console.log("LogroPin with id:" + id + " Not Find it")
+                console.log("UniReward with id:" + id + " Not Find it")
                 return false
             }
         })
     },
-    async obtainUserIdLP(idLogroPin) {
-        return db.Logropines.findOne({
+    async obtainUserIdUR(idUniReward) {
+        return db.UniRewards.findOne({
                 where: {
-                    id: idLogroPin
+                    id: idUniReward
                 }
             })
             .then((result) => {
                 if (result != null) {
-                    console.log("LogroPin with id:" + idLogroPin + " Find it")
-                    return result.UsuarioId
+                    console.log("UniReward with id:" + idUniReward + " Find it")
+                    return result.UserId
                 } else {
-                    console.log("LogroPin with id:" + idLogroPin + " Not Find it")
+                    console.log("UniReward with id:" + idUniReward + " Not Find it")
                 }
             })
     },
-    async ownableLogroPin(idLogroPin, username, userPassword) {
+    async ownableUniReward(idUniReward, username, userPassword) {
         const idUser = await this.obtainUserId(username, userPassword)
-        const idUserLP = await this.obtainUserIdLP(idLogroPin)
-        if (idUser == idUserLP) {
-            console.log("User " + username + " has de own property for LogroPin with Id:" + idLogroPin)
+        const idUserUR = await this.obtainUserIdUR(idUniReward)
+        if (idUser == idUserUR) {
+            console.log("User " + username + " has de own property for UniReward with Id:" + idUniReward)
             return true
         } else {
-            console.log("User " + username + " hasn`t the own property for LogroPin with Id:" + idLogroPin)
+            console.log("User " + username + " hasn`t the own property for UniReward with Id:" + idUniReward)
             return false
         }
     },
 
-    //Usuario Functions
+    //User Functions
     createUser(req, res) {
-        db.Usuarios.create({
+        db.Users.create({
             name: req.body.name,
             fullSurname: req.body.fullSurname,
             username: req.body.username,
@@ -189,7 +189,7 @@ module.exports = {
         });
     },
     deleteUser(id) {
-        db.Usuarios.update({
+        db.Users.update({
             deleted: true
         }, {
             where: {
@@ -197,7 +197,7 @@ module.exports = {
             }
         }).then((result) => {
             console.log("OK User with id:" + id + " eliminated")
-            db.Monederos.update({
+            db.Wallets.update({
                 deleted: true
             }, {
                 where: {
@@ -214,7 +214,7 @@ module.exports = {
         });
     },
     updateUser(req, res) {
-        db.Usuarios.update({
+        db.Users.update({
             name: req.body.nameNew,
             fullSurname: req.body.fullSurnameNew,
             username: req.body.usernameNew,
@@ -233,7 +233,7 @@ module.exports = {
     },
     async obtainDeleteField(idObject, opc) {
         if (opc == 0) {
-            return db.Usuarios.findOne({
+            return db.Users.findOne({
                 where: {
                     id: idObject
                 }
@@ -247,7 +247,7 @@ module.exports = {
                 }
             })
         } else if (opc == 1) {
-            return db.Monederos.findOne({
+            return db.Wallets.findOne({
                 where: {
                     id: idObject
                 }
@@ -261,7 +261,7 @@ module.exports = {
                 }
             })
         } else if (opc == 2) {
-            return db.Logropines.findOne({
+            return db.UniRewards.findOne({
                 where: {
                     id: idObject
                 }
@@ -277,7 +277,7 @@ module.exports = {
         }
     },
     async obtainUserPassword(id) {
-        return db.Usuarios.findOne({
+        return db.Users.findOne({
             where: {
                 id: id
             }
@@ -287,7 +287,7 @@ module.exports = {
         })
     },
     async userIdExists(id) {
-        return db.Usuarios.findOne({
+        return db.Users.findOne({
             where: {
                 id: id
             }
@@ -303,7 +303,7 @@ module.exports = {
     },
     async obtainUserId(usName, usPass) {
         if (typeof usName == 'string' && typeof usPass == 'string') {
-            return db.Usuarios.findOne({
+            return db.Users.findOne({
                 where: {
                     username: usName,
                     password: usPass
@@ -327,7 +327,7 @@ module.exports = {
         if ((typeof req.body.username == 'string' && typeof req.body.name == 'string' && typeof req.body.fullSurname == 'string' && typeof req.body.username == 'string') &&
             req.body.username != null && req.body.name != null && req.body.fullSurname != null && req.body.password != null &&
             req.body.username.length > 0 && req.body.name.length > 0 && req.body.fullSurname.length > 0 && req.body.password.length > 0) {
-            return db.Usuarios.findOne({
+            return db.Users.findOne({
                 where: {
                     username: req.body.username
                 }
@@ -353,7 +353,7 @@ module.exports = {
     },
     async isUserDeleted(idUser) {
         if (typeof idUser == 'number') {
-            return db.Usuarios.findOne({
+            return db.Users.findOne({
                 where: {
                     id: idUser
                 }
@@ -373,13 +373,13 @@ module.exports = {
 
     },
 
-    //Monedero functions
+    //Wallet functions
     createWallet(req, res) {
         if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'number') {
-            return db.Monederos.create({
+            return db.Wallets.create({
                 publicKey: req.keyPublic,
                 privateKey: req.keyPrivate,
-                UsuarioId: req.owner
+                UserId: req.owner
             }).then(() => {
                 console.log("Wallet Created")
             }).catch((val) => {
@@ -392,7 +392,7 @@ module.exports = {
     },
     deleteWallet(idUser) {
         if (typeof idUser == 'number') {
-            db.Monederos.update({
+            db.Wallets.update({
                 deleted: true
             }, {
                 where: {
@@ -408,26 +408,26 @@ module.exports = {
         }
 
     },
-    async updateIdArrayWallet(idUsuario, idLogroPin, privateKey, password, res) {
-        let privateKeyId = await this.obtainPrivateKeyId(idUsuario)
-        let userpassword = await this.obtainUserPassword(idUsuario)
+    async updateIdArrayWallet(idUser, idUniReward, privateKey, password, res) {
+        let privateKeyId = await this.obtainPrivateKeyId(idUser)
+        let userpassword = await this.obtainUserPassword(idUser)
         console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
         console.log("Compare if " + userpassword + " is equals to " + userpassword)
-        if (privateKey == privateKeyId && userpassword == password && (typeof idUsuario == 'number' && typeof idLogroPin == 'number' &&
+        if (privateKey == privateKeyId && userpassword == password && (typeof idUser == 'number' && typeof idUniReward == 'number' &&
                 typeof privateKey == 'string' && typeof password == 'string')) {
             console.log("Private Key is correct")
-            db.Monederos.findOne({
+            db.Wallets.findOne({
                 where: {
-                    UsuarioId: idUsuario
+                    UserId: idUser
                 }
             }).then((result) => {
-                console.log(result.idsLogroPins)
-                result.idsLogroPins.push(idLogroPin)
-                db.Monederos.update({
-                    idsLogroPins: result.idsLogroPins
+                console.log(result.idsUniRewards)
+                result.idsUniRewards.push(idUniReward)
+                db.Wallets.update({
+                    idsUniRewards: result.idsUniRewards
                 }, {
                     where: {
-                        UsuarioId: idUsuario
+                        UserId: idUser
                     }
                 }).then(
                     console.log("All is fine")
@@ -438,23 +438,23 @@ module.exports = {
             res.json({ ok: false, error: "Key isn't correct" })
         }
     },
-    async takeLogroPinFromWallet(privKey, idLogroPin) {
+    async takeUniRewardFromWallet(privKey, idUniReward) {
         const isWalletDeleted = this.isWalletDeletedPK(privKey)
-        const isLogroPDeleted = this.isLogroPDeleted(idLogroPin)
-        if (typeof privKey == 'string' && typeof idLogroPin == 'number') {
-            if (isWalletDeleted && isLogroPDeleted) {
-                return db.Monederos.findOne({
+        const isUniRDeleted = this.isUniRDeleted(idUniReward)
+        if (typeof privKey == 'string' && typeof idUniReward == 'number') {
+            if (isWalletDeleted && isUniRDeleted) {
+                return db.Wallets.findOne({
                     where: {
                         privateKey: privKey
                     }
                 }).then((result) => {
-                    console.log(result.idsLogroPins)
-                    const index = result.idsLogroPins.indexOf(idLogroPin);
-                    console.log("The localitation of idLogroPin:" + idLogroPin + "is " + index)
+                    console.log(result.idsUniRewards)
+                    const index = result.idsUniRewards.indexOf(idUniReward);
+                    console.log("The localitation of idUniReward:" + idUniReward + "is " + index)
                     if (index > -1) {
-                        result.idsLogroPins.splice(index, 1) //Delete idLogroPin once in the array
-                        db.Monederos.update({
-                            idsLogroPins: result.idsLogroPins
+                        result.idsUniRewards.splice(index, 1) //Delete idUniReward once in the array
+                        db.Wallets.update({
+                            idsUniRewards: result.idsUniRewards
                         }, {
                             where: {
                                 privateKey: privKey
@@ -469,17 +469,17 @@ module.exports = {
                     console.log("Error: " + val);
                 });
             } else {
-                console.log("Cant remove LogroPin from Wallet - Reason: LogroPin or Wallet of parameters dosent exists")
+                console.log("Cant remove UniReward from Wallet - Reason: UniReward or Wallet of parameters dosent exists")
             }
         } else {
-            console.log("Cant remove LogroPin from Wallet - Reason: Not correct type of parameters")
+            console.log("Cant remove UniReward from Wallet - Reason: Not correct type of parameters")
         }
     },
-    obtainPrivateKeyId(id) {
+    async obtainPrivateKeyId(id) {
         if (typeof id == 'number') {
-            return db.Monederos.findOne({
+            return db.Wallets.findOne({
                 where: {
-                    UsuarioId: id
+                    UserId: id
                 }
             }).then((result) => {
                 if (result != null) {
@@ -494,18 +494,18 @@ module.exports = {
             console.log("Id to obtain WalletId isnt a number")
         }
     },
-    async obtainMonederoId(idUsu) {
+    async obtainWalletId(idUsu) {
         if (typeof idUsu == 'number' || idUsu != null) {
-            return db.Monederos.findOne({
+            return db.Wallets.findOne({
                 where: {
-                    UsuarioId: idUsu
+                    UserId: idUsu
                 }
             }).then((result) => {
                 if (result == null) {
                     console.log("No Wallet for User with id:" + idUsu)
                     return null
                 } else {
-                    console.log("Getting idMonedero own by idUsuario: " + result.id)
+                    console.log("Getting idWallet own by idUser: " + result.id)
                     return result.id
                 }
             })
@@ -515,7 +515,7 @@ module.exports = {
     },
     async isWalletDeletedPK(privKey) {
         if (typeof privKey == 'string') {
-            return db.Monederos.findOne({
+            return db.Wallets.findOne({
                 where: {
                     privateKey: privKey
                 }
@@ -527,32 +527,32 @@ module.exports = {
             console.log("Id to obtain WalletId isnt a number")
         }
     },
-    async isLogroPDeleted(idLogro) {
-        if (typeof idLogro == 'number') {
-            return db.Logropines.findOne({
+    async isUniRDeleted(idUniReward) {
+        if (typeof idUniReward == 'number') {
+            return db.UniRewards.findOne({
                 where: {
-                    id: idLogro
+                    id: idUniReward
                 }
             }).then((result) => {
                 console.log("Getting delete field: " + result.delete)
                 return result.delete
             })
         } else {
-            console.log("Id to obtain LogroPin isnt a number")
+            console.log("Id to obtain UniRin isnt a number")
         }
     },
     async userHasWallet(idUsu) {
         if (typeof idUsu == 'number' && idUsu != null || idUsu != undefined) {
-            return db.Monederos.findOne({
+            return db.Wallets.findOne({
                 where: {
-                    UsuarioId: idUsu
+                    UserId: idUsu
                 }
             }).then((result) => {
                 if (result != null) {
-                    console.log("idUsuario: " + idUsu + " has a wallet")
+                    console.log("idUser: " + idUsu + " has a wallet")
                     return true
                 } else {
-                    console.log("idUsuario: " + idUsu + " hasn't a wallet")
+                    console.log("idUser: " + idUsu + " hasn't a wallet")
                     return false
                 }
             })
@@ -570,7 +570,7 @@ module.exports = {
             toAddress: transaction.toAddress,
             amount: transaction.amount,
             signature: transaction.signatureC,
-            LogropineId: transaction.LogroPinId
+            UniRewardId: transaction.UniRewardId
         }).then((result) => {
             console.log("Transaction Created")
             return result
@@ -578,8 +578,8 @@ module.exports = {
     },
     async proveTransactionParams(req) {
         //Prove Destination and From Addresses
-        if (req.body.fromAddress != null && req.body.toAddress != null && req.body.amount != null && req.body.logroPinId != null &&
-            typeof req.body.fromAddress == 'string' && typeof req.body.toAddress == 'string' && typeof req.body.amount == 'number' && typeof req.body.logroPinId == 'number' &&
+        if (req.body.fromAddress != null && req.body.toAddress != null && req.body.amount != null && req.body.UniRewardId != null &&
+            typeof req.body.fromAddress == 'string' && typeof req.body.toAddress == 'string' && typeof req.body.amount == 'number' && typeof req.body.UniRewardId == 'number' &&
             req.body.fromAddress != req.body.toAddress) {
             let isWalletFromAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.fromAddress)
             let isWalletToAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.toAddress)
@@ -597,24 +597,28 @@ module.exports = {
 
     },
     async existAndNoDeleteWallet(walletDirection) {
-        return db.Monederos.findOne({
-            where: {
-                publicKey: walletDirection
-            }
-        }).then((result) => {
-            if (result != null) {
-                if (result.delete == false) {
-                    console.log("WalletAdress is correct and Dont deleted")
-                    return true
+        if (typeof walletDirection != 'string' && walletDirection != null) {
+            return db.Wallets.findOne({
+                where: {
+                    publicKey: walletDirection
+                }
+            }).then((result) => {
+                if (result != null) {
+                    if (result.delete == false) {
+                        console.log("WalletAdress is correct and Dont deleted")
+                        return true
+                    } else {
+                        console.log("WalletAdress is correct but is Deleted")
+                        return false
+                    }
+
                 } else {
-                    console.log("WalletAdress is correct but is Deleted")
+                    console.log("WalletAdress isn't correct")
                     return false
                 }
-
-            } else {
-                console.log("WalletAdress isn't correct")
-                return false
-            }
-        }).catch((val) => {})
+            }).catch((val) => {})
+        } else {
+            console.log("Wrong parametrs to ")
+        }
     }
 }

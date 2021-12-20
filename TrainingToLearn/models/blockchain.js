@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.DATE
         },
-        logroPin: {
+        uniReward: {
             allowNull: null,
             type: DataTypes.JSON
         },

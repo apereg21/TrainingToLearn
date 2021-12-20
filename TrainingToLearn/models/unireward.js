@@ -1,20 +1,20 @@
 module.exports = (sequelize, DataTypes) => {
-    const Logropines = sequelize.define('Logropines', {
+    const UniRewards = sequelize.define('UniRewards', {
         id: {
             allowNull: false,
             primaryKey: true,
             autoIncrement: true,
             type: DataTypes.INTEGER,
         },
-        nameLP: {
+        nameUR: {
             allowNull: false,
             type: DataTypes.STRING,
         },
-        descriptionLP: {
+        descriptionUR: {
             allowNull: true,
             type: DataTypes.STRING,
         },
-        imageLP: {
+        imageUR: {
             allowNull: true,
             type: DataTypes.STRING,
         },
@@ -24,8 +24,8 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: false
         }
     }, {});
-    Logropines.associate = function(models) {
-        Logropines.hasMany(models.Transactions, { onDelete: 'cascade' })
+    UniRewards.associate = function(models) {
+        UniRewards.hasMany(models.Transactions, { onDelete: 'cascade' })
     };
-    return Logropines;
+    return UniRewards;
 };

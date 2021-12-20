@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const Usuarios = sequelize.define('Usuarios', {
+    const Users = sequelize.define('Users', {
         id: {
             allowNull: false,
             autoIncrement: true,
@@ -31,9 +31,9 @@ module.exports = (sequelize, DataTypes) => {
         createdAt: false,
         updatedAt: false
     });
-    Usuarios.associate = function(models) {
-        Usuarios.hasOne(models.Monederos, { onDelete: 'cascade' });
-        Usuarios.hasOne(models.Logropines, { onDelete: 'cascade' });
+    Users.associate = function(models) {
+        Users.hasOne(models.Wallets, { onDelete: 'cascade' });
+        Users.hasMany(models.UniRewards, { onDelete: 'cascade' });
     };
-    return Usuarios;
+    return Users;
 };
