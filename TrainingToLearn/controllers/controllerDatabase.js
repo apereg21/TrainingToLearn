@@ -2,10 +2,35 @@ const db = require('../models')
 
 module.exports = {
     //Blockchain Functions
+    async proveRewardParameters(req){
+        if (req.body.nameUR != null && req.body.descriptionUR != null && req.body.imageUR != null &&
+            req.body.username != null && req.body.password != null && req.body.userPrivateKey != null &&
+            typeof req.body.nameUR == 'string'  && typeof req.body.descriptionUR == 'string' && typeof req.body.imageUR == 'string' &&
+            typeof req.body.username == 'string' && typeof req.body.password == 'string' && typeof req.body.userPrivateKey == 'string') {
+            let userID = await this.obtainUserId(req.body.username, req.body.password)
+            let isUserDelete = await this.isUserDeleted(userID)
+            if (userID!=null && !isUserDelete) {
+                let userPrivKey = await this.obtainPrivateKeyId(userID)
+                if((userPrivKey!=null && req.body.userPrivateKey == userPrivKey)){
+                    console.log("All is correct in params of Transaction")
+                    return true
+                }else{
+                    console.log("PrivateKey ins't correct")
+                    return false
+                }
+            } else {
+                console.log("User's don't exist or User's data ins't correct")
+                return false
+            }
+        } else {
+            console.log("Some isn't correct in params of Reward Creation")
+            return false
+        }
+    },
     allBlocks() {
         return db.Blockchain.findAll();
     },
-    getLastBlockIndex() {
+    async getLastBlockIndex() {
         return db.Blockchain
             .count()
             .then((result) => {
@@ -14,7 +39,7 @@ module.exports = {
             })
             .catch((error) => console.log("Error: " + error));
     },
-    async createBlock(req, res) {
+    async createBlock(req) {
         console.log((req.index) + (req.timestamp) + (req.uniReward) + (req.data) + (req.hash) + (req.hashPrev))
         if ((typeof req.index == 'number' && typeof req.hash == 'string' && typeof req.hashPrev == 'string') &&
             (req.index != null) && (req.timestamp != null) && (req.uniReward != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
@@ -27,11 +52,10 @@ module.exports = {
                 hashPrev: req.hashPrev
             }).then(() => {})
         } else {
-            console.log("Error in createBlock")
-            res.json({ ok: false, error: "NotCorrectReqParameters" })
+            console.log("Error in createBlock - NotCorrectReqParameters")
         }
     },
-    getHashLastBlock(lastIndex, res) {
+    async getHashLastBlock(lastIndex) {
         console.log("Last index is: " + lastIndex)
         if (lastIndex >= 0 && lastIndex != null && typeof lastIndex == 'number') {
             return db.Blockchain.findOne({
@@ -41,7 +65,6 @@ module.exports = {
             }).then(result => {
                 if (!result) {
                     console.log("Not found HashLastBlock")
-                        //res.sendStatus(404)
                 } else {
                     console.log("Found HashLastBlock")
                     return result.hash
@@ -49,8 +72,7 @@ module.exports = {
 
             })
         } else {
-            console.log("Error in getHashLastBlock")
-            res.json({ ok: false, error: "WrongLastIndexBlock" })
+            console.log("Error in getHashLastBlock WrongLastIndexBlock")
         }
 
     },
@@ -66,7 +88,7 @@ module.exports = {
     },
 
     //uniRewards functions
-    async createUniReward(req, idUser, res) {
+    async createUniReward(req, idUser) {
         if (((req.body.nameUR != null && req.body.nameUR.length > 0))) {
             return db.UniRewards
                 .create({
@@ -81,10 +103,9 @@ module.exports = {
                 })
         } else {
             console.log("Error in createUniReward")
-            res.json({ ok: false, error: "NotCorrectReqParameters" })
         }
     },
-    deleteUniReward(req, res) {
+    deleteUniReward(req) {
         db.UniRewards.update({
             deleted: true
         }, {
@@ -94,59 +115,51 @@ module.exports = {
         }).then(() => {
             console.log("uniReward Eliminated")
         }).catch((val) => {
-            res.json({ ok: false, error: val.name });
+            console.log("Error: "+val.name)
         });
     },
-    updateUniReward(req, res) {
-        db.UniRewards.update({
-            username: req.body.usernameNuevo,
-            fullSurname: req.body.fullSurnameNuevo,
-        }, {
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
-    },
-    async findUniReward(idUR, res) {
+    
+    async findUniReward(idUR) {
         if (idUR != null || idUR < 0) {
             console.log("db.UniRewards.findByPk(" + idUR + ")")
             db.UniRewards
                 .findOne({ where: { id: idUR }, raw: true })
                 .then(buscaPin => {
                     if (!buscaPin) {
-                        console.log("Not found UniReward"),
-                            res.status(400).send(error)
+                        console.log("Not found UniReward")
                     } else {
                         console.log("Found UniReward")
                         return buscaPin
                     }
 
                 })
-                .catch((error) => res.status(400).send(error).end());
+                .catch(
+                    (error) => console.log("Error: "+error)
+                )
         } else {
-            console.log("Error in FindUniReward")
-            res.status(400).json({ ok: false, error: "WrongLastIndexUniReward" })
+            console.log("Error in FindUniReward - WrongLastIndexUniReward")
         }
 
     },
     async existUniReward(id) {
-        return db.UniRewards.findOne({
-            where: {
-                id: id
-            }
-        }).then((result) => {
-            if (result != null) {
-                console.log("UniReward with id:" + id + " Find it")
-                return true
-            } else {
-                console.log("UniReward with id:" + id + " Not Find it")
-                return false
-            }
-        })
+        if(id!=null && typeof id =='number'){
+            return db.UniRewards.findOne({
+                where: {
+                    id: id
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("UniReward with id:" + id + " Find it")
+                    return true
+                } else {
+                    console.log("UniReward with id:" + id + " Not Find it")
+                    return false
+                }
+            })
+        }else{
+            console.log("Id administrated isn't correct")
+            return null
+        }
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
@@ -176,7 +189,7 @@ module.exports = {
     },
 
     //User Functions
-    createUser(req, res) {
+    createUser(req) {
         db.Users.create({
             name: req.body.name,
             fullSurname: req.body.fullSurname,
@@ -207,30 +220,13 @@ module.exports = {
                 console.log("OK Wallet with id:" + id + " eliminated")
 
             }).catch((val) => {
-                res.json({ ok: false, error: val.name });
+                console.log("Error"+val.name);
             });
         }).catch((val) => {
-            res.json({ ok: false, error: val.name });
+            console.log("Error"+val.name);
         });
     },
-    updateUser(req, res) {
-        db.Users.update({
-            name: req.body.nameNew,
-            fullSurname: req.body.fullSurnameNew,
-            username: req.body.usernameNew,
-            password: req.body.passwordNew,
-        }, {
-            where: {
-                id: req.body.id,
-                password: req.body.password,
-                username: req.body.username
-            }
-        }).then(() => {
-            res.json({ ok: true });
-        }).catch((val) => {
-            res.json({ ok: false, error: val.name });
-        });
-    },
+
     async obtainDeleteField(idObject, opc) {
         if (opc == 0) {
             return db.Users.findOne({
@@ -348,6 +344,7 @@ module.exports = {
             })
         } else {
             console.log("Something with the data isn't correct")
+            return null
         }
 
     },
@@ -372,9 +369,98 @@ module.exports = {
         }
 
     },
+    async getUserData(idUser){
+        if (typeof idUser == 'number') {
+            return db.Users.findOne({
+                where: {
+                    id: idUser
+                }
+            }).then((result) => {
+                if (result!= null) {
+                    console.log("User data find it")
+                    return result
+                } else {
+                    console.log("User data not find it")
+                    return null
+                }
+            })
+        } else {
+            console.log("idUser isn't a number")
+            return null
+        }
+    },
+    async modifyUserData(req, userId){
+        let user = await this.getUserData(userId)
+        let usName=""
+        let usUserName=""
+        let usFullSurname=""
+        let usPassword=""
+        for(let i = 0;i<req.body.changes.length;i++){
+            switch(req.body.changes[i]){
+                case "p":
+                    usPassword=req.body.passwordN
+                break;
+                case "u":
+                    usUserName=req.body.usernameN
+                break;
+                case "f":
+                    usFullSurname=req.body.fullSurnameN
+                break;
+                case "n":
+                    usName=req.body.nameN   
+                break;
+                default:
+            }
+        }
+        if(usPassword==""){
+            usPassword=user.password
+        }
+        if(usUserName==""){
+            usUserName=user.username
+        }
+        if(usName==""){
+            usName=user.name
+        }
+        if(usFullSurname==""){
+            usFullSurname=user.fullSurname
+        }
+                
+        return db.Users.update({
+            name: usName,
+            fullSurname: usFullSurname,
+            username: usUserName,
+            password: usPassword,  
+        }, {
+            where: {
+                id: userId
+            }
+        }).then(() => {
+            console.log("User changed")
+        })
+    },
+    async isUsernameUsed(userName){
+        if (typeof userName == 'string') {
+            return db.Users.findOne({
+                where: {
+                    username: userName
+                }
+            }).then((result) => {
+                if (result!= null) {
+                    console.log("Username find it")
+                    return true
+                } else {
+                    console.log("Username not find it")
+                    return false
+                }
+            })
+        } else {
+            console.log("userName isn't a string")
+            return null
+        }
+    },
 
     //Wallet functions
-    createWallet(req, res) {
+    createWallet(req) {
         if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'number') {
             return db.Wallets.create({
                 publicKey: req.keyPublic,
@@ -408,7 +494,7 @@ module.exports = {
         }
 
     },
-    async updateIdArrayWallet(idUser, idUniReward, privateKey, password, res) {
+    async updateIdArrayWallet(idUser, idUniReward, privateKey, password) {
         let privateKeyId = await this.obtainPrivateKeyId(idUser)
         let userpassword = await this.obtainUserPassword(idUser)
         console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
@@ -434,8 +520,7 @@ module.exports = {
                 )
             })
         } else {
-            console.log("Something with the data isn't correct")
-            res.json({ ok: false, error: "Key isn't correct" })
+            console.log("Something with the data isn't correct - Key isn't correct")
         }
     },
     async takeUniRewardFromWallet(privKey, idUniReward) {
@@ -487,11 +572,13 @@ module.exports = {
                     return result.privateKey
                 } else {
                     console.log("PrivateKey associated to id:" + id + " not found")
+                    return null
                 }
 
             })
         } else {
             console.log("Id to obtain WalletId isnt a number")
+            return null
         }
     },
     async obtainWalletId(idUsu) {
@@ -539,6 +626,7 @@ module.exports = {
             })
         } else {
             console.log("Id to obtain UniRin isnt a number")
+            return null
         }
     },
     async userHasWallet(idUsu) {
@@ -564,7 +652,7 @@ module.exports = {
     },
 
     //Transactions functions
-    async createTransaction(transaction, res) {
+    async createTransaction(transaction) {
         return db.Transactions.create({
             fromAddress: transaction.fromAddress,
             toAddress: transaction.toAddress,
@@ -584,8 +672,14 @@ module.exports = {
             let isWalletFromAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.fromAddress)
             let isWalletToAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.toAddress)
             if (isWalletFromAddressExistNoDelete && isWalletToAddressExistNoDelete) {
-                console.log("All is correct in params of Transaction")
-                return true
+                let isUniRExists = await this.existUniReward(req.bodyUniRewardId)
+                if(isUniRExists && isUniRExists!=null){
+                    console.log("All is correct in params of Transaction")
+                    return true
+                }else{
+                    console.log("UniRewardId dosen't exist")
+                    return true
+                }
             } else {
                 console.log("User's transaction dont exist or User's transaction is deleted")
                 return false
@@ -611,7 +705,6 @@ module.exports = {
                         console.log("WalletAdress is correct but is Deleted")
                         return false
                     }
-
                 } else {
                     console.log("WalletAdress isn't correct")
                     return false

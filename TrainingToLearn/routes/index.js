@@ -14,7 +14,7 @@ var pendingTransactions = [];
  * Default Route
  */
 
-router.get('/', (req, res) => {
+router.get('/', (req) => {
     res.send('Hey!')
 });
 
@@ -50,32 +50,41 @@ router.get('/', (req, res) => {
  */
 
 router.post('/createNewReward', async function(req, res) {
-    let lastIndex = await controllerDB.getLastBlockIndex()
-    if (lastIndex == 0) {
-        //There aren't blocks in the blockchain --> Adding the genesisBlock
-        var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
-        genesisBlock.hash = genesisBlock.calculateHash()
-        await controllerDB.createBlock(genesisBlock, res)
-        lastIndex++
-    }
-    let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1, res)
-    let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    if (idUser != null) {
-        let uniReward = await controllerDB.createUniReward(req, idUser, res)
-            //Waiting petitions for the block
-        await sleep(20000)
-        if (prevHash == null || uniReward == null || (uniReward.nameUR == null || uniReward.descriptionUR == null || uniReward.imageUR == null || uniReward.UserId == null || uniReward.WalletId == null)) {
-            console.log("Something with the UniReward Data gone wrong")
-            res.send({ ok: false })
-        } else {
-            let newBlock = new Block(lastIndex, new Date(), uniReward, { transactions: pendingTransactions }, prevHash)
-            newBlock.hash = newBlock.calculateHash()
-            console.log(newBlock.hash)
-            await controllerDB.createBlock(newBlock, res)
-                //Assing UniReward to the Wallet with the id --> req.body.Id
-            await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password, res)
-            res.send("OK - Reward created")
+    let proveInitialParam = await controllerDB.proveRewardParameters(req)
+    if(proveInitialParam){
+        let lastIndex = await controllerDB.getLastBlockIndex()
+        if (lastIndex == 0) {
+            //There aren't blocks in the blockchain --> Adding the genesisBlock
+            var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
+            genesisBlock.hash = genesisBlock.calculateHash()
+            await controllerDB.createBlock(genesisBlock)
+            lastIndex++
         }
+        let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
+        let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        if (idUser != null) {
+            let uniReward = await controllerDB.createUniReward(req, idUser)
+                //Waiting petitions for the block
+            await sleep(20000)
+            if (prevHash == null || uniReward == null || (uniReward.nameUR == null || uniReward.descriptionUR == null || uniReward.imageUR == null || uniReward.UserId == null || uniReward.WalletId == null)) {
+                console.log("Reward not created - Reason: Something with the UniReward fields isnt correct")
+                res.send("Reward not created - Reason: Something with the UniReward fields isnt correct")
+            } else {
+                let newBlock = new Block(lastIndex, new Date(), uniReward, { transactions: pendingTransactions }, prevHash)
+                newBlock.hash = newBlock.calculateHash()
+                console.log(newBlock.hash)
+                await controllerDB.createBlock(newBlock)
+                    //Assing UniReward to the Wallet with the id --> req.body.Id
+                await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
+                res.send("OK - Reward created")
+            }
+        }else{
+            console.log("Reward not created - Reason: Username or password isn't correct")
+            res.send("Reward not created - Reason: Username or password isn't correct") 
+        }
+    }else{
+        console.log("Reward not created - Reason: Incorrect params, someone of the params are not correct")
+        res.send("Reward not created - Reason: Incorrect params, someone of the params are not correct") 
     }
 });
 
@@ -108,7 +117,7 @@ router.post('/createNewTransaction', async function(req, res) {
                 console.log("Can't finish the Transaction - Reason: Signature not correct")
                 res.send("Can't finish the Transaction - Reason: Signature not correct")
             } else {
-                let jsonTransaction = await controllerDB.createTransaction(newTransac, res)
+                let jsonTransaction = await controllerDB.createTransaction(newTransac)
                 addPendingTransaction(jsonTransaction)
                 res.send("OK - Transaction finish")
             }
@@ -138,14 +147,23 @@ router.post('/createNewTransaction', async function(req, res) {
  */
 
 router.post('/createNewUser', async function(req, res) {
-    let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
-    if (userAlreadyCreated == false) {
-        controllerDB.createUser(req, res)
+    let userAlreadyCreated = await controllerDB.isUserCreated(req)
+    if (userAlreadyCreated == false && req.body.username.lenght >0 && req.body.password.lenght > 0) {
+        controllerDB.createUser(req)
         console.log("OK - User created correctly")
         res.send("OK - User created correctly")
     } else {
-        console.log("User dont created - Reason: The user alredy exists or the data of parameters isn't correct")
-        res.send("User dont created- Reason: The user alredy exists or the data of parameters isn't correct")
+        let userID=await controllerDB.obtainUserId(req.body.username, req.body.password)
+        let userDeleted= await controllerDB.isUserDeleted(userID)
+        if((typeof req.body.username != 'string' && typeof req.body.name != 'string' && typeof req.body.fullSurname != 'string' && typeof req.body.username != 'string') &&
+        req.body.username == null && req.body.name == null && req.body.fullSurname == null && req.body.password == null &&
+        req.body.username.length < 0 && req.body.name.length < 0 && req.body.fullSurname.length < 0 && req.body.password.length < 0){
+            console.log("User dont created - Reason: The data of parameters isn't correct")
+            res.send("User dont created - Reason: The data of parameters isn't correct")
+        }else if(userAlreadyCreated != false && !userDeleted){
+            console.log("User dont created - Reason: User is Created already")
+            res.send("User dont created - Reason: User is Created already")
+        }
     }
 
 });
@@ -170,7 +188,7 @@ router.post('/createNewWallet', async function(req, res) {
         const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
         if (!hasWallet && !deletedWallet && hasWallet != null && deletedWallet != null) {
             const newWallet = new Wallet(ownerId)
-            controllerDB.createWallet(newWallet, res)
+            controllerDB.createWallet(newWallet)
             res.send("OK - Wallet Created")
         } else {
             console.log("Can't create wallet - Reason: The user has a Wallet already")
@@ -189,10 +207,63 @@ router.post('/createNewWallet', async function(req, res) {
 });
 
 /*
+ * Modify Routes
+ */
+
+router.post('/changeUserData', async function(req, res) {
+    const userID = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    if (userID != null) {
+        const userNameExist = await controllerDB.isUsernameUsed(req.body.usernameN)
+        if(!userNameExist && userNameExist==null){
+            let counterErrors=0
+            for(let i = 0;i<req.body.changes.length;i++){
+                switch(req.body.changes[i]){
+                    case "p":
+                        if(req.body.passwordN==null || typeof req.body.passwordN !='string'){ 
+                            counterErrors++
+                        }   
+                    break;
+                    case "u":
+                        if(req.body.usernameN==null || typeof req.body.usernameN !='string'){ 
+                            counterErrors++
+                        }   
+                    break;
+                    case "f":
+                        if(req.body.fullSurnameN==null || typeof req.body.fullSurnameN !='string'){ 
+                            counterErrors++
+                        }   
+                    break;
+                    case "n":
+                        if(req.body.nameN==null || typeof req.body.nameN !='string'){ 
+                            counterErrors++
+                        }   
+                    break;
+                    default:
+                }
+            }
+            if(counterErrors==0){
+                await controllerDB.modifyUserData(req,userID)
+                console.log("OK - User modify")
+                res.send("OK - User modify")
+            }else{
+                console.log("User not modify - Reason: Parameters not corrects")
+                res.send("User not modify - Reason: Parameters not corrects")
+            }
+        }else{
+            console.log("User not modify - Reason: Username already exist")
+            res.send("User not modify - Reason: Username already exist")
+        }
+    } else {
+        console.log("User data dont change - Reason: Username or password ins't correct")
+        res.send("User data dont change - Reason: Username or password ins't correct")
+    }
+});
+
+/*
  * Routes Delete Object
  */
 
-// router.post('/deleteUniReward', async function(req, res) {
+// router.post('/deleteUniReward', async function(req) {
 //     const existUniReward = await controllerDB.existUniReward(req.body.id)
 //     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
 //     const deletedUniReward = await controllerDB.obtainDeleteField(idUser, 0)
@@ -202,7 +273,7 @@ router.post('/createNewWallet', async function(req, res) {
 //         if (isUniRewardOwner) {
 // Elimination moment
 //             await controllerDB.takeUniRewardFromWallet(req.body.privateKey, req.body.id)
-//             controllerDB.deleteUniReward(req, res)
+//             controllerDB.deleteUniReward(req)
 //             res.send("OK - UniRewardEliminated")
 //         } else {
 //             console.log("The UniReward asociated to id:" + req.body.id + " can't be eliminated - Reason: Not correct User Owner")
