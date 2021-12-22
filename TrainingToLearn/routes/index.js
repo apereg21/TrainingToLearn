@@ -148,21 +148,27 @@ router.post('/createNewTransaction', async function(req, res) {
 
 router.post('/createNewUser', async function(req, res) {
     let userAlreadyCreated = await controllerDB.isUserCreated(req)
-    if (userAlreadyCreated == false && req.body.username.lenght >0 && req.body.password.lenght > 0) {
+    let usName=req.body.username
+    let usPass=req.body.password
+    console.log(usName.length +"\n"+usPass.length)
+    if (userAlreadyCreated == false && (usPass.length > 0) && (usName.length > 0)) {
         controllerDB.createUser(req)
         console.log("OK - User created")
         res.send("OK - User created")
     } else {
         let userID=await controllerDB.obtainUserId(req.body.username, req.body.password)
         let userDeleted= await controllerDB.isUserDeleted(userID)
+
         if((typeof req.body.username != 'string' && typeof req.body.name != 'string' && typeof req.body.fullSurname != 'string' && typeof req.body.username != 'string') &&
         req.body.username == null && req.body.name == null && req.body.fullSurname == null && req.body.password == null &&
         req.body.username.length < 0 && req.body.name.length < 0 && req.body.fullSurname.length < 0 && req.body.password.length < 0){
             console.log("User dont created - Reason: The data of parameters isn't correct")
             res.send("User dont created - Reason: The data of parameters isn't correct")
-        }else if(userAlreadyCreated != false && !userDeleted){
+        }else if(!userDeleted){
             console.log("User dont created - Reason: User is Created already")
             res.send("User dont created - Reason: User is Created already")
+        }else{
+            res.send("")
         }
     }
 
