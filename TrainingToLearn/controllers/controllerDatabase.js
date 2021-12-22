@@ -348,6 +348,19 @@ module.exports = {
         }
 
     },
+    async usernameDeleted(usName){
+        return db.Users.findOne({
+            where: {
+                username: usName
+            }
+        }).then((result) => {
+            if(result.delete){
+                return true
+            }else{
+                return false
+            }
+        })
+    },
     async isUserDeleted(idUser) {
         if (typeof idUser == 'number') {
             return db.Users.findOne({
@@ -630,7 +643,6 @@ module.exports = {
         }
     },
     async userHasWallet(idUsu) {
-        if (typeof idUsu == 'number' && idUsu != null || idUsu != undefined) {
             return db.Wallets.findOne({
                 where: {
                     UserId: idUsu
@@ -644,11 +656,6 @@ module.exports = {
                     return false
                 }
             })
-        } else {
-            console.log("Id to comprobate if User has wallet isnt a number")
-            return null
-        }
-
     },
 
     //Transactions functions

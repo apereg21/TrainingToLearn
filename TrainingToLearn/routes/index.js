@@ -147,31 +147,32 @@ router.post('/createNewTransaction', async function(req, res) {
  */
 
 router.post('/createNewUser', async function(req, res) {
-    let userAlreadyCreated = await controllerDB.isUserCreated(req)
-    let usName=req.body.username
-    let usPass=req.body.password
-    console.log(usName.length +"\n"+usPass.length)
-    if (userAlreadyCreated == false && (usPass.length > 0) && (usName.length > 0)) {
-        controllerDB.createUser(req)
-        console.log("OK - User created")
-        res.send("OK - User created")
-    } else {
-        let userID=await controllerDB.obtainUserId(req.body.username, req.body.password)
-        let userDeleted= await controllerDB.isUserDeleted(userID)
-
-        if((typeof req.body.username != 'string' && typeof req.body.name != 'string' && typeof req.body.fullSurname != 'string' && typeof req.body.username != 'string') &&
-        req.body.username == null && req.body.name == null && req.body.fullSurname == null && req.body.password == null &&
-        req.body.username.length < 0 && req.body.name.length < 0 && req.body.fullSurname.length < 0 && req.body.password.length < 0){
-            console.log("User dont created - Reason: The data of parameters isn't correct")
-            res.send("User dont created - Reason: The data of parameters isn't correct")
-        }else if(!userDeleted){
-            console.log("User dont created - Reason: User is Created already")
-            res.send("User dont created - Reason: User is Created already")
-        }else{
-            res.send("")
+    let isNameExist = proveKey('name','string' ,req.body)
+    let isUserNameExist = proveKey('username','string' ,req.body)
+    let isFullSurnameExist = proveKey('fullSurname','string' ,req.body)
+    let isPasswordExist = proveKey('password','string' ,req.body)
+    if(isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist){
+        let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
+        if (userAlreadyCreated == false) {
+            controllerDB.createUser(req)
+            console.log("OK - User created")
+            res.send("OK - User created")
+        } else {
+            let userIsDeleted = await controllerDB.usernameDeleted(req.body.username)
+            if(userIsDeleted){
+                controllerDB.createUser(req)
+                console.log("OK - User created")
+                res.send("OK - User created")  
+            }else{
+                console.log("User dont created - Reason: User is Created already")
+                res.send("User dont created - Reason: User is Created already")
+            }
+            
         }
+    }else{
+        console.log("User dont created - Reason: The data of parameters isn't correct")
+        res.send("User dont created - Reason: The data of parameters isn't correct")
     }
-
 });
 
 //This router is used for create a new Wallet to the DB. //The Wallet is passed in form of 
@@ -187,29 +188,37 @@ router.post('/createNewUser', async function(req, res) {
  */
 
 router.post('/createNewWallet', async function(req, res) {
-    const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    if (ownerId != null) {
-        const hasWallet = await controllerDB.userHasWallet(ownerId)
-        const idWallet = await controllerDB.obtainWalletId(ownerId)
-        const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
-        if (!hasWallet && !deletedWallet && hasWallet != null && deletedWallet != null) {
-            const newWallet = new Wallet(ownerId)
-            controllerDB.createWallet(newWallet)
-            res.send("OK - Wallet Created")
-        } else {
-            console.log("Can't create wallet - Reason: The user has a Wallet already")
-            res.send("Can't create wallet - Reason: The user has a Wallet already")
-        }
-    } else {
-        if (typeof req.body.username != 'string' || typeof req.body.password != 'string') {
-            console.log("Can't create wallet - Reason: Username or password not corect types")
-            res.send("Can't create wallet - Reason: Username or password not corect types")
+    let isUserNameExist = proveKey('username','string' ,req.body)
+    let isPasswordExist = proveKey('password','string' ,req.body)
+    if(isUserNameExist && isPasswordExist){
+        const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        if (ownerId != null) {
+            const hasWallet = await controllerDB.userHasWallet(ownerId)
+            if (!hasWallet) {
+                const newWallet = new Wallet(ownerId)
+                controllerDB.createWallet(newWallet)
+                res.send("OK - Wallet Created")
+            } else {
+                const idWallet = await controllerDB.obtainWalletId(ownerId)
+                const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
+                if(deletedWallet){
+                    const newWallet = new Wallet(ownerId)
+                    controllerDB.createWallet(newWallet)
+                    res.send("OK - Wallet Created")
+                }else{
+                    console.log("Can't create wallet - Reason: The user has a Wallet already")
+                    res.send("Can't create wallet - Reason: The user has a Wallet already")
+                }
+            }
         } else {
             console.log("Can't create wallet - Reason: Username and password not corect")
             res.send("Can't create wallet - Reason: Username and password not corect")
         }
-
+    }else{
+        console.log("Can't create wallet - Reason: Username or password not corect types")
+        res.send("Can't create wallet - Reason: Username or password not corect types")
     }
+    
 });
 
 /*
@@ -345,6 +354,32 @@ function sleep(ms) {
 
 function addPendingTransaction(transaction) {
     pendingTransactions.push(transaction)
+}
+
+function proveKey(nameKey,variableType,reqJson){
+    var objJson = Object(reqJson)
+    let isKeyExist = objJson.hasOwnProperty(nameKey)
+    console.log(isKeyExist)
+    if(isKeyExist){
+        console.log(typeof reqJson[nameKey]+" = "+ variableType)
+        if(typeof reqJson[nameKey] == variableType){
+            if(typeof reqJson[nameKey] == 'string'){
+                if(reqJson[nameKey].length > 0){
+                    console.log("CorrectType\n")
+                    return true
+                }else{
+                    console.log("IncorrectType - Reason: Length\n")
+                    return false
+                }
+            }
+        }else{
+            console.log("IncorrectType - Reason: Not correct type\n")
+            return false
+        }
+    }else{
+        console.log("IncorrectType - Reason: Not exist\n")
+        return false
+    }    
 }
 
 module.exports = router;
