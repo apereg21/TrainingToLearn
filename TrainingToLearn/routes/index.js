@@ -2,7 +2,6 @@
 const Block = require('../block')
 const Wallet = require('../wallet');
 const Transaction = require('../transaction');
-const models = require('../models');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
 
@@ -105,27 +104,35 @@ router.post('/createNewReward', async function(req, res) {
  */
 
 router.post('/createNewTransaction', async function(req, res) {
-    let isTransactionCorrect = await controllerDB.proveTransactionParams(req)
-    let userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    if (isTransactionCorrect && typeof userId == 'number' && userId != null) {
-        let isUserDeleted = await controllerDB.isUserDeleted(userId)
-        if (isUserDeleted != null && isUserDeleted == false) {
-            let privKey = await controllerDB.obtainPrivateKeyId(userId)
-            let newTransac = new Transaction(req.body.fromAddress, req.body.toAddress, req.body.amount, req.body.uniRewardId)
-            newTransac.signTransaction(privKey)
-            if (newTransac.signatureC == null) {
-                console.log("Can't finish the Transaction - Reason: Signature not correct")
-                res.send("Can't finish the Transaction - Reason: Signature not correct")
+    var isFromAddresExist = proveKey('fromAddress', 'string', req.body)
+    var isToAddresExist = proveKey('toAddress', 'string', req.body)
+    var isAmountExist = proveKey('amount', 'number', req.body)
+    var isUniRewardIdExist = proveKey('uniRewardId', 'number', req.body)
+    var isUsernameFromExist = proveKey('usernameFrom', 'string', req.body)
+    var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
+    if (isFromAddresExist && isToAddresExist && isAmountExist && isUniRewardIdExist && isUsernameFromExist && isPasswordFromExist) {
+        let userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        if (userId != null) {
+            let isUserDeleted = await controllerDB.isUserDeleted(userId)
+            if (isUserDeleted != null && isUserDeleted == false) {
+                let privKey = await controllerDB.obtainPrivateKeyId(userId)
+                let newTransac = new Transaction(req.body.fromAddress, req.body.toAddress, req.body.amount, req.body.uniRewardId)
+                newTransac.signTransaction(privKey)
+                if (newTransac.signatureC == null) {
+                    console.log("Can't finish the Transaction - Reason: Signature not correct")
+                    res.send("Can't finish the Transaction - Reason: Signature not correct")
+                } else {
+                    let jsonTransaction = await controllerDB.createTransaction(newTransac)
+                    addPendingTransaction(jsonTransaction)
+                    res.send("OK - Transaction created")
+                }
             } else {
-                let jsonTransaction = await controllerDB.createTransaction(newTransac)
-                addPendingTransaction(jsonTransaction)
-                res.send("OK - Transaction created")
+                console.log("Can't finish the Transaction - Reason: User dosen't Exist")
+                res.send("Can't finish the Transaction - Reason: User dosen't Exists")
             }
         } else {
-            console.log("Can't finish the Transaction - Reason: User dosen't Exist")
-            res.send("Can't finish the Transaction - Reason: User dosen't Exists")
+            console.log("Some isn't correct in params of Transaction")
         }
-
     } else {
         console.log("Can't finish the Transaction - Reason: Not correct parameters")
         res.send("Can't finish the Transaction - Reason: Not correct paramaters")
@@ -316,36 +323,48 @@ router.post('/changeUserData', async function(req, res) {
 // });
 
 router.post('/deleteUser', async function(req, res) {
-    const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    if (idUser != null) {
-        const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
-        const idWallet = await controllerDB.obtainWalletId(idUser)
-        const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
-        if ((!deletedUser) && ((!deletedWallet) || deletedWallet == null)) {
-            controllerDB.deleteUser(idUser)
-            res.send("OK - " + req.body.username + "'s data eliminated")
+    let isUserNameExist = proveKey('username', 'string', req.body)
+    let isPasswordExist = proveKey('password', 'string', req.body)
+    if (isUserNameExist && isPasswordExist) {
+        const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        if (idUser != null) {
+            const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
+            const idWallet = await controllerDB.obtainWalletId(idUser)
+            const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
+            if ((!deletedUser) && ((!deletedWallet) || deletedWallet == null)) {
+                controllerDB.deleteUser(idUser)
+                res.send("OK - " + req.body.username + "'s data eliminated")
+            } else {
+                console.log(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
+                res.send(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
+            }
         } else {
-            console.log(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
-            res.send(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
+            console.log(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
+            res.send(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
         }
     } else {
-        console.log(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
-        res.send(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
+        console.log("Wallet don't deleted - Reason: Not correct parammeters")
+        res.send("Wallet don't deleted - Reason: Not correct parammeters")
     }
 });
 
 router.post('/deleteWallet', async function(req, res) {
-    const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    const privateKey = await controllerDB.obtainPrivateKeyId(idUser)
-    const deletedWallet = await controllerDB.obtainDeleteField(idUser, 1)
-    console.log(idUser)
-    console.log(privateKey)
-    if (idUser != null && privateKey != null && (privateKey == req.body.privateKey) && !deletedWallet) {
-        controllerDB.deleteWallet(idUser)
-        res.send("OK - " + req.body.username + "'s data eliminated")
+    let isUserNameExist = proveKey('username', 'string', req.body)
+    let isPasswordExist = proveKey('password', 'string', req.body)
+    if (isUserNameExist && isPasswordExist) {
+        const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        const deletedWallet = await controllerDB.obtainDeleteField(idUser, 1)
+        console.log(idUser)
+        if (idUser != null && !deletedWallet) {
+            controllerDB.deleteWallet(idUser)
+            res.send("OK - " + req.body.username + "'s data eliminated")
+        } else {
+            console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist an User with those username and password")
+            res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist an User with those username and password")
+        }
     } else {
-        console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
-        res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+        console.log("Wallet don't deleted - Reason: Not correct parammeters")
+        res.send("Wallet don't deleted - Reason: Not correct parammeters")
     }
 });
 
@@ -373,28 +392,30 @@ function addPendingTransaction(transaction) {
 function proveKey(nameKey, variableType, reqJson) {
     var objJson = Object(reqJson)
     let isKeyExist = objJson.hasOwnProperty(nameKey)
-    console.log(nameKey + ": " + isKeyExist)
+    console.log("Prove the key: " + nameKey)
+    console.log("Is this key in json request body? " + isKeyExist)
     if (isKeyExist) {
+        console.log("Is this key with the correct type? " + isKeyExist)
         console.log(typeof reqJson[nameKey] + " = " + variableType)
         if (typeof reqJson[nameKey] == variableType) {
             if (typeof reqJson[nameKey] == 'string') {
                 if (reqJson[nameKey].length > 0) {
-                    console.log("CorrectType\n")
+                    console.log("Correct Type\n")
                     return true
                 } else {
-                    console.log("IncorrectType - Reason: Length\n")
+                    console.log("Incorrect Type - Reason: Length of Key isn't correct\n")
                     return false
                 }
             } else {
-                console.log("CorrectType\n")
+                console.log("Correc tType\n")
                 return true
             }
         } else {
-            console.log("IncorrectType - Reason: Not correct type\n")
+            console.log("Incorrect Type - Reason: Not correct type\n")
             return false
         }
     } else {
-        console.log("IncorrectType - Reason: Not exist\n")
+        console.log("Incorrect Type - Reason: Not exist\n")
         return false
     }
 }

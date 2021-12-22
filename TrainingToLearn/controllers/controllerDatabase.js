@@ -439,20 +439,15 @@ module.exports = {
 
     //Wallet functions
     createWallet(req) {
-        if (typeof req.keyPublic == 'string' && typeof req.keyPrivate == 'string' && typeof req.owner == 'number') {
-            return db.Wallets.create({
-                publicKey: req.keyPublic,
-                privateKey: req.keyPrivate,
-                UserId: req.owner
-            }).then(() => {
-                console.log("Wallet Created")
-            }).catch((val) => {
-                console.log("Error: " + val);
-            });
-        } else {
-            console.log("Something with the data isn't correct")
-        }
-
+        return db.Wallets.create({
+            publicKey: req.keyPublic,
+            privateKey: req.keyPrivate,
+            UserId: req.owner
+        }).then(() => {
+            console.log("Wallet Created")
+        }).catch((val) => {
+            console.log("Error: " + val);
+        });
     },
     deleteWallet(idUser) {
         if (typeof idUser == 'number') {
@@ -636,54 +631,24 @@ module.exports = {
             return result
         }).catch((val) => {});
     },
-    async proveTransactionParams(req) {
-        //Prove Destination and From Addresses
-        if (req.body.fromAddress != null && req.body.toAddress != null && req.body.amount != null && req.body.UniRewardId != null &&
-            typeof req.body.fromAddress == 'string' && typeof req.body.toAddress == 'string' && typeof req.body.amount == 'number' && typeof req.body.UniRewardId == 'number' &&
-            req.body.fromAddress != req.body.toAddress) {
-            let isWalletFromAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.fromAddress)
-            let isWalletToAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.toAddress)
-            if (isWalletFromAddressExistNoDelete && isWalletToAddressExistNoDelete) {
-                let isUniRExists = await this.existUniReward(req.bodyUniRewardId)
-                if (isUniRExists && isUniRExists != null) {
-                    console.log("All is correct in params of Transaction")
-                    return true
-                } else {
-                    console.log("UniRewardId dosen't exist")
-                    return true
-                }
-            } else {
-                console.log("User's transaction dont exist or User's transaction is deleted")
-                return false
-            }
-        } else {
-            console.log("Some isn't correct in params of Transaction")
-            return false
-        }
-
-    },
     async existAndNoDeleteWallet(walletDirection) {
-        if (typeof walletDirection != 'string' && walletDirection != null) {
-            return db.Wallets.findOne({
-                where: {
-                    publicKey: walletDirection
-                }
-            }).then((result) => {
-                if (result != null) {
-                    if (result.delete == false) {
-                        console.log("WalletAdress is correct and Dont deleted")
-                        return true
-                    } else {
-                        console.log("WalletAdress is correct but is Deleted")
-                        return false
-                    }
+        return db.Wallets.findOne({
+            where: {
+                publicKey: walletDirection
+            }
+        }).then((result) => {
+            if (result != null) {
+                if (result.delete == false) {
+                    console.log("WalletAdress is correct and Dont deleted")
+                    return true
                 } else {
-                    console.log("WalletAdress isn't correct")
+                    console.log("WalletAdress is correct but is Deleted")
                     return false
                 }
-            }).catch((val) => {})
-        } else {
-            console.log("Wrong parametrs to ")
-        }
+            } else {
+                console.log("WalletAdress isn't correct")
+                return false
+            }
+        }).catch((val) => {})
     }
 }
