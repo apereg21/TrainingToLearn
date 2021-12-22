@@ -2,19 +2,19 @@ const db = require('../models')
 
 module.exports = {
     //Blockchain Functions
-    async proveRewardParameters(req){
+    async proveRewardParameters(req) {
         if (req.body.nameUR != null && req.body.descriptionUR != null && req.body.imageUR != null &&
             req.body.username != null && req.body.password != null && req.body.userPrivateKey != null &&
-            typeof req.body.nameUR == 'string'  && typeof req.body.descriptionUR == 'string' && typeof req.body.imageUR == 'string' &&
+            typeof req.body.nameUR == 'string' && typeof req.body.descriptionUR == 'string' && typeof req.body.imageUR == 'string' &&
             typeof req.body.username == 'string' && typeof req.body.password == 'string' && typeof req.body.userPrivateKey == 'string') {
             let userID = await this.obtainUserId(req.body.username, req.body.password)
             let isUserDelete = await this.isUserDeleted(userID)
-            if (userID!=null && !isUserDelete) {
+            if (userID != null && !isUserDelete) {
                 let userPrivKey = await this.obtainPrivateKeyId(userID)
-                if((userPrivKey!=null && req.body.userPrivateKey == userPrivKey)){
+                if ((userPrivKey != null && req.body.userPrivateKey == userPrivKey)) {
                     console.log("All is correct in params of Transaction")
                     return true
-                }else{
+                } else {
                     console.log("PrivateKey ins't correct")
                     return false
                 }
@@ -115,10 +115,10 @@ module.exports = {
         }).then(() => {
             console.log("uniReward Eliminated")
         }).catch((val) => {
-            console.log("Error: "+val.name)
+            console.log("Error: " + val.name)
         });
     },
-    
+
     async findUniReward(idUR) {
         if (idUR != null || idUR < 0) {
             console.log("db.UniRewards.findByPk(" + idUR + ")")
@@ -134,7 +134,7 @@ module.exports = {
 
                 })
                 .catch(
-                    (error) => console.log("Error: "+error)
+                    (error) => console.log("Error: " + error)
                 )
         } else {
             console.log("Error in FindUniReward - WrongLastIndexUniReward")
@@ -142,7 +142,7 @@ module.exports = {
 
     },
     async existUniReward(id) {
-        if(id!=null && typeof id =='number'){
+        if (id != null && typeof id == 'number') {
             return db.UniRewards.findOne({
                 where: {
                     id: id
@@ -156,7 +156,7 @@ module.exports = {
                     return false
                 }
             })
-        }else{
+        } else {
             console.log("Id administrated isn't correct")
             return null
         }
@@ -220,10 +220,10 @@ module.exports = {
                 console.log("OK Wallet with id:" + id + " eliminated")
 
             }).catch((val) => {
-                console.log("Error"+val.name);
+                console.log("Error" + val.name);
             });
         }).catch((val) => {
-            console.log("Error"+val.name);
+            console.log("Error" + val.name);
         });
     },
 
@@ -298,65 +298,51 @@ module.exports = {
         })
     },
     async obtainUserId(usName, usPass) {
-        if (typeof usName == 'string' && typeof usPass == 'string') {
-            return db.Users.findOne({
-                where: {
-                    username: usName,
-                    password: usPass
-                }
-            }).then((result) => {
-                if (result != null) {
-                    console.log("User find it")
-                    return result.id
-                } else {
-                    console.log("User not find it")
-                    return null
-                }
-            })
-        } else {
-            console.log("Parameters to obatain Wallet isnt correct")
-            return null
-        }
-
+        return db.Users.findOne({
+            where: {
+                username: usName,
+                password: usPass
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("User find it")
+                return result.id
+            } else {
+                console.log("User not find it")
+                return null
+            }
+        })
     },
     async isUserCreated(req) {
-        if ((typeof req.body.username == 'string' && typeof req.body.name == 'string' && typeof req.body.fullSurname == 'string' && typeof req.body.username == 'string') &&
-            req.body.username != null && req.body.name != null && req.body.fullSurname != null && req.body.password != null &&
-            req.body.username.length > 0 && req.body.name.length > 0 && req.body.fullSurname.length > 0 && req.body.password.length > 0) {
-            return db.Users.findOne({
-                where: {
-                    username: req.body.username
-                }
-            }).then((result) => {
-                if (result != null) {
-                    console.log("User find it")
-                    if (result.delete == true) {
-                        console.log("User can created")
-                        return false
-                    } else {
-                        console.log("User can't created")
-                        return true
-                    }
-                } else {
-                    console.log("User not find it")
+        return db.Users.findOne({
+            where: {
+                username: req.body.username
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("User find it")
+                if (result.delete == true) {
+                    console.log("User can created")
                     return false
+                } else {
+                    console.log("User can't created")
+                    return true
                 }
-            })
-        } else {
-            console.log("Something with the data isn't correct")
-            return null
-        }
-
+            } else {
+                console.log("User not find it")
+                return false
+            }
+        })
     },
-    async usernameDeleted(usName){
+    async usernameDeleted(usName) {
         return db.Users.findOne({
             where: {
                 username: usName
             }
         }).then((result) => {
-            if(result.delete){
+            if (result.delete) {
                 return true
-            }else{
+            } else {
                 return false
             }
         })
@@ -382,14 +368,14 @@ module.exports = {
         }
 
     },
-    async getUserData(idUser){
+    async getUserData(idUser) {
         if (typeof idUser == 'number') {
             return db.Users.findOne({
                 where: {
                     id: idUser
                 }
             }).then((result) => {
-                if (result!= null) {
+                if (result != null) {
                     console.log("User data find it")
                     return result
                 } else {
@@ -402,47 +388,29 @@ module.exports = {
             return null
         }
     },
-    async modifyUserData(req, userId){
+    async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
         let user = await this.getUserData(userId)
-        let usName=""
-        let usUserName=""
-        let usFullSurname=""
-        let usPassword=""
-        for(let i = 0;i<req.body.changes.length;i++){
-            switch(req.body.changes[i]){
-                case "p":
-                    usPassword=req.body.passwordN
-                break;
-                case "u":
-                    usUserName=req.body.usernameN
-                break;
-                case "f":
-                    usFullSurname=req.body.fullSurnameN
-                break;
-                case "n":
-                    usName=req.body.nameN   
-                break;
-                default:
-            }
+        if (usPasswordN == "") {
+            console.log("User's password don't change")
+            usPasswordN = user.password
         }
-        if(usPassword==""){
-            usPassword=user.password
+        if (usUserNameN == "") {
+            console.log("User's username don't change")
+            usUserNameN = user.username
         }
-        if(usUserName==""){
-            usUserName=user.username
+        if (usNameN == "") {
+            console.log("User's name don't change")
+            usNameN = user.name
         }
-        if(usName==""){
-            usName=user.name
+        if (usFullSurnameN == "") {
+            console.log("User's full surname don't change")
+            usFullSurnameN = user.fullSurname
         }
-        if(usFullSurname==""){
-            usFullSurname=user.fullSurname
-        }
-                
         return db.Users.update({
-            name: usName,
-            fullSurname: usFullSurname,
-            username: usUserName,
-            password: usPassword,  
+            name: usNameN,
+            fullSurname: usFullSurnameN,
+            username: usUserNameN,
+            password: usPasswordN,
         }, {
             where: {
                 id: userId
@@ -450,26 +418,23 @@ module.exports = {
         }).then(() => {
             console.log("User changed")
         })
+
     },
-    async isUsernameUsed(userName){
-        if (typeof userName == 'string') {
-            return db.Users.findOne({
-                where: {
-                    username: userName
-                }
-            }).then((result) => {
-                if (result!= null) {
-                    console.log("Username find it")
-                    return true
-                } else {
-                    console.log("Username not find it")
-                    return false
-                }
-            })
-        } else {
-            console.log("userName isn't a string")
-            return null
-        }
+    async isUsernameUsed(userName) {
+        return db.Users.findOne({
+            where: {
+                username: userName,
+                deleted: false
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("Username find it")
+                return true
+            } else {
+                console.log("Username not find it")
+                return false
+            }
+        })
     },
 
     //Wallet functions
@@ -643,19 +608,19 @@ module.exports = {
         }
     },
     async userHasWallet(idUsu) {
-            return db.Wallets.findOne({
-                where: {
-                    UserId: idUsu
-                }
-            }).then((result) => {
-                if (result != null) {
-                    console.log("idUser: " + idUsu + " has a wallet")
-                    return true
-                } else {
-                    console.log("idUser: " + idUsu + " hasn't a wallet")
-                    return false
-                }
-            })
+        return db.Wallets.findOne({
+            where: {
+                UserId: idUsu
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("idUser: " + idUsu + " has a wallet")
+                return true
+            } else {
+                console.log("idUser: " + idUsu + " hasn't a wallet")
+                return false
+            }
+        })
     },
 
     //Transactions functions
@@ -680,10 +645,10 @@ module.exports = {
             let isWalletToAddressExistNoDelete = await this.existAndNoDeleteWallet(req.body.toAddress)
             if (isWalletFromAddressExistNoDelete && isWalletToAddressExistNoDelete) {
                 let isUniRExists = await this.existUniReward(req.bodyUniRewardId)
-                if(isUniRExists && isUniRExists!=null){
+                if (isUniRExists && isUniRExists != null) {
                     console.log("All is correct in params of Transaction")
                     return true
-                }else{
+                } else {
                     console.log("UniRewardId dosen't exist")
                     return true
                 }

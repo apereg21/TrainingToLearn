@@ -51,7 +51,7 @@ router.get('/', (req) => {
 
 router.post('/createNewReward', async function(req, res) {
     let proveInitialParam = await controllerDB.proveRewardParameters(req)
-    if(proveInitialParam){
+    if (proveInitialParam) {
         let lastIndex = await controllerDB.getLastBlockIndex()
         if (lastIndex == 0) {
             //There aren't blocks in the blockchain --> Adding the genesisBlock
@@ -78,13 +78,13 @@ router.post('/createNewReward', async function(req, res) {
                 await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
                 res.send("OK - Reward created")
             }
-        }else{
+        } else {
             console.log("Reward not created - Reason: Username or password isn't correct")
-            res.send("Reward not created - Reason: Username or password isn't correct") 
+            res.send("Reward not created - Reason: Username or password isn't correct")
         }
-    }else{
+    } else {
         console.log("Reward not created - Reason: Incorrect params, someone of the params are not correct")
-        res.send("Reward not created - Reason: Incorrect params, someone of the params are not correct") 
+        res.send("Reward not created - Reason: Incorrect params, someone of the params are not correct")
     }
 });
 
@@ -147,11 +147,11 @@ router.post('/createNewTransaction', async function(req, res) {
  */
 
 router.post('/createNewUser', async function(req, res) {
-    let isNameExist = proveKey('name','string' ,req.body)
-    let isUserNameExist = proveKey('username','string' ,req.body)
-    let isFullSurnameExist = proveKey('fullSurname','string' ,req.body)
-    let isPasswordExist = proveKey('password','string' ,req.body)
-    if(isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist){
+    let isNameExist = proveKey('name', 'string', req.body)
+    let isUserNameExist = proveKey('username', 'string', req.body)
+    let isFullSurnameExist = proveKey('fullSurname', 'string', req.body)
+    let isPasswordExist = proveKey('password', 'string', req.body)
+    if (isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist) {
         let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
         if (userAlreadyCreated == false) {
             controllerDB.createUser(req)
@@ -159,17 +159,17 @@ router.post('/createNewUser', async function(req, res) {
             res.send("OK - User created")
         } else {
             let userIsDeleted = await controllerDB.usernameDeleted(req.body.username)
-            if(userIsDeleted){
+            if (userIsDeleted) {
                 controllerDB.createUser(req)
                 console.log("OK - User created")
-                res.send("OK - User created")  
-            }else{
+                res.send("OK - User created")
+            } else {
                 console.log("User dont created - Reason: User is Created already")
                 res.send("User dont created - Reason: User is Created already")
             }
-            
+
         }
-    }else{
+    } else {
         console.log("User dont created - Reason: The data of parameters isn't correct")
         res.send("User dont created - Reason: The data of parameters isn't correct")
     }
@@ -188,9 +188,9 @@ router.post('/createNewUser', async function(req, res) {
  */
 
 router.post('/createNewWallet', async function(req, res) {
-    let isUserNameExist = proveKey('username','string' ,req.body)
-    let isPasswordExist = proveKey('password','string' ,req.body)
-    if(isUserNameExist && isPasswordExist){
+    let isUserNameExist = proveKey('username', 'string', req.body)
+    let isPasswordExist = proveKey('password', 'string', req.body)
+    if (isUserNameExist && isPasswordExist) {
         const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
         if (ownerId != null) {
             const hasWallet = await controllerDB.userHasWallet(ownerId)
@@ -201,11 +201,11 @@ router.post('/createNewWallet', async function(req, res) {
             } else {
                 const idWallet = await controllerDB.obtainWalletId(ownerId)
                 const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
-                if(deletedWallet){
+                if (deletedWallet) {
                     const newWallet = new Wallet(ownerId)
                     controllerDB.createWallet(newWallet)
                     res.send("OK - Wallet Created")
-                }else{
+                } else {
                     console.log("Can't create wallet - Reason: The user has a Wallet already")
                     res.send("Can't create wallet - Reason: The user has a Wallet already")
                 }
@@ -214,11 +214,11 @@ router.post('/createNewWallet', async function(req, res) {
             console.log("Can't create wallet - Reason: Username and password not corect")
             res.send("Can't create wallet - Reason: Username and password not corect")
         }
-    }else{
+    } else {
         console.log("Can't create wallet - Reason: Username or password not corect types")
         res.send("Can't create wallet - Reason: Username or password not corect types")
     }
-    
+
 });
 
 /*
@@ -226,52 +226,66 @@ router.post('/createNewWallet', async function(req, res) {
  */
 
 router.post('/changeUserData', async function(req, res) {
-    const userID = await controllerDB.obtainUserId(req.body.username, req.body.password)
-    if (userID != null) {
-        const userNameExist = await controllerDB.isUsernameUsed(req.body.usernameN)
-        if(!userNameExist && userNameExist==null){
-            let counterErrors=0
-            for(let i = 0;i<req.body.changes.length;i++){
-                switch(req.body.changes[i]){
+    let isUserNameExist = proveKey('username', 'string', req.body)
+    let isPasswordExist = proveKey('password', 'string', req.body)
+    let isChangesExist = proveKey('changes', 'object', req.body)
+    if (isUserNameExist && isPasswordExist && isChangesExist) {
+        const userID = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        if (userID != null) {
+            let counterErrors = 0
+            let counterErrName = 0
+            for (let i = 0; i < req.body.changes.length; i++) {
+                switch (req.body.changes[i]) {
                     case "p":
-                        if(req.body.passwordN==null || typeof req.body.passwordN !='string'){ 
+                        if (proveKey('passwordN', 'string', req.body) == false) {
                             counterErrors++
-                        }   
-                    break;
+                        }
+                        break;
                     case "u":
-                        if(req.body.usernameN==null || typeof req.body.usernameN !='string'){ 
+                        if (proveKey('usernameN', 'string', req.body) == false) {
                             counterErrors++
-                        }   
-                    break;
+                        } else {
+                            let userNameExist = await controllerDB.isUsernameUsed(req.body.usernameN)
+                            if (userNameExist) {
+                                counterErrors++
+                                counterErrName++
+                            }
+                        }
+                        break;
                     case "f":
-                        if(req.body.fullSurnameN==null || typeof req.body.fullSurnameN !='string'){ 
+                        if (proveKey('fullSurnameN', 'string', req.body) == false) {
                             counterErrors++
-                        }   
-                    break;
+                        }
+                        break;
                     case "n":
-                        if(req.body.nameN==null || typeof req.body.nameN !='string'){ 
+                        if (proveKey('nameN', 'string', req.body) == false) {
                             counterErrors++
-                        }   
-                    break;
+                        }
+                        break;
                     default:
                         counterErrors++
                 }
             }
-            if(counterErrors==0){
-                await controllerDB.modifyUserData(req,userID)
+            if (counterErrors == 0) {
+                await controllerDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
                 console.log("OK - User modify")
                 res.send("OK - User modify")
-            }else{
-                console.log("User not modify - Reason: Parameters not corrects")
-                res.send("User not modify - Reason: Parameters not corrects")
+            } else {
+                if (counterErrName > 0) {
+                    console.log("User not modify - Reason: Username Already used")
+                    res.send("User not modify - Reason: Username Already used")
+                } else {
+                    console.log("User not modify - Reason: Parameters are not corrects")
+                    res.send("User not modify - Reason: Parameters are not corrects")
+                }
             }
-        }else{
-            console.log("User not modify - Reason: Username already exist")
-            res.send("User not modify - Reason: Username already exist")
+        } else {
+            console.log("User data dont change - Reason: Username or password ins't correct")
+            res.send("User data dont change - Reason: Username or password ins't correct")
         }
     } else {
-        console.log("User data dont change - Reason: Username or password ins't correct")
-        res.send("User data dont change - Reason: Username or password ins't correct")
+        console.log("User not modify - Reason: Parameters not corrects")
+        res.send("User not modify - Reason: Parameters not corrects")
     }
 });
 
@@ -356,30 +370,33 @@ function addPendingTransaction(transaction) {
     pendingTransactions.push(transaction)
 }
 
-function proveKey(nameKey,variableType,reqJson){
+function proveKey(nameKey, variableType, reqJson) {
     var objJson = Object(reqJson)
     let isKeyExist = objJson.hasOwnProperty(nameKey)
-    console.log(isKeyExist)
-    if(isKeyExist){
-        console.log(typeof reqJson[nameKey]+" = "+ variableType)
-        if(typeof reqJson[nameKey] == variableType){
-            if(typeof reqJson[nameKey] == 'string'){
-                if(reqJson[nameKey].length > 0){
+    console.log(nameKey + ": " + isKeyExist)
+    if (isKeyExist) {
+        console.log(typeof reqJson[nameKey] + " = " + variableType)
+        if (typeof reqJson[nameKey] == variableType) {
+            if (typeof reqJson[nameKey] == 'string') {
+                if (reqJson[nameKey].length > 0) {
                     console.log("CorrectType\n")
                     return true
-                }else{
+                } else {
                     console.log("IncorrectType - Reason: Length\n")
                     return false
                 }
+            } else {
+                console.log("CorrectType\n")
+                return true
             }
-        }else{
+        } else {
             console.log("IncorrectType - Reason: Not correct type\n")
             return false
         }
-    }else{
+    } else {
         console.log("IncorrectType - Reason: Not exist\n")
         return false
-    }    
+    }
 }
 
 module.exports = router;
