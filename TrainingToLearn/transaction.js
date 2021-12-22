@@ -30,6 +30,7 @@ class Transaction {
         console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
         if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
             console.log('Something gone wrong with the operations!');
+            this.signatureC = null
         }else{
             const hashTx = this.calHashTransaction();
             const sig = signingKeyInterna.sign(hashTx, 'base64');

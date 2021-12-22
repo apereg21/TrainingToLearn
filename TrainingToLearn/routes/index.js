@@ -67,8 +67,8 @@ router.post('/createNewReward', async function(req, res) {
                 //Waiting petitions for the block
             await sleep(20000)
             if (prevHash == null || uniReward == null || (uniReward.nameUR == null || uniReward.descriptionUR == null || uniReward.imageUR == null || uniReward.UserId == null || uniReward.WalletId == null)) {
-                console.log("Reward not created - Reason: Something with the UniReward fields isnt correct")
-                res.send("Reward not created - Reason: Something with the UniReward fields isnt correct")
+                console.log("Reward not created - Reason: Something with the UniReward fields isn't correct")
+                res.send("Reward not created - Reason: Something with the UniReward fields isn't correct")
             } else {
                 let newBlock = new Block(lastIndex, new Date(), uniReward, { transactions: pendingTransactions }, prevHash)
                 newBlock.hash = newBlock.calculateHash()
@@ -119,11 +119,11 @@ router.post('/createNewTransaction', async function(req, res) {
             } else {
                 let jsonTransaction = await controllerDB.createTransaction(newTransac)
                 addPendingTransaction(jsonTransaction)
-                res.send("OK - Transaction finish")
+                res.send("OK - Transaction created")
             }
         } else {
-            console.log("Can't finish the Transaction - Reason: User Dosent Exist")
-            res.send("Can't finish the Transaction - Reason: User Dosent Exists")
+            console.log("Can't finish the Transaction - Reason: User dosen't Exist")
+            res.send("Can't finish the Transaction - Reason: User dosen't Exists")
         }
 
     } else {
@@ -150,8 +150,8 @@ router.post('/createNewUser', async function(req, res) {
     let userAlreadyCreated = await controllerDB.isUserCreated(req)
     if (userAlreadyCreated == false && req.body.username.lenght >0 && req.body.password.lenght > 0) {
         controllerDB.createUser(req)
-        console.log("OK - User created correctly")
-        res.send("OK - User created correctly")
+        console.log("OK - User created")
+        res.send("OK - User created")
     } else {
         let userID=await controllerDB.obtainUserId(req.body.username, req.body.password)
         let userDeleted= await controllerDB.isUserDeleted(userID)
@@ -196,8 +196,8 @@ router.post('/createNewWallet', async function(req, res) {
         }
     } else {
         if (typeof req.body.username != 'string' || typeof req.body.password != 'string') {
-            console.log("Can't create wallet - Reason: Username and password not corect types")
-            res.send("Can't create wallet - Reason: Username and password not corect types")
+            console.log("Can't create wallet - Reason: Username or password not corect types")
+            res.send("Can't create wallet - Reason: Username or password not corect types")
         } else {
             console.log("Can't create wallet - Reason: Username and password not corect")
             res.send("Can't create wallet - Reason: Username and password not corect")
@@ -239,6 +239,7 @@ router.post('/changeUserData', async function(req, res) {
                         }   
                     break;
                     default:
+                        counterErrors++
                 }
             }
             if(counterErrors==0){
@@ -295,8 +296,8 @@ router.post('/deleteUser', async function(req, res) {
             controllerDB.deleteUser(idUser)
             res.send("OK - " + req.body.username + "'s data eliminated")
         } else {
-            console.log(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
-            res.send(req.body.username + "'s data can't be eliminated - Reason: Not Exist")
+            console.log(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
+            res.send(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
         }
     } else {
         console.log(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
@@ -308,7 +309,6 @@ router.post('/deleteWallet', async function(req, res) {
     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
     const privateKey = await controllerDB.obtainPrivateKeyId(idUser)
     const deletedWallet = await controllerDB.obtainDeleteField(idUser, 1)
-
     console.log(idUser)
     console.log(privateKey)
     if (idUser != null && privateKey != null && (privateKey == req.body.privateKey) && !deletedWallet) {
