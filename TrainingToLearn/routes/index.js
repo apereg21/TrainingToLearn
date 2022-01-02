@@ -48,9 +48,15 @@ router.get('/', (req) => {
  * and calculate the hash block. Then we asociated the UniRewardId to the user's wallet
  */
 
+//Blockchain Functions
+
 router.post('/createNewReward', async function(req, res) {
-    let proveInitialParam = await controllerDB.proveRewardParameters(req)
-    if (proveInitialParam) {
+    var isNameURExist = proveKey('nameUR', 'string', req.body)
+    var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
+    var isImageURExist = proveKey('imageUR', 'string', req.body)
+    var isUsernameExist = proveKey('username', 'string', req.body)
+    var isPasswordExist = proveKey('password', 'string', req.body)
+    if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist) {
         let lastIndex = await controllerDB.getLastBlockIndex()
         if (lastIndex == 0) {
             //There aren't blocks in the blockchain --> Adding the genesisBlock
@@ -61,9 +67,9 @@ router.post('/createNewReward', async function(req, res) {
         }
         let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
         let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-        if (idUser != null) {
+        let isUserDelete = await controllerDB.isUserDeleted(idUser)
+        if (idUser != null && !isUserDelete) {
             let uniReward = await controllerDB.createUniReward(req, idUser)
-                //Waiting petitions for the block
             await sleep(20000)
             if (prevHash == null || uniReward == null || (uniReward.nameUR == null || uniReward.descriptionUR == null || uniReward.imageUR == null || uniReward.UserId == null || uniReward.WalletId == null)) {
                 console.log("Reward not created - Reason: Something with the UniReward fields isn't correct")
@@ -73,7 +79,6 @@ router.post('/createNewReward', async function(req, res) {
                 newBlock.hash = newBlock.calculateHash()
                 console.log(newBlock.hash)
                 await controllerDB.createBlock(newBlock)
-                    //Assing UniReward to the Wallet with the id --> req.body.Id
                 await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
                 res.send("OK - Reward created")
             }

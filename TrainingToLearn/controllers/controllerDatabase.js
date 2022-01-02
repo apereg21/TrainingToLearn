@@ -1,32 +1,6 @@
 const db = require('../models')
 
 module.exports = {
-    //Blockchain Functions
-    async proveRewardParameters(req) {
-        if (req.body.nameUR != null && req.body.descriptionUR != null && req.body.imageUR != null &&
-            req.body.username != null && req.body.password != null && req.body.userPrivateKey != null &&
-            typeof req.body.nameUR == 'string' && typeof req.body.descriptionUR == 'string' && typeof req.body.imageUR == 'string' &&
-            typeof req.body.username == 'string' && typeof req.body.password == 'string' && typeof req.body.userPrivateKey == 'string') {
-            let userID = await this.obtainUserId(req.body.username, req.body.password)
-            let isUserDelete = await this.isUserDeleted(userID)
-            if (userID != null && !isUserDelete) {
-                let userPrivKey = await this.obtainPrivateKeyId(userID)
-                if ((userPrivKey != null && req.body.userPrivateKey == userPrivKey)) {
-                    console.log("All is correct in params of Transaction")
-                    return true
-                } else {
-                    console.log("PrivateKey ins't correct")
-                    return false
-                }
-            } else {
-                console.log("User's don't exist or User's data ins't correct")
-                return false
-            }
-        } else {
-            console.log("Some isn't correct in params of Reward Creation")
-            return false
-        }
-    },
     allBlocks() {
         return db.Blockchain.findAll();
     },
