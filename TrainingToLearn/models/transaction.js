@@ -14,13 +14,17 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.STRING
         },
-        amount: {
+        typeTransaction: {
             allowNull: false,
-            type: DataTypes.INTEGER
+            type: DataTypes.STRING
         },
         signature: {
             allowNull: false,
             type: DataTypes.STRING
+        },
+        money: {
+            allowNull: true,
+            type: DataTypes.INTEGER
         }
     }, {
         createdAt: false,

@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.STRING
         },
+        typeUser: {
+            allowNull: false,
+            type: DataTypes.STRING
+        },
         deleted: {
             allowNull: false,
             type: DataTypes.BOOLEAN,
@@ -33,7 +37,6 @@ module.exports = (sequelize, DataTypes) => {
     });
     Users.associate = function(models) {
         Users.hasOne(models.Wallets, { onDelete: 'cascade' });
-        Users.hasMany(models.UniRewards, { onDelete: 'cascade' });
     };
     return Users;
 };

@@ -109,27 +109,40 @@ router.post('/createNewReward', async function(req, res) {
  */
 
 router.post('/createNewTransaction', async function(req, res) {
-    var isFromAddresExist = proveKey('fromAddress', 'string', req.body)
-    var isToAddresExist = proveKey('toAddress', 'string', req.body)
-    var isAmountExist = proveKey('amount', 'number', req.body)
-    var isUniRewardIdExist = proveKey('uniRewardId', 'number', req.body)
-    var isUsernameFromExist = proveKey('usernameFrom', 'string', req.body)
+    var isFromAddresNameExist = proveKey('fromAddressUN', 'string', req.body)
+    var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
+    var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
     var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
-    if (isFromAddresExist && isToAddresExist && isAmountExist && isUniRewardIdExist && isUsernameFromExist && isPasswordFromExist) {
-        let userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+    if (isFromAddresNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist) {
+        let userId = await controllerDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
         if (userId != null) {
             let isUserDeleted = await controllerDB.isUserDeleted(userId)
             if (isUserDeleted != null && isUserDeleted == false) {
-                let privKey = await controllerDB.obtainPrivateKeyId(userId)
-                let newTransac = new Transaction(req.body.fromAddress, req.body.toAddress, req.body.amount, req.body.uniRewardId)
-                newTransac.signTransaction(privKey)
-                if (newTransac.signatureC == null) {
-                    console.log("Can't finish the Transaction - Reason: Signature not correct")
-                    res.send("Can't finish the Transaction - Reason: Signature not correct")
+                let userFromAddress = await controllerDB.findUserAddress(req.body.fromAddressUN)
+                let toAddress = await controllerDB.findUserAddress(req.body.toAddressUN)
+                if (req.body.typeT == "M") {
+                    var isMoneyExist = proveKey('money', 'integer', req.body)
+                    if (isMoneyExist) {
+                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyT, null, req.body.typeT, 0)
+                        let jsonTransaction = await controllerDB.createTransaction(newTransac)
+                        addPendingTransaction(jsonTransaction)
+                        res.send("OK - Transaction created")
+                    } else {
+                        console.log("Can't finish the Transaction - Reason: Not correct parameters")
+                        res.send("Can't finish the Transaction - Reason: Not correct paramaters")
+                    }
                 } else {
-                    let jsonTransaction = await controllerDB.createTransaction(newTransac)
-                    addPendingTransaction(jsonTransaction)
-                    res.send("OK - Transaction created")
+                    var isUniRewardTransactionExist = proveKey('uniRewardT', 'string', req.body)
+                    if (isUniRewardTransactionExist) {
+                        let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
+                        let newTransac = new Transaction(userFromAddress, toAddress, null, uniRewardId, req.body.typeT, 1)
+                        let jsonTransaction = await controllerDB.createTransaction(newTransac)
+                        addPendingTransaction(jsonTransaction)
+                        res.send("OK - Transaction created")
+                    } else {
+                        console.log("Can't finish the Transaction - Reason: Not correct parameters")
+                        res.send("Can't finish the Transaction - Reason: Not correct paramaters")
+                    }
                 }
             } else {
                 console.log("Can't finish the Transaction - Reason: User dosen't Exist")
@@ -163,18 +176,39 @@ router.post('/createNewUser', async function(req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isFullSurnameExist = proveKey('fullSurname', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
-    if (isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist) {
+    let isRoleExist = proveKey('roleUser', 'string', req.body)
+    if (isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist && isRoleExist) {
         let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
         if (userAlreadyCreated == false) {
-            controllerDB.createUser(req)
+            await controllerDB.createUser(req)
             console.log("OK - User created")
-            res.send("OK - User created")
+            const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+            console.log("Hola buenas tardes aqui está: " + ownerId)
+            const hasWallet = await controllerDB.userHasWallet(ownerId)
+            if (!hasWallet) {
+                const newWallet = new Wallet(ownerId)
+                controllerDB.createWallet(newWallet)
+                console.log("OK - Wallet Created")
+            } else {
+                console.log("Wallet dont created - Reason: User has a Wallet already")
+            }
+            res.send("OK - Acount created")
         } else {
             let userIsDeleted = await controllerDB.usernameDeleted(req.body.username)
             if (userIsDeleted) {
-                controllerDB.createUser(req)
+                await controllerDB.createUser(req)
                 console.log("OK - User created")
-                res.send("OK - User created")
+                const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+                console.log("Hola buenas tardes aqui está: " + ownerId)
+                const hasWallet = await controllerDB.userHasWallet(ownerId)
+                if (!hasWallet) {
+                    const newWallet = new Wallet(ownerId)
+                    controllerDB.createWallet(newWallet)
+                    console.log("OK - Wallet Created")
+                } else {
+                    console.log("Wallet dont created - Reason: User has a Wallet already")
+                }
+                res.send("OK - Acount created")
             } else {
                 console.log("User dont created - Reason: User is Created already")
                 res.send("User dont created - Reason: User is Created already")
@@ -187,50 +221,14 @@ router.post('/createNewUser', async function(req, res) {
     }
 });
 
-//This router is used for create a new Wallet to the DB. //The Wallet is passed in form of 
-//body parameters in the petition (req field)
-//Parameters are
-/**  
- *  @param {string} username
- *  @param {string} password
- */
-/* The only thing we need to do is create the object from the class Wallet from this project
- *The class fild all the elements from the object, like the public and private key
- * to the user
- */
+router.get('/getAllUsersList', async function(req, res) {
+    var usersList = await controllerDB.getAllUsers()
+    res.send(usersList)
+});
 
-router.post('/createNewWallet', async function(req, res) {
-    let isUserNameExist = proveKey('username', 'string', req.body)
-    let isPasswordExist = proveKey('password', 'string', req.body)
-    if (isUserNameExist && isPasswordExist) {
-        const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-        if (ownerId != null) {
-            const hasWallet = await controllerDB.userHasWallet(ownerId)
-            if (!hasWallet) {
-                const newWallet = new Wallet(ownerId)
-                controllerDB.createWallet(newWallet)
-                res.send("OK - Wallet Created")
-            } else {
-                const idWallet = await controllerDB.obtainWalletId(ownerId)
-                const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
-                if (deletedWallet) {
-                    const newWallet = new Wallet(ownerId)
-                    controllerDB.createWallet(newWallet)
-                    res.send("OK - Wallet Created")
-                } else {
-                    console.log("Can't create wallet - Reason: The user has a Wallet already")
-                    res.send("Can't create wallet - Reason: The user has a Wallet already")
-                }
-            }
-        } else {
-            console.log("Can't create wallet - Reason: Username and password not corect")
-            res.send("Can't create wallet - Reason: Username and password not corect")
-        }
-    } else {
-        console.log("Can't create wallet - Reason: Username or password not corect types")
-        res.send("Can't create wallet - Reason: Username or password not corect types")
-    }
-
+router.get('/getAllRewardsList', async function(req, res) {
+    var rewardsList = await controllerDB.getAllRewards()
+    res.send(rewardsList)
 });
 
 /*

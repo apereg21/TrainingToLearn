@@ -62,6 +62,11 @@ module.exports = {
     },
 
     //uniRewards functions
+    async getAllRewards() {
+        return db.UniRewards.findAll({}).then((result) => {
+            return result
+        })
+    },
     async createUniReward(req, idUser) {
         if (((req.body.nameUR != null && req.body.nameUR.length > 0))) {
             return db.UniRewards
@@ -92,7 +97,20 @@ module.exports = {
             console.log("Error: " + val.name)
         });
     },
-
+    async getUniRewardId(uniRewardT) {
+        return db.UniRewards.findOne({
+                where: {
+                    nameUR: uniRewardT
+                }
+            })
+            .then((result) => {
+                if (result != null) {
+                    return result.id
+                } else {
+                    return null
+                }
+            })
+    },
     async findUniReward(idUR) {
         if (idUR != null || idUR < 0) {
             console.log("db.UniRewards.findByPk(" + idUR + ")")
@@ -163,12 +181,18 @@ module.exports = {
     },
 
     //User Functions
-    createUser(req) {
-        db.Users.create({
+    async getAllUsers() {
+        return db.Users.findAll({}).then((result) => {
+            return result
+        })
+    },
+    async createUser(req) {
+        return db.Users.create({
             name: req.body.name,
             fullSurname: req.body.fullSurname,
             username: req.body.username,
-            password: req.body.password
+            password: req.body.password,
+            typeUser: req.body.roleUser
         }).then(() => {
             console.log("Created")
         }).catch((val) => {
@@ -271,6 +295,30 @@ module.exports = {
             }
         })
     },
+    async findUserAddress(usName) {
+        return db.Users.findOne({
+            where: {
+                username: usName
+            }
+        }).then((result) => {
+            if (result != null) {
+                return db.Wallets.findOne({
+                    where: {
+                        id: result.id
+                    }
+                }).then((wallet) => {
+                    if (wallet != null) {
+                        return wallet.publicKey
+                    } else {
+                        return null
+                    }
+                })
+            } else {
+                return null
+            }
+        })
+    },
+
     async obtainUserId(usName, usPass) {
         return db.Users.findOne({
             where: {
@@ -593,17 +641,31 @@ module.exports = {
     },
 
     //Transactions functions
-    async createTransaction(transaction) {
-        return db.Transactions.create({
-            fromAddress: transaction.fromAddress,
-            toAddress: transaction.toAddress,
-            amount: transaction.amount,
-            signature: transaction.signatureC,
-            UniRewardId: transaction.UniRewardId
-        }).then((result) => {
-            console.log("Transaction Created")
-            return result
-        }).catch((val) => {});
+    async createTransaction(transaction, type) {
+        if (type == "M") {
+            return db.Transactions.create({
+                fromAddress: transaction.fromAddress,
+                toAddress: transaction.toAddress,
+                money: transaction.amount,
+                typeTransaction: transaction.typeT,
+                signature: transaction.signatureC
+            }).then((result) => {
+                console.log("Transaction Created")
+                return result
+            }).catch((val) => { console.log(val) });
+        } else {
+            return db.Transactions.create({
+                fromAddress: transaction.fromAddress,
+                toAddress: transaction.toAddress,
+                typeTransaction: transaction.typeT,
+                signature: transaction.signatureC,
+                UniRewardId: transaction.UniRewardId
+            }).then((result) => {
+                console.log("Transaction Created")
+                return result
+            }).catch((val) => { console.log(val) });
+        }
+
     },
     async existAndNoDeleteWallet(walletDirection) {
         return db.Wallets.findOne({

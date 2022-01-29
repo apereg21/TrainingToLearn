@@ -6,13 +6,19 @@ class Transaction {
     /*  El contructor necesita, la fecha de la transacción, destinatario, remitente
      *   y la cantidad que se deseea traspasar de una cartera a otra
      */
-    constructor(fromAddress, toAddress, amount, logropinId) {
+    constructor(fromAddress, toAddress, amount, unireward, typeTr, opc) {
             this.fromAddress = fromAddress;
             this.toAddress = toAddress;
-            this.amount = amount;
             this.timestamp = Date.now();
-            this.signatureC = "";
-            this.LogroPinId = logropinId;
+            this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
+            if (opc == 0) {
+                this.UniRewardId = null;
+                this.amount = amount;
+            } else {
+                this.UniRewardId = unireward;
+                this.amount = null;
+            }
+            this.typeT = typeTr;
         }
         /*
          *   Firmar la transacción, que se realiza mediante la clave privada
@@ -31,14 +37,14 @@ class Transaction {
         if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
             console.log('Something gone wrong with the operations!');
             this.signatureC = null
-        }else{
+        } else {
             const hashTx = this.calHashTransaction();
             const sig = signingKeyInterna.sign(hashTx, 'base64');
             var signature = sig.toDER('hex');
             console.log("Firmado: " + signature)
             this.signatureC = signature
         }
-        
+
     }
 
 
@@ -53,11 +59,11 @@ class Transaction {
         if (this.fromAddress === null) return true;
         if (!this.signatureC || this.signatureC.length === 0) {
             console.log('No signature in this transaction');
-        }else{
+        } else {
             const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
             return publicKey.verify(this.calHashTransaction(), this.signatureC);
         }
-        
+
     }
 }
 module.exports = Transaction

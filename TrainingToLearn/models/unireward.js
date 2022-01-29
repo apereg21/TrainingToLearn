@@ -18,10 +18,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             type: DataTypes.STRING,
         },
-        deleted: {
+        moneyExp: {
             allowNull: false,
-            type: DataTypes.BOOLEAN,
-            defaultValue: false
+            type: DataTypes.JSON,
+            defaultValue: []
         }
     }, {});
     UniRewards.associate = function(models) {

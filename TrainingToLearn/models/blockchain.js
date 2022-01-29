@@ -9,11 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.DATE
         },
-        uniReward: {
-            allowNull: null,
-            type: DataTypes.JSON
-        },
-        data: {
+        idsTransactions: {
             allowNull: true,
             type: DataTypes.JSON
         },

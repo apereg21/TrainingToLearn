@@ -15,9 +15,9 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING
         },
         money: {
-            allowNull: true,
-            type: DataTypes.INTEGER,
-            defaultValue: 0,
+            allowNull: false,
+            type: DataTypes.JSON,
+            defaultValue: []
 
         },
         idsUniRewards: {
@@ -36,6 +36,8 @@ module.exports = (sequelize, DataTypes) => {
     });
     Wallets.associate = function(models) {
         Wallets.hasMany(models.UniRewards, { onDelete: 'cascade' })
+        Wallets.hasMany(models.Transactions, { onDelete: 'cascade' })
+        Wallets.hasMany(models.UniPoints, { onDelete: 'cascade' })
     };
     return Wallets;
 };
