@@ -54,33 +54,22 @@ router.post('/createNewReward', async function(req, res) {
     var isNameURExist = proveKey('nameUR', 'string', req.body)
     var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
     var isImageURExist = proveKey('imageUR', 'string', req.body)
+    var isCostRewardExist = proveKey('costReward', 'number', req.body)
     var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
-    if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist) {
-        let lastIndex = await controllerDB.getLastBlockIndex()
-        if (lastIndex == 0) {
-            //There aren't blocks in the blockchain --> Adding the genesisBlock
-            var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
-            genesisBlock.hash = genesisBlock.calculateHash()
-            await controllerDB.createBlock(genesisBlock)
-            lastIndex++
-        }
-        let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
+    if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist && isCostRewardExist) {
         let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
         let isUserDelete = await controllerDB.isUserDeleted(idUser)
         if (idUser != null && !isUserDelete) {
-            let uniReward = await controllerDB.createUniReward(req, idUser)
-            await sleep(20000)
-            if (prevHash == null || uniReward == null || (uniReward.nameUR == null || uniReward.descriptionUR == null || uniReward.imageUR == null || uniReward.UserId == null || uniReward.WalletId == null)) {
-                console.log("Reward not created - Reason: Something with the UniReward fields isn't correct")
-                res.send("Reward not created - Reason: Something with the UniReward fields isn't correct")
-            } else {
-                let newBlock = new Block(lastIndex, new Date(), uniReward, { transactions: pendingTransactions }, prevHash)
-                newBlock.hash = newBlock.calculateHash()
-                console.log(newBlock.hash)
-                await controllerDB.createBlock(newBlock)
-                await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
+            let userType = await controllerDB.obtainUserType(req.body.username, req.body.password)
+            if (userType == "I") {
+                let uniReward = await controllerDB.createUniReward(req, idUser)
+                console.log(uniReward)
+                    //await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
                 res.send("OK - Reward created")
+            } else {
+                console.log("Reward not created - Reason: Username without permissions")
+                res.send("Reward not created - Reason: Username without permissions")
             }
         } else {
             console.log("Reward not created - Reason: Username or password isn't correct")
@@ -121,9 +110,9 @@ router.post('/createNewTransaction', async function(req, res) {
                 let userFromAddress = await controllerDB.findUserAddress(req.body.fromAddressUN)
                 let toAddress = await controllerDB.findUserAddress(req.body.toAddressUN)
                 if (req.body.typeT == "M") {
-                    var isMoneyExist = proveKey('money', 'integer', req.body)
+                    var isMoneyExist = proveKey('moneyTo', 'number', req.body)
                     if (isMoneyExist) {
-                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyT, null, req.body.typeT, 0)
+                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT)
                         let jsonTransaction = await controllerDB.createTransaction(newTransac)
                         addPendingTransaction(jsonTransaction)
                         res.send("OK - Transaction created")
@@ -135,7 +124,7 @@ router.post('/createNewTransaction', async function(req, res) {
                     var isUniRewardTransactionExist = proveKey('uniRewardT', 'string', req.body)
                     if (isUniRewardTransactionExist) {
                         let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
-                        let newTransac = new Transaction(userFromAddress, toAddress, null, uniRewardId, req.body.typeT, 1)
+                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT)
                         let jsonTransaction = await controllerDB.createTransaction(newTransac)
                         addPendingTransaction(jsonTransaction)
                         res.send("OK - Transaction created")
@@ -421,6 +410,22 @@ function proveKey(nameKey, variableType, reqJson) {
         console.log("Incorrect Type - Reason: Not exist\n")
         return false
     }
+}
+
+async function createBlock() {
+    let lastIndex = await controllerDB.getLastBlockIndex()
+    if (lastIndex == 0) {
+        //There aren't blocks in the blockchain --> Adding the genesisBlock
+        var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
+        genesisBlock.hash = genesisBlock.calculateHash()
+        await controllerDB.createBlock(genesisBlock)
+        lastIndex++
+    }
+    let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
+    let newBlock = new Block(lastIndex, new Date(), uniReward, { transactions: pendingTransactions }, prevHash)
+    newBlock.hash = newBlock.calculateHash()
+    console.log(newBlock.hash)
+    await controllerDB.createBlock(newBlock)
 }
 
 module.exports = router;

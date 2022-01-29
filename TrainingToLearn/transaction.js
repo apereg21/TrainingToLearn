@@ -6,17 +6,17 @@ class Transaction {
     /*  El contructor necesita, la fecha de la transacción, destinatario, remitente
      *   y la cantidad que se deseea traspasar de una cartera a otra
      */
-    constructor(fromAddress, toAddress, amount, unireward, typeTr, opc) {
+    constructor(fromAddress, toAddress, amount, unireward, typeTr) {
             this.fromAddress = fromAddress;
             this.toAddress = toAddress;
             this.timestamp = Date.now();
             this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
-            if (opc == 0) {
+            if (typeTr == "M") {
                 this.UniRewardId = null;
                 this.amount = amount;
             } else {
                 this.UniRewardId = unireward;
-                this.amount = null;
+                this.amount = amount;
             }
             this.typeT = typeTr;
         }

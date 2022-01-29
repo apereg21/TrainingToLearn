@@ -74,8 +74,9 @@ module.exports = {
                     nameUR: req.body.nameUR,
                     descriptionUR: req.body.descriptionUR,
                     imageUR: req.body.imageUR,
-                    UserId: idUser,
-                    WalletId: await this.obtainWalletId(idUser)
+                    cost: req.body.costReward,
+                    username: req.body.username,
+                    password: req.body.password
                 }).then(data => {
                     console.log(data);
                     return data
@@ -335,6 +336,24 @@ module.exports = {
             }
         })
     },
+
+    async obtainUserType(usName, usPass) {
+        return db.Users.findOne({
+            where: {
+                username: usName,
+                password: usPass
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("User find it")
+                return result.typeUser
+            } else {
+                console.log("User not find it")
+                return null
+            }
+        })
+    },
+
     async isUserCreated(req) {
         return db.Users.findOne({
             where: {
@@ -657,6 +676,7 @@ module.exports = {
             return db.Transactions.create({
                 fromAddress: transaction.fromAddress,
                 toAddress: transaction.toAddress,
+                money: transaction.amount,
                 typeTransaction: transaction.typeT,
                 signature: transaction.signatureC,
                 UniRewardId: transaction.UniRewardId

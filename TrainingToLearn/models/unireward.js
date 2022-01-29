@@ -11,15 +11,19 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
         },
         descriptionUR: {
-            allowNull: true,
+            allowNull: false,
             type: DataTypes.STRING,
         },
         imageUR: {
             allowNull: true,
             type: DataTypes.STRING,
         },
-        moneyExp: {
+        cost: {
             allowNull: false,
+            type: DataTypes.INTEGER,
+        },
+        moneyExp: {
+            allowNull: true,
             type: DataTypes.JSON,
             defaultValue: []
         }
