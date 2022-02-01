@@ -8,7 +8,7 @@ const controllerDB = require('../controllers/controllerDatabase');
 //Configuration zone
 var router = express.Router();
 var pendingTransactions = [];
-
+var periodicFunct = setInterval(() => createBlock(), 60000);
 /*
  * Default Route
  */
@@ -113,8 +113,8 @@ router.post('/createNewTransaction', async function(req, res) {
                     var isMoneyExist = proveKey('moneyTo', 'number', req.body)
                     if (isMoneyExist) {
                         let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT)
-                        let jsonTransaction = await controllerDB.createTransaction(newTransac)
-                        addPendingTransaction(jsonTransaction)
+                        let transactionObj = await controllerDB.createTransaction(newTransac)
+                        addPendingTransaction(transactionObj)
                         res.send("OK - Transaction created")
                     } else {
                         console.log("Can't finish the Transaction - Reason: Not correct parameters")
@@ -125,8 +125,8 @@ router.post('/createNewTransaction', async function(req, res) {
                     if (isUniRewardTransactionExist) {
                         let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
                         let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT)
-                        let jsonTransaction = await controllerDB.createTransaction(newTransac)
-                        addPendingTransaction(jsonTransaction)
+                        let transactionObj = await controllerDB.createTransaction(newTransac)
+                        addPendingTransaction(transactionObj)
                         res.send("OK - Transaction created")
                     } else {
                         console.log("Can't finish the Transaction - Reason: Not correct parameters")
@@ -413,19 +413,26 @@ function proveKey(nameKey, variableType, reqJson) {
 }
 
 async function createBlock() {
-    let lastIndex = await controllerDB.getLastBlockIndex()
-    if (lastIndex == 0) {
-        //There aren't blocks in the blockchain --> Adding the genesisBlock
-        var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
-        genesisBlock.hash = genesisBlock.calculateHash()
-        await controllerDB.createBlock(genesisBlock)
-        lastIndex++
+    console.log("Time has passed, time for block creation. ¿There are pending transactions?")
+    if (pendingTransactions.length > 0) {
+        console.log("YES")
+        console.log(pendingTransactions)
+        let lastIndex = await controllerDB.getLastBlockIndex()
+        if (lastIndex == 0) {
+            var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
+            genesisBlock.hash = genesisBlock.calculateHash()
+            await controllerDB.createBlock(genesisBlock)
+            lastIndex++
+        }
+        let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
+        let newBlock = new Block(lastIndex, new Date(), pendingTransactions, prevHash)
+        newBlock.hash = newBlock.calculateHash()
+        await controllerDB.createBlock(newBlock)
+        pendingTransactions.splice(0, pendingTransactions.length)
+        console.log(pendingTransactions)
+    } else {
+        console.log("NO")
     }
-    let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
-    let newBlock = new Block(lastIndex, new Date(), uniReward, { transactions: pendingTransactions }, prevHash)
-    newBlock.hash = newBlock.calculateHash()
-    console.log(newBlock.hash)
-    await controllerDB.createBlock(newBlock)
 }
 
 module.exports = router;

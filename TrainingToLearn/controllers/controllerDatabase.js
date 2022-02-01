@@ -14,20 +14,16 @@ module.exports = {
             .catch((error) => console.log("Error: " + error));
     },
     async createBlock(req) {
-        console.log((req.index) + (req.timestamp) + (req.uniReward) + (req.data) + (req.hash) + (req.hashPrev))
-        if ((typeof req.index == 'number' && typeof req.hash == 'string' && typeof req.hashPrev == 'string') &&
-            (req.index != null) && (req.timestamp != null) && (req.uniReward != null) && (req.data != null) && (req.hash != null) && (req.hashPrev != null)) {
-            return db.Blockchain.create({
-                index: req.index,
-                timestamp: Date.now(),
-                uniReward: req.uniReward,
-                data: JSON.stringify(req.data),
-                hash: req.hash,
-                hashPrev: req.hashPrev
-            }).then(() => {})
-        } else {
-            console.log("Error in createBlock - NotCorrectReqParameters")
-        }
+        return db.Blockchain.create({
+            index: req.index,
+            timestamp: Date.now(),
+            idsTransactions: req.transactionIds,
+            hash: req.hash,
+            hashPrev: req.hashPrev
+        }).then((result) => {
+            console.log("The index of last creation is: " + result.index)
+            return result.index
+        }).catch((error) => console.log("Error: " + error));
     },
     async getHashLastBlock(lastIndex) {
         console.log("Last index is: " + lastIndex)
@@ -670,7 +666,7 @@ module.exports = {
                 signature: transaction.signatureC
             }).then((result) => {
                 console.log("Transaction Created")
-                return result
+                return result.id
             }).catch((val) => { console.log(val) });
         } else {
             return db.Transactions.create({
@@ -682,7 +678,7 @@ module.exports = {
                 UniRewardId: transaction.UniRewardId
             }).then((result) => {
                 console.log("Transaction Created")
-                return result
+                return result.id
             }).catch((val) => { console.log(val) });
         }
 
