@@ -96,10 +96,10 @@ module.exports = {
     },
     async getUniRewardId(uniRewardT) {
         return db.UniRewards.findOne({
-                where: {
-                    nameUR: uniRewardT
-                }
-            })
+            where: {
+                nameUR: uniRewardT
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -152,10 +152,10 @@ module.exports = {
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -510,7 +510,7 @@ module.exports = {
         console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
         console.log("Compare if " + userpassword + " is equals to " + userpassword)
         if (privateKey == privateKeyId && userpassword == password && (typeof idUser == 'number' && typeof idUniReward == 'number' &&
-                typeof privateKey == 'string' && typeof password == 'string')) {
+            typeof privateKey == 'string' && typeof password == 'string')) {
             console.log("Private Key is correct")
             db.Wallets.findOne({
                 where: {
@@ -533,43 +533,7 @@ module.exports = {
             console.log("Something with the data isn't correct - Key isn't correct")
         }
     },
-    async takeUniRewardFromWallet(privKey, idUniReward) {
-        const isWalletDeleted = this.isWalletDeletedPK(privKey)
-        const isUniRDeleted = this.isUniRDeleted(idUniReward)
-        if (typeof privKey == 'string' && typeof idUniReward == 'number') {
-            if (isWalletDeleted && isUniRDeleted) {
-                return db.Wallets.findOne({
-                    where: {
-                        privateKey: privKey
-                    }
-                }).then((result) => {
-                    console.log(result.idsUniRewards)
-                    const index = result.idsUniRewards.indexOf(idUniReward);
-                    console.log("The localitation of idUniReward:" + idUniReward + "is " + index)
-                    if (index > -1) {
-                        result.idsUniRewards.splice(index, 1) //Delete idUniReward once in the array
-                        db.Wallets.update({
-                            idsUniRewards: result.idsUniRewards
-                        }, {
-                            where: {
-                                privateKey: privKey
-                            }
-                        }).then(
-                            console.log("All is fine")
-                        )
-                    } else {
-                        console.log("Id isn't correct and can't be localizated")
-                    }
-                }).catch((val) => {
-                    console.log("Error: " + val);
-                });
-            } else {
-                console.log("Cant remove UniReward from Wallet - Reason: UniReward or Wallet of parameters dosent exists")
-            }
-        } else {
-            console.log("Cant remove UniReward from Wallet - Reason: Not correct type of parameters")
-        }
-    },
+
     async obtainPrivateKeyId(id) {
         if (typeof id == 'number') {
             return db.Wallets.findOne({
@@ -654,10 +618,30 @@ module.exports = {
             }
         })
     },
+    async updateMoneyFieldWallet(userWalletId, unipointsIds) {
+        return db.Wallets.findOne({
+            where: {
+                id: userWalletId
+            }
+        }).then((result) => {
+            console.log(result.idsUniRewards)
+            var vectorIds = []
+            vectorIds = result.idsUniRewards.concat(unipointsIds)
+            return db.Wallets.update({
+                idsUniRewards: vectorIds
+            }, {
+                where: {
+                    id: userWalletId
+                }
+            }).then(
+                console.log("User wallet updated")
+            )
+        })
+    },
 
     //Transactions functions
-    async createTransaction(transaction, type) {
-        if (type == "M") {
+    async createTransaction(transaction) {
+        if (transaction.typeT == "M") {
             return db.Transactions.create({
                 fromAddress: transaction.fromAddress,
                 toAddress: transaction.toAddress,
@@ -701,6 +685,13 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => {})
+        }).catch((val) => { })
+    },
+    async createPoint(pointsArray) {
+        return db.UniPoints.bulkCreate(pointsArray
+          ).then((points)=>{
+            return points.map((point) => point.id)
+          });
+        
     }
 }

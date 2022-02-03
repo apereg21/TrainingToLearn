@@ -1,5 +1,5 @@
 //Imports
-const Block = require('../block')
+const Block = require('../block');
 const Wallet = require('../wallet');
 const Transaction = require('../transaction');
 var express = require('express');
@@ -50,7 +50,8 @@ router.get('/', (req) => {
 
 //Blockchain Functions
 
-router.post('/createNewReward', async function(req, res) {
+router.post('/createNewReward', async function (req, res) {
+    var arrayPoints =[]
     var isNameURExist = proveKey('nameUR', 'string', req.body)
     var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
     var isImageURExist = proveKey('imageUR', 'string', req.body)
@@ -58,23 +59,48 @@ router.post('/createNewReward', async function(req, res) {
     var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
     if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist && isCostRewardExist) {
+
         let idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
         let isUserDelete = await controllerDB.isUserDeleted(idUser)
+
         if (idUser != null && !isUserDelete) {
             let userType = await controllerDB.obtainUserType(req.body.username, req.body.password)
             if (userType == "I") {
-                let uniReward = await controllerDB.createUniReward(req, idUser)
-                console.log(uniReward)
+                let userFromAddress = await controllerDB.findUserAddress("System")
+                if (userFromAddress != null) {
+                    let toAddress = await controllerDB.findUserAddress(req.body.username)
+                    let paymentInstructor = new Transaction(userFromAddress, toAddress, req.body.costReward, null, "M")
+                    let transactionObjId = await controllerDB.createTransaction(paymentInstructor)
+                    addPendingTransaction(transactionObjId)
+                    let userWalletId = await controllerDB.obtainWalletId(idUser)
+                    for(var i=0;i<req.body.costReward;i++){
+                        var jsonObj={
+                            timestamp: new Date(),
+                            WalletId: userWalletId
+                        }
+                        arrayPoints.push(jsonObj)
+                    }
+                    var idPoints = await controllerDB.createPoint(arrayPoints)
+                    await controllerDB.updateMoneyFieldWallet(userWalletId, idPoints)
+                    idPoints.splice(0,idPoints.length)
                     //await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
-                res.send("OK - Reward created")
+                    let uniReward = await controllerDB.createUniReward(req, idUser)
+                    console.log(uniReward)
+                    res.send("OK - Reward created")
+                }
+                else {
+                    res.send("Reward not created - Reason: System User for points transation dosen't exist")
+                }
             } else {
                 console.log("Reward not created - Reason: Username without permissions")
                 res.send("Reward not created - Reason: Username without permissions")
             }
+
         } else {
             console.log("Reward not created - Reason: Username or password isn't correct")
             res.send("Reward not created - Reason: Username or password isn't correct")
         }
+
     } else {
         console.log("Reward not created - Reason: Incorrect params, someone of the params are not correct")
         res.send("Reward not created - Reason: Incorrect params, someone of the params are not correct")
@@ -97,7 +123,7 @@ router.post('/createNewReward', async function(req, res) {
  *  calling the function addPendingTransaction 
  */
 
-router.post('/createNewTransaction', async function(req, res) {
+router.post('/createNewTransaction', async function (req, res) {
     var isFromAddresNameExist = proveKey('fromAddressUN', 'string', req.body)
     var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
     var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
@@ -160,7 +186,7 @@ router.post('/createNewTransaction', async function(req, res) {
  *
  */
 
-router.post('/createNewUser', async function(req, res) {
+router.post('/createNewUser', async function (req, res) {
     let isNameExist = proveKey('name', 'string', req.body)
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isFullSurnameExist = proveKey('fullSurname', 'string', req.body)
@@ -210,12 +236,12 @@ router.post('/createNewUser', async function(req, res) {
     }
 });
 
-router.get('/getAllUsersList', async function(req, res) {
+router.get('/getAllUsersList', async function (req, res) {
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 });
 
-router.get('/getAllRewardsList', async function(req, res) {
+router.get('/getAllRewardsList', async function (req, res) {
     var rewardsList = await controllerDB.getAllRewards()
     res.send(rewardsList)
 });
@@ -224,7 +250,7 @@ router.get('/getAllRewardsList', async function(req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function(req, res) {
+router.post('/changeUserData', async function (req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
     let isChangesExist = proveKey('changes', 'object', req.body)
@@ -314,7 +340,7 @@ router.post('/changeUserData', async function(req, res) {
 //     }
 // });
 
-router.post('/deleteUser', async function(req, res) {
+router.post('/deleteUser', async function (req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
     if (isUserNameExist && isPasswordExist) {
@@ -340,7 +366,7 @@ router.post('/deleteUser', async function(req, res) {
     }
 });
 
-router.post('/deleteWallet', async function(req, res) {
+router.post('/deleteWallet', async function (req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
     if (isUserNameExist && isPasswordExist) {
@@ -359,17 +385,6 @@ router.post('/deleteWallet', async function(req, res) {
         res.send("Wallet don't deleted - Reason: Not correct parammeters")
     }
 });
-
-/* 
- * The objective of this funtion is do a break in the cycle of execution of node, to execute something,
- * whatever you want. For example in this function, we do an stop of ms miliseconds.
- */
-
-function sleep(ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
 
 /* 
  * This funtion is used for adding information to the pendingTransaction array.
@@ -419,7 +434,7 @@ async function createBlock() {
         console.log(pendingTransactions)
         let lastIndex = await controllerDB.getLastBlockIndex()
         if (lastIndex == 0) {
-            var genesisBlock = new Block(lastIndex, new Date(), {}, [], "0")
+            var genesisBlock = new Block(lastIndex, new Date(), [], "0")
             genesisBlock.hash = genesisBlock.calculateHash()
             await controllerDB.createBlock(genesisBlock)
             lastIndex++
