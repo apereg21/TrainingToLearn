@@ -50,8 +50,8 @@ router.get('/', (req) => {
 
 //Blockchain Functions
 
-router.post('/createNewReward', async function (req, res) {
-    var arrayPoints =[]
+router.post('/createNewReward', async function(req, res) {
+    var arrayPoints = []
     var isNameURExist = proveKey('nameUR', 'string', req.body)
     var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
     var isImageURExist = proveKey('imageUR', 'string', req.body)
@@ -73,8 +73,8 @@ router.post('/createNewReward', async function (req, res) {
                     let transactionObjId = await controllerDB.createTransaction(paymentInstructor)
                     addPendingTransaction(transactionObjId)
                     let userWalletId = await controllerDB.obtainWalletId(idUser)
-                    for(var i=0;i<req.body.costReward;i++){
-                        var jsonObj={
+                    for (var i = 0; i < req.body.costReward; i++) {
+                        var jsonObj = {
                             timestamp: new Date(),
                             WalletId: userWalletId
                         }
@@ -82,13 +82,12 @@ router.post('/createNewReward', async function (req, res) {
                     }
                     var idPoints = await controllerDB.createPoint(arrayPoints)
                     await controllerDB.updateMoneyFieldWallet(userWalletId, idPoints)
-                    idPoints.splice(0,idPoints.length)
-                    //await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
+                    idPoints.splice(0, idPoints.length)
+                        //await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
                     let uniReward = await controllerDB.createUniReward(req, idUser)
                     console.log(uniReward)
                     res.send("OK - Reward created")
-                }
-                else {
+                } else {
                     res.send("Reward not created - Reason: System User for points transation dosen't exist")
                 }
             } else {
@@ -123,7 +122,7 @@ router.post('/createNewReward', async function (req, res) {
  *  calling the function addPendingTransaction 
  */
 
-router.post('/createNewTransaction', async function (req, res) {
+router.post('/createNewTransaction', async function(req, res) {
     var isFromAddresNameExist = proveKey('fromAddressUN', 'string', req.body)
     var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
     var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
@@ -186,7 +185,7 @@ router.post('/createNewTransaction', async function (req, res) {
  *
  */
 
-router.post('/createNewUser', async function (req, res) {
+router.post('/createNewUser', async function(req, res) {
     let isNameExist = proveKey('name', 'string', req.body)
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isFullSurnameExist = proveKey('fullSurname', 'string', req.body)
@@ -236,12 +235,12 @@ router.post('/createNewUser', async function (req, res) {
     }
 });
 
-router.get('/getAllUsersList', async function (req, res) {
+router.get('/getAllUsersList', async function(req, res) {
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 });
 
-router.get('/getAllRewardsList', async function (req, res) {
+router.get('/getAllRewardsList', async function(req, res) {
     var rewardsList = await controllerDB.getAllRewards()
     res.send(rewardsList)
 });
@@ -250,7 +249,7 @@ router.get('/getAllRewardsList', async function (req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function (req, res) {
+router.post('/changeUserData', async function(req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
     let isChangesExist = proveKey('changes', 'object', req.body)
@@ -314,33 +313,7 @@ router.post('/changeUserData', async function (req, res) {
     }
 });
 
-/*
- * Routes Delete Object
- */
-
-// router.post('/deleteUniReward', async function(req) {
-//     const existUniReward = await controllerDB.existUniReward(req.body.id)
-//     const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
-//     const deletedUniReward = await controllerDB.obtainDeleteField(idUser, 0)
-//     console.log(existUniReward)
-//     if (existUniReward && !deletedUniReward) {
-//         const isUniRewardOwner = await controllerDB.ownableUniReward(req.body.id, req.body.username, req.body.password)
-//         if (isUniRewardOwner) {
-// Elimination moment
-//             await controllerDB.takeUniRewardFromWallet(req.body.privateKey, req.body.id)
-//             controllerDB.deleteUniReward(req)
-//             res.send("OK - UniRewardEliminated")
-//         } else {
-//             console.log("The UniReward asociated to id:" + req.body.id + " can't be eliminated - Reason: Not correct User Owner")
-//             res.send("The UniReward asociated to id:" + req.body.id + " can't be eliminated - Reason: Not correct User Owner")
-//         }
-//     } else {
-//         console.log("The UniReward asociated to id:" + req.body.id + " can't be eliminated - Reason: Not Exist")
-//         res.send("The UniReward asociated to id:" + req.body.id + " can't be eliminated - Reason: Not Exist")
-//     }
-// });
-
-router.post('/deleteUser', async function (req, res) {
+router.post('/deleteUser', async function(req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
     if (isUserNameExist && isPasswordExist) {
@@ -366,7 +339,7 @@ router.post('/deleteUser', async function (req, res) {
     }
 });
 
-router.post('/deleteWallet', async function (req, res) {
+router.post('/deleteWallet', async function(req, res) {
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
     if (isUserNameExist && isPasswordExist) {
@@ -429,7 +402,8 @@ function proveKey(nameKey, variableType, reqJson) {
 
 async function createBlock() {
     console.log("Time has passed, time for block creation. ¿There are pending transactions?")
-    if (pendingTransactions.length > 0) {
+    var validBlockchain = isValidBlockchain()
+    if (pendingTransactions.length > 0 && validBlockchain) {
         console.log("YES")
         console.log(pendingTransactions)
         let lastIndex = await controllerDB.getLastBlockIndex()
@@ -447,6 +421,27 @@ async function createBlock() {
         console.log(pendingTransactions)
     } else {
         console.log("NO")
+    }
+
+    async function isValidBlockchain() {
+        console.log("¿Is Blockchain valid?")
+        var blockchainLength = await controllerDB.getLastBlockIndex()
+        for (let i = 1; i < blockchainLength; i++) {
+            const currentBlock = await controllerDB.getBlock(i);
+            const previousBlock = await controllerDB.getBlock(i - 1);
+            const blockCurrentObj = new Block(i, currentBlock.timestamp, currentBlock.idsTransactions, currentBlock.hashPrev)
+            if (currentBlock.hash != blockCurrentObj.calculateHash()) {
+                console.log("NO")
+                return false;
+            }
+
+            if (currentBlock.hashPrev != previousBlock.hash) {
+                console.log("NO")
+                return false;
+            }
+        }
+        console.log("YES")
+        return true;
     }
 }
 

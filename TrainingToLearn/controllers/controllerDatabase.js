@@ -4,6 +4,15 @@ module.exports = {
     allBlocks() {
         return db.Blockchain.findAll();
     },
+    async getBlock(indexNumber) {
+        return db.Blockchain.findOne({
+            where: {
+                index: indexNumber
+            }
+        }).then(result => {
+            return result
+        }).catch((error) => console.log("Error: " + error));
+    },
     async getLastBlockIndex() {
         return db.Blockchain
             .count()
@@ -96,10 +105,10 @@ module.exports = {
     },
     async getUniRewardId(uniRewardT) {
         return db.UniRewards.findOne({
-            where: {
-                nameUR: uniRewardT
-            }
-        })
+                where: {
+                    nameUR: uniRewardT
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -152,10 +161,10 @@ module.exports = {
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -510,7 +519,7 @@ module.exports = {
         console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
         console.log("Compare if " + userpassword + " is equals to " + userpassword)
         if (privateKey == privateKeyId && userpassword == password && (typeof idUser == 'number' && typeof idUniReward == 'number' &&
-            typeof privateKey == 'string' && typeof password == 'string')) {
+                typeof privateKey == 'string' && typeof password == 'string')) {
             console.log("Private Key is correct")
             db.Wallets.findOne({
                 where: {
@@ -685,13 +694,12 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => { })
+        }).catch((val) => {})
     },
     async createPoint(pointsArray) {
-        return db.UniPoints.bulkCreate(pointsArray
-          ).then((points)=>{
+        return db.UniPoints.bulkCreate(pointsArray).then((points) => {
             return points.map((point) => point.id)
-          });
-        
+        });
+
     }
 }
