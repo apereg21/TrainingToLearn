@@ -434,6 +434,26 @@ module.exports = {
             return null
         }
     },
+
+    async getSpecificUserID(usName, usPass){
+        return db.Users.findOne({
+            where: {
+                username:usName,
+                password: usPass
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("User data find it")
+                return result.id
+            } else {
+                console.log("User data not find it")
+                return null
+            }
+        }).catch((val) => {
+            console.log("Error: " + val);
+        });
+    },
+
     async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
         let user = await this.getUserData(userId)
         if (usPasswordN == "") {
@@ -463,7 +483,9 @@ module.exports = {
             }
         }).then(() => {
             console.log("User changed")
-        })
+        }).catch((val) => {
+            console.log("Error: " + val);
+        });
 
     },
     async isUsernameUsed(userName) {
@@ -513,6 +535,30 @@ module.exports = {
         }
 
     },
+
+    async getUserWalletData(idUser) {
+        var vectorURTransac =[]
+        if (typeof idUser == 'number') {
+            return db.Wallets.findOne({
+                where: {
+                    UserId: idUser
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("User wallet data find it")
+                    vectorURTransac.push(result.idsUniRewards)
+                    return vectorURTransac
+                } else {
+                    console.log("User wallet data not find it")
+                    return null
+                }
+            })
+        } else {
+            console.log("idUser isn't a number")
+            return null
+        }
+    },
+
     async updateIdArrayWallet(idUser, idUniReward, privateKey, password) {
         let privateKeyId = await this.obtainPrivateKeyId(idUser)
         let userpassword = await this.obtainUserPassword(idUser)
