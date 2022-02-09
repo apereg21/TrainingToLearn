@@ -186,6 +186,22 @@ module.exports = {
         }
     },
 
+    async getSpecificUR(idUniReward) {
+        return db.UniRewards.findOne({
+                where: {
+                    id: idUniReward
+                }
+            })
+            .then((result) => {
+                if (result != null) {
+                    console.log("UniReward with id:" + idUniReward + " Find it")
+                    return result
+                } else {
+                    console.log("UniReward with id:" + idUniReward + " Not Find it")
+                }
+            })
+    },
+
     //User Functions
     async getAllUsers() {
         return db.Users.findAll({}).then((result) => {
@@ -435,10 +451,10 @@ module.exports = {
         }
     },
 
-    async getSpecificUserID(usName, usPass){
+    async getSpecificUserID(usName, usPass) {
         return db.Users.findOne({
             where: {
-                username:usName,
+                username: usName,
                 password: usPass
             }
         }).then((result) => {
@@ -537,17 +553,25 @@ module.exports = {
     },
 
     async getUserWalletData(idUser) {
-        var vectorURTransac =[]
+        var vectorURTransac = []
         if (typeof idUser == 'number') {
             return db.Wallets.findOne({
                 where: {
                     UserId: idUser
                 }
-            }).then((result) => {
+            }).then(async(result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
-                    vectorURTransac.push(result.idsUniRewards)
-                    return vectorURTransac
+                    vectorURTransac.push(result)
+                    if (!(result.idsUniRewards.length <= 0)) {
+                        var uniRewardsList = []
+                        for (var i = 0; i < result.idsUniRewards.length; i++) {
+                            var uniReward = await this.getSpecificUR(result.idsUniRewards[i])
+                            uniRewardsList.push(uniReward)
+                        }
+                        vectorURTransac.push(uniRewardsList)
+                        return vectorURTransac
+                    }
                 } else {
                     console.log("User wallet data not find it")
                     return null

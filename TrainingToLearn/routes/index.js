@@ -30,21 +30,21 @@ router.get('/getAllRewardsList', async function(req, res) {
 
 
 router.get('/getSpecificUser/:id', async function(req, res) {
-    console.log(req.params.id+" is an "+typeof req.params.id)
-    console.log(parseInt((req.params.id).replace(':','')))
-    var userData = await controllerDB.getUserData(parseInt((req.params.id).replace(':','')))
+    console.log(req.params.id + " is an " + typeof req.params.id)
+    console.log(parseInt((req.params.id).replace(':', '')))
+    var userData = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
     res.send(userData)
 });
 
 router.post('/getSpecificUserID', async function(req, res) {
     var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
-    res.send(""+userID)
+    res.send("" + userID)
 });
 
-router.get('/getSpecificWallet', async function(req, res) {
-    console.log(req.params.id+" is an "+typeof req.params.id)
-    console.log(parseInt((req.params.id).replace(':','')))
-    var walletData = await controllerDB.getUserWalletData(req.body.username, req.body.password)
+router.get('/getSpecificWallet/:id', async function(req, res) {
+    console.log(req.params.id + " is an " + typeof req.params.id)
+    console.log(parseInt((req.params.id).replace(':', '')))
+    var walletData = await controllerDB.getUserWalletData(parseInt((req.params.id).replace(':', '')))
     res.send(walletData)
 });
 
@@ -449,8 +449,8 @@ async function createBlock() {
         var blockchainLength = await controllerDB.getLastBlockIndex()
         const genesisBlock = await controllerDB.getBlock(0)
         var genesisBlockObj = new Block(genesisBlock.index, genesisBlock.timestamp, genesisBlock.idsTransactions, "0")
-        //Prove genesisBlock
-        if(genesisBlock.hash != genesisBlockObj.calculateHash()){
+            //Prove genesisBlock
+        if (genesisBlock.hash != genesisBlockObj.calculateHash()) {
             console.log("NO")
             return false
         }
