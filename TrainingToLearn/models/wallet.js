@@ -36,7 +36,6 @@ module.exports = (sequelize, DataTypes) => {
     });
     Wallets.associate = function(models) {
         Wallets.hasMany(models.UniRewards, { onDelete: 'cascade' })
-        Wallets.hasMany(models.Transactions, { onDelete: 'cascade' })
         Wallets.hasMany(models.UniPoints, { onDelete: 'cascade' })
     };
     return Wallets;

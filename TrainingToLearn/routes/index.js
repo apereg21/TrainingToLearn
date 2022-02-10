@@ -114,7 +114,6 @@ router.post('/createNewReward', async function(req, res) {
                     var idPoints = await controllerDB.createPoint(arrayPoints)
                     await controllerDB.updateMoneyFieldWallet(userWalletId, idPoints)
                     idPoints.splice(0, idPoints.length)
-                        //await controllerDB.updateIdArrayWallet(idUser, uniReward.id, req.body.userPrivateKey, req.body.password)
                     let uniReward = await controllerDB.createUniReward(req, idUser)
                     console.log(uniReward)
                     res.send("OK - Reward created")
@@ -168,7 +167,10 @@ router.post('/createNewTransaction', async function(req, res) {
                 if (req.body.typeT == "M") {
                     var isMoneyExist = proveKey('moneyTo', 'number', req.body)
                     if (isMoneyExist) {
-                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT)
+                        let userFromId = await controllerDB.findUserAddressID(userFromAddress)
+                        let userToId = await controllerDB.findUserAddressID(toAddress)
+                        var idsWallets = [userFromId, userToId]
+                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT, idsWallets)
                         let transactionObj = await controllerDB.createTransaction(newTransac)
                         addPendingTransaction(transactionObj)
                         res.send("OK - Transaction created")
@@ -179,9 +181,13 @@ router.post('/createNewTransaction', async function(req, res) {
                 } else {
                     var isUniRewardTransactionExist = proveKey('uniRewardT', 'string', req.body)
                     if (isUniRewardTransactionExist) {
+                        let userFromId = await controllerDB.findUserAddressID(userFromAddress)
+                        let userToId = await controllerDB.findUserAddressID(toAddress)
+                        var idsWallets = [userFromId, userToId]
                         let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
-                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT)
+                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets)
                         let transactionObj = await controllerDB.createTransaction(newTransac)
+                        await controllerDB.updateIdArrayWallet(userId,uniRewardId)
                         addPendingTransaction(transactionObj)
                         res.send("OK - Transaction created")
                     } else {
@@ -441,34 +447,37 @@ async function createBlock() {
         pendingTransactions.splice(0, pendingTransactions.length)
         console.log(pendingTransactions)
     } else {
-        console.log("NO")
+        console.log("NO pending Transactions")
     }
 
     async function isValidBlockchain() {
         console.log("¿Is Blockchain valid?")
         var blockchainLength = await controllerDB.getLastBlockIndex()
-        const genesisBlock = await controllerDB.getBlock(0)
-        var genesisBlockObj = new Block(genesisBlock.index, genesisBlock.timestamp, genesisBlock.idsTransactions, "0")
-            //Prove genesisBlock
-        if (genesisBlock.hash != genesisBlockObj.calculateHash()) {
-            console.log("NO")
-            return false
-        }
-        //Prove other blocks
-        for (let i = 1; i < blockchainLength; i++) {
-            const currentBlock = await controllerDB.getBlock(i);
-            const previousBlock = await controllerDB.getBlock(i - 1);
-            const blockCurrentObj = new Block(i, currentBlock.timestamp, currentBlock.idsTransactions, currentBlock.hashPrev)
-            if (currentBlock.hash != blockCurrentObj.calculateHash()) {
+        if(blockchainLength > 0){
+            const genesisBlock = await controllerDB.getBlock(0)
+            var genesisBlockObj = new Block(genesisBlock.index, genesisBlock.timestamp, genesisBlock.idsTransactions, "0")
+                //Prove genesisBlock
+            if (genesisBlock.hash != genesisBlockObj.calculateHash()) {
                 console.log("NO")
-                return false;
+                return false
             }
+            //Prove other blocks
+            for (let i = 1; i < blockchainLength; i++) {
+                const currentBlock = await controllerDB.getBlock(i);
+                const previousBlock = await controllerDB.getBlock(i - 1);
+                const blockCurrentObj = new Block(i, currentBlock.timestamp, currentBlock.idsTransactions, currentBlock.hashPrev)
+                if (currentBlock.hash != blockCurrentObj.calculateHash()) {
+                    console.log("NO")
+                    return false;
+                }
 
-            if (currentBlock.hashPrev != previousBlock.hash) {
-                console.log("NO")
-                return false;
+                if (currentBlock.hashPrev != previousBlock.hash) {
+                    console.log("NO")
+                    return false;
+                }
             }
         }
+        
         console.log("YES")
         return true;
     }

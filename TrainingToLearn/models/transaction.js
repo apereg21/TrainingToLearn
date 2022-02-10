@@ -23,9 +23,17 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING
         },
         money: {
-            allowNull: true,
+
             type: DataTypes.INTEGER
-        }
+        },
+        idWalletFrom:{
+            allowNull: false,
+            type: DataTypes.INTEGER,
+        },
+        idWalletTo:{
+            allowNull: false,
+            type: DataTypes.INTEGER,
+        },
     }, {
         createdAt: false,
         updatedAt: false

@@ -1,4 +1,5 @@
 const db = require('../models')
+const { Op } = require("sequelize");
 
 module.exports = {
     allBlocks() {
@@ -105,10 +106,10 @@ module.exports = {
     },
     async getUniRewardId(uniRewardT) {
         return db.UniRewards.findOne({
-                where: {
-                    nameUR: uniRewardT
-                }
-            })
+            where: {
+                nameUR: uniRewardT
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -161,10 +162,10 @@ module.exports = {
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -188,10 +189,10 @@ module.exports = {
 
     async getSpecificUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -335,6 +336,19 @@ module.exports = {
                         return null
                     }
                 })
+            } else {
+                return null
+            }
+        })
+    },
+    async findUserAddressID(address) {
+        return db.Wallets.findOne({
+            where: {
+                publicKey: address
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result.id
             } else {
                 return null
             }
@@ -559,7 +573,7 @@ module.exports = {
                 where: {
                     UserId: idUser
                 }
-            }).then(async(result) => {
+            }).then(async (result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
                     vectorURTransac.push(result)
@@ -570,6 +584,16 @@ module.exports = {
                             uniRewardsList.push(uniReward)
                         }
                         vectorURTransac.push(uniRewardsList)
+                        var transactionList = await this.getUserWalletTransaction(result.UserId)
+                        console.log("==============================")
+                        for (var i = 0; i < transactionList.length; i++) {
+                            var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
+                            var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
+                            transactionList[i].fromAddress = nameAddress
+                            transactionList[i].toAddress = nameAddress2
+                        }
+                        console.log("==============================")
+                        vectorURTransac.push(transactionList)
                         return vectorURTransac
                     }
                 } else {
@@ -582,35 +606,49 @@ module.exports = {
             return null
         }
     },
-
-    async updateIdArrayWallet(idUser, idUniReward, privateKey, password) {
-        let privateKeyId = await this.obtainPrivateKeyId(idUser)
-        let userpassword = await this.obtainUserPassword(idUser)
-        console.log("Compare if " + privateKey + " is equals to " + privateKeyId)
-        console.log("Compare if " + userpassword + " is equals to " + userpassword)
-        if (privateKey == privateKeyId && userpassword == password && (typeof idUser == 'number' && typeof idUniReward == 'number' &&
-                typeof privateKey == 'string' && typeof password == 'string')) {
-            console.log("Private Key is correct")
-            db.Wallets.findOne({
+    async getNameAdressWallet(address) {
+        return db.Wallets.findOne({
+            where: {
+                publicKey: address
+            }
+        }).then((result) => {
+            if(result!=null){
+                return db.Users.findOne({
+                    where: {
+                        id: result.id
+                    }
+                }).then((result2) => {
+                    if(result2!=null){
+                        return result2.username
+                    }else{
+                        return null
+                    }
+                    
+                }).catch((val)=>{})
+            }else{
+                return null
+            }
+            
+        }).catch((val)=>{})
+    },
+    async updateIdArrayWallet(idUser, idUniReward) {
+        return db.Wallets.findOne({
+            where: {
+                UserId: idUser
+            }
+        }).then((result) => {
+            console.log(result.idsUniRewards)
+            result.idsUniRewards.push(idUniReward)
+            return db.Wallets.update({
+                idsUniRewards: result.idsUniRewards
+            }, {
                 where: {
                     UserId: idUser
                 }
-            }).then((result) => {
-                console.log(result.idsUniRewards)
-                result.idsUniRewards.push(idUniReward)
-                db.Wallets.update({
-                    idsUniRewards: result.idsUniRewards
-                }, {
-                    where: {
-                        UserId: idUser
-                    }
-                }).then(
-                    console.log("All is fine")
-                )
-            })
-        } else {
-            console.log("Something with the data isn't correct - Key isn't correct")
-        }
+            }).then(
+                console.log("All is fine")
+            )
+        })
     },
 
     async obtainPrivateKeyId(id) {
@@ -697,17 +735,17 @@ module.exports = {
             }
         })
     },
-    async updateMoneyFieldWallet(userWalletId, unipointsIds) {
+    async updateMoneyFieldWallet(userWalletId, moneyIds) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
             }
         }).then((result) => {
-            console.log(result.idsUniRewards)
+            console.log(result.money)
             var vectorIds = []
-            vectorIds = result.idsUniRewards.concat(unipointsIds)
+            vectorIds = result.money.concat(moneyIds)
             return db.Wallets.update({
-                idsUniRewards: vectorIds
+                money: vectorIds
             }, {
                 where: {
                     id: userWalletId
@@ -726,7 +764,9 @@ module.exports = {
                 toAddress: transaction.toAddress,
                 money: transaction.amount,
                 typeTransaction: transaction.typeT,
-                signature: transaction.signatureC
+                signature: transaction.signatureC,
+                idWalletFrom: transaction.idWFrom,
+                idWalletTo: transaction.idWTo
             }).then((result) => {
                 console.log("Transaction Created")
                 return result.id
@@ -738,7 +778,9 @@ module.exports = {
                 money: transaction.amount,
                 typeTransaction: transaction.typeT,
                 signature: transaction.signatureC,
-                UniRewardId: transaction.UniRewardId
+                UniRewardId: transaction.UniRewardId,
+                idWalletFrom: transaction.idWalletFrom,
+                idWalletTo: transaction.idWalletTo
             }).then((result) => {
                 console.log("Transaction Created")
                 return result.id
@@ -764,12 +806,27 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => {})
+        }).catch((val) => { })
     },
+    async getUserWalletTransaction(idWallet) {
+        return db.Transactions.findAll({
+            where: {
+                [Op.or]: [{ idWalletFrom: idWallet }, { idWalletTo: idWallet }]
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("Transactions find asociated to concrete Wallet")
+                return result
+            } else {
+                console.log("No Transactions find asociated to concrete Wallet")
+                return null
+            }
+        }).catch((val) => { console.log(val) })
+    },
+
     async createPoint(pointsArray) {
         return db.UniPoints.bulkCreate(pointsArray).then((points) => {
             return points.map((point) => point.id)
         });
-
     }
 }

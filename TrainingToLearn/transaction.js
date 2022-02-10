@@ -6,7 +6,7 @@ class Transaction {
     /*  El contructor necesita, la fecha de la transacción, destinatario, remitente
      *   y la cantidad que se deseea traspasar de una cartera a otra
      */
-    constructor(fromAddress, toAddress, amount, unireward, typeTr) {
+    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets) {
             this.fromAddress = fromAddress;
             this.toAddress = toAddress;
             this.timestamp = Date.now();
@@ -14,10 +14,13 @@ class Transaction {
             if (typeTr == "M") {
                 this.UniRewardId = null;
                 this.amount = amount;
+
             } else {
                 this.UniRewardId = unireward;
                 this.amount = amount;
             }
+            this.idWalletFrom = idsWallets[0]
+            this.idWalletTo = idsWallets[1]
             this.typeT = typeTr;
         }
         /*
