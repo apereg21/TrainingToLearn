@@ -106,10 +106,10 @@ module.exports = {
     },
     async getUniRewardId(uniRewardT) {
         return db.UniRewards.findOne({
-            where: {
-                nameUR: uniRewardT
-            }
-        })
+                where: {
+                    nameUR: uniRewardT
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -162,10 +162,10 @@ module.exports = {
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -189,10 +189,10 @@ module.exports = {
 
     async getSpecificUR(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -216,6 +216,19 @@ module.exports = {
             username: req.body.username,
             password: req.body.password,
             typeUser: req.body.roleUser
+        }).then(() => {
+            console.log("Created")
+        }).catch((val) => {
+            console.log("Something go wrong with user creation: " + val);
+        });
+    },
+    async createSystem(req) {
+        return db.Users.create({
+            name: req.name,
+            fullSurname: req.fullSurname,
+            username: req.username,
+            password: req.password,
+            typeUser: req.typeUser
         }).then(() => {
             console.log("Created")
         }).catch((val) => {
@@ -573,7 +586,7 @@ module.exports = {
                 where: {
                     UserId: idUser
                 }
-            }).then(async (result) => {
+            }).then(async(result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
                     vectorURTransac.push(result)
@@ -612,24 +625,24 @@ module.exports = {
                 publicKey: address
             }
         }).then((result) => {
-            if(result!=null){
+            if (result != null) {
                 return db.Users.findOne({
                     where: {
                         id: result.id
                     }
                 }).then((result2) => {
-                    if(result2!=null){
+                    if (result2 != null) {
                         return result2.username
-                    }else{
+                    } else {
                         return null
                     }
-                    
-                }).catch((val)=>{})
-            }else{
+
+                }).catch((val) => {})
+            } else {
                 return null
             }
-            
-        }).catch((val)=>{})
+
+        }).catch((val) => {})
     },
     async updateIdArrayWallet(idUser, idUniReward) {
         return db.Wallets.findOne({
@@ -765,8 +778,8 @@ module.exports = {
                 money: transaction.amount,
                 typeTransaction: transaction.typeT,
                 signature: transaction.signatureC,
-                idWalletFrom: transaction.idWFrom,
-                idWalletTo: transaction.idWTo
+                idWalletFrom: transaction.idWalletFrom,
+                idWalletTo: transaction.idWalletTo
             }).then((result) => {
                 console.log("Transaction Created")
                 return result.id
@@ -806,7 +819,7 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => { })
+        }).catch((val) => {})
     },
     async getUserWalletTransaction(idWallet) {
         return db.Transactions.findAll({

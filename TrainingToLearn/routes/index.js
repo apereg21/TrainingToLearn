@@ -97,10 +97,11 @@ router.post('/createNewReward', async function(req, res) {
         if (idUser != null && !isUserDelete) {
             let userType = await controllerDB.obtainUserType(req.body.username, req.body.password)
             if (userType == "I") {
-                let userFromAddress = await controllerDB.findUserAddress("System")
-                if (userFromAddress != null) {
-                    let toAddress = await controllerDB.findUserAddress(req.body.username)
-                    let paymentInstructor = new Transaction(userFromAddress, toAddress, req.body.costReward, null, "M")
+                let userFromAddressID = await controllerDB.findUserAddress("System")
+                if (userFromAddressID != null) {
+                    let userToAddressID = await controllerDB.findUserAddress(req.body.username)
+                    var idsWallets = [userFromAddressID, userToAddressID]
+                    let paymentInstructor = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets)
                     let transactionObjId = await controllerDB.createTransaction(paymentInstructor)
                     addPendingTransaction(transactionObjId)
                     let userWalletId = await controllerDB.obtainWalletId(idUser)
@@ -153,11 +154,11 @@ router.post('/createNewReward', async function(req, res) {
  */
 
 router.post('/createNewTransaction', async function(req, res) {
-    var isFromAddresNameExist = proveKey('fromAddressUN', 'string', req.body)
+    var isFromAddressNameExist = proveKey('fromAddressUN', 'string', req.body)
     var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
     var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
     var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
-    if (isFromAddresNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist) {
+    if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist) {
         let userId = await controllerDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
         if (userId != null) {
             let isUserDeleted = await controllerDB.isUserDeleted(userId)
@@ -187,7 +188,7 @@ router.post('/createNewTransaction', async function(req, res) {
                         let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
                         let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets)
                         let transactionObj = await controllerDB.createTransaction(newTransac)
-                        await controllerDB.updateIdArrayWallet(userId,uniRewardId)
+                        await controllerDB.updateIdArrayWallet(userId, uniRewardId)
                         addPendingTransaction(transactionObj)
                         res.send("OK - Transaction created")
                     } else {
@@ -234,7 +235,6 @@ router.post('/createNewUser', async function(req, res) {
             await controllerDB.createUser(req)
             console.log("OK - User created")
             const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-            console.log("Hola buenas tardes aqui está: " + ownerId)
             const hasWallet = await controllerDB.userHasWallet(ownerId)
             if (!hasWallet) {
                 const newWallet = new Wallet(ownerId)
@@ -250,7 +250,6 @@ router.post('/createNewUser', async function(req, res) {
                 await controllerDB.createUser(req)
                 console.log("OK - User created")
                 const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-                console.log("Hola buenas tardes aqui está: " + ownerId)
                 const hasWallet = await controllerDB.userHasWallet(ownerId)
                 if (!hasWallet) {
                     const newWallet = new Wallet(ownerId)
@@ -453,7 +452,7 @@ async function createBlock() {
     async function isValidBlockchain() {
         console.log("¿Is Blockchain valid?")
         var blockchainLength = await controllerDB.getLastBlockIndex()
-        if(blockchainLength > 0){
+        if (blockchainLength > 0) {
             const genesisBlock = await controllerDB.getBlock(0)
             var genesisBlockObj = new Block(genesisBlock.index, genesisBlock.timestamp, genesisBlock.idsTransactions, "0")
                 //Prove genesisBlock
@@ -477,7 +476,7 @@ async function createBlock() {
                 }
             }
         }
-        
+
         console.log("YES")
         return true;
     }
