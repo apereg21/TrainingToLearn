@@ -98,12 +98,14 @@ router.post('/createNewReward', async function(req, res) {
             let userType = await controllerDB.obtainUserType(req.body.username, req.body.password)
             if (userType == "I") {
                 let userFromAddressID = await controllerDB.findUserAddress("System")
+                let userToAddressID = await controllerDB.findUserAddress(req.body.username)
                 if (userFromAddressID != null) {
-                    let userToAddressID = await controllerDB.findUserAddress(req.body.username)
-                    var idsWallets = [userFromAddressID, userToAddressID]
-                    let paymentInstructor = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets)
-                    let transactionObjId = await controllerDB.createTransaction(paymentInstructor)
-                    addPendingTransaction(transactionObjId)
+                    let userFromId = await controllerDB.findUserAddressID(userFromAddressID)
+                    let userToId = await controllerDB.findUserAddressID(userToAddressID)
+                    var idsWallets = [userFromId, userToId]
+                    let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets)
+                    let transactionObj = await controllerDB.createTransaction(newTransac)
+                    addPendingTransaction(transactionObj)
                     let userWalletId = await controllerDB.obtainWalletId(idUser)
                     for (var i = 0; i < req.body.costReward; i++) {
                         var jsonObj = {

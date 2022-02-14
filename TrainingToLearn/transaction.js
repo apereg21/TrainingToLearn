@@ -13,12 +13,11 @@ class Transaction {
             this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
             if (typeTr == "M") {
                 this.UniRewardId = null;
-                this.amount = amount;
 
             } else {
                 this.UniRewardId = unireward;
-                this.amount = amount;
             }
+            this.amount = amount;
             this.idWalletFrom = idsWallets[0]
             this.idWalletTo = idsWallets[1]
             this.typeT = typeTr;
