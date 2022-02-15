@@ -91,6 +91,20 @@ module.exports = {
             console.log("Error in createUniReward")
         }
     },
+    getUniRewardName(idUniReward){
+        return db.UniRewards.findOne({
+            where: {
+                id: idUniReward
+            }
+        })
+        .then((result) => {
+            if (result != null) {
+                return result.nameUR
+            } else {
+                return null
+            }
+        })
+    },
     deleteUniReward(req) {
         db.UniRewards.update({
             deleted: true
@@ -499,19 +513,19 @@ module.exports = {
 
     async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
         let user = await this.getUserData(userId)
-        if (usPasswordN == "") {
+        if (usPasswordN == "" || usPasswordN == user.password ) {
             console.log("User's password don't change")
             usPasswordN = user.password
         }
-        if (usUserNameN == "") {
+        if (usUserNameN == ""||usUserNameN == user.username) {
             console.log("User's username don't change")
             usUserNameN = user.username
         }
-        if (usNameN == "") {
+        if (usNameN == ""||usNameN == user.name) {
             console.log("User's name don't change")
             usNameN = user.name
         }
-        if (usFullSurnameN == "") {
+        if (usFullSurnameN == ""||usFullSurnameN == user.fullSurname) {
             console.log("User's full surname don't change")
             usFullSurnameN = user.fullSurname
         }
@@ -598,7 +612,18 @@ module.exports = {
                         }
                         vectorURTransac.push(uniRewardsList)
                         var transactionList = await this.getUserWalletTransaction(result.UserId)
-                        console.log("==============================")
+                        for (var i = 0; i < transactionList.length; i++) {
+                            var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
+                            var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
+                            var nameUniReward = await this.getUniRewardName(transactionList[i].UniRewardId)
+                            transactionList[i].fromAddress = nameAddress
+                            transactionList[i].toAddress = nameAddress2
+                            transactionList[i].UniRewardId = nameUniReward
+                        }
+                        vectorURTransac.push(transactionList)
+                    }
+                    else{
+                        var transactionList = await this.getUserWalletTransaction(result.UserId)
                         for (var i = 0; i < transactionList.length; i++) {
                             var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
                             var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
@@ -606,9 +631,12 @@ module.exports = {
                             transactionList[i].toAddress = nameAddress2
                         }
                         console.log("==============================")
-                        vectorURTransac.push(transactionList)
-                        return vectorURTransac
+                        vectorURTransac.push(transactionList);
+                        console.log(vectorURTransac[0])
+                        console.log(vectorURTransac[1])
+                        console.log("==============================") 
                     }
+                    return vectorURTransac
                 } else {
                     console.log("User wallet data not find it")
                     return null
