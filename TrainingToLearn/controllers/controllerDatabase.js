@@ -91,19 +91,19 @@ module.exports = {
             console.log("Error in createUniReward")
         }
     },
-    getUniRewardName(idUniReward){
+    getUniRewardName(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
-        .then((result) => {
-            if (result != null) {
-                return result.nameUR
-            } else {
-                return null
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
+            .then((result) => {
+                if (result != null) {
+                    return result.nameUR
+                } else {
+                    return null
+                }
+            })
     },
     deleteUniReward(req) {
         db.UniRewards.update({
@@ -513,36 +513,46 @@ module.exports = {
 
     async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
         let user = await this.getUserData(userId)
-        if (usPasswordN == "" || usPasswordN == user.password ) {
+        if (usPasswordN == "" || usPasswordN == user.password) {
             console.log("User's password don't change")
             usPasswordN = user.password
         }
-        if (usUserNameN == ""||usUserNameN == user.username) {
+        if (usUserNameN == "" || usUserNameN == user.username) {
             console.log("User's username don't change")
             usUserNameN = user.username
         }
-        if (usNameN == ""||usNameN == user.name) {
-            console.log("User's name don't change")
-            usNameN = user.name
-        }
-        if (usFullSurnameN == ""||usFullSurnameN == user.fullSurname) {
+
+        if (usFullSurnameN == "" || usFullSurnameN == user.fullSurname) {
             console.log("User's full surname don't change")
             usFullSurnameN = user.fullSurname
         }
-        return db.Users.update({
-            name: usNameN,
-            fullSurname: usFullSurnameN,
-            username: usUserNameN,
-            password: usPasswordN,
-        }, {
-            where: {
-                id: userId
-            }
-        }).then(() => {
-            console.log("User changed")
-        }).catch((val) => {
-            console.log("Error: " + val);
-        });
+        if (usNameN == "" || usNameN == user.name) {
+            console.log("User's name don't change")
+            usNameN == user.name
+        }
+        if (usUserNameN != user.username) {
+            console.log("Usernames are diferent, can create user")
+            console.log(usUserNameN + "" + user.username)
+            return db.Users.update({
+                name: usNameN,
+                fullSurname: usFullSurnameN,
+                username: usUserNameN,
+                password: usPasswordN,
+            }, {
+                where: {
+                    id: userId
+                }
+            }).then(() => {
+                console.log("User changed")
+                return true
+            }).catch((val) => {
+                console.log("Error: " + val);
+            });
+        } else {
+            console.log("Usernames aren't diferent, can't create user")
+            return false
+        }
+
 
     },
     async isUsernameUsed(userName) {
@@ -621,8 +631,7 @@ module.exports = {
                             transactionList[i].UniRewardId = nameUniReward
                         }
                         vectorURTransac.push(transactionList)
-                    }
-                    else{
+                    } else {
                         var transactionList = await this.getUserWalletTransaction(result.UserId)
                         for (var i = 0; i < transactionList.length; i++) {
                             var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
@@ -634,7 +643,7 @@ module.exports = {
                         vectorURTransac.push(transactionList);
                         console.log(vectorURTransac[0])
                         console.log(vectorURTransac[1])
-                        console.log("==============================") 
+                        console.log("==============================")
                     }
                     return vectorURTransac
                 } else {

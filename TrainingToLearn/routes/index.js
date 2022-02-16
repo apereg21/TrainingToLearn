@@ -38,7 +38,11 @@ router.get('/getSpecificUser/:id', async function(req, res) {
 
 router.post('/getSpecificUserID', async function(req, res) {
     var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
-    res.send("" + userID)
+    if (userID != null) {
+        res.send("" + userID)
+    } else {
+        res.send(null)
+    }
 });
 
 router.get('/getSpecificWallet/:id', async function(req, res) {
@@ -285,7 +289,6 @@ router.post('/changeUserData', async function(req, res) {
         const userID = await controllerDB.obtainUserId(req.body.username, req.body.password)
         if (userID != null) {
             let counterErrors = 0
-            let counterErrName = 0
             for (let i = 0; i < req.body.changes.length; i++) {
                 switch (req.body.changes[i]) {
                     case "p":
@@ -296,12 +299,6 @@ router.post('/changeUserData', async function(req, res) {
                     case "u":
                         if (proveKey('usernameN', 'string', req.body) == false) {
                             counterErrors++
-                        } else {
-                            let userNameExist = await controllerDB.isUsernameUsed(req.body.usernameN)
-                            if (userNameExist) {
-                                counterErrors++
-                                counterErrName++
-                            }
                         }
                         break;
                     case "f":
@@ -319,17 +316,15 @@ router.post('/changeUserData', async function(req, res) {
                 }
             }
             if (counterErrors == 0) {
-                await controllerDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
-                console.log("OK - User modify")
-                res.send("OK - User modify")
-            } else {
-                if (counterErrName > 0) {
-                    console.log("User not modify - Reason: Username Already used")
-                    res.send("User not modify - Reason: Username Already used")
+                let userModify = await controllerDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
+                if (userModify == true) {
+                    res.send("User data chaged")
                 } else {
-                    console.log("User not modify - Reason: Parameters are not corrects")
-                    res.send("User not modify - Reason: Parameters are not corrects")
+                    res.send("User data not chaged - Reason: Username Already Exists")
                 }
+            } else {
+                console.log("User not modify - Reason: Parameters are not corrects")
+                res.send("User not modify - Reason: Parameters are not corrects")
             }
         } else {
             console.log("User data dont change - Reason: Username or password ins't correct")
