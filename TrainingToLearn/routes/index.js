@@ -188,6 +188,7 @@ router.post('/createNewTransaction', async function(req, res) {
                 } else {
                     var isUniRewardTransactionExist = proveKey('uniRewardT', 'string', req.body)
                     if (isUniRewardTransactionExist) {
+                        userFromAddress = await controllerDB.findUserAddress("System")
                         let userFromId = await controllerDB.findUserAddressID(userFromAddress)
                         let userToId = await controllerDB.findUserAddressID(toAddress)
                         var idsWallets = [userFromId, userToId]
@@ -236,7 +237,7 @@ router.post('/createNewUser', async function(req, res) {
     let isPasswordExist = proveKey('password', 'string', req.body)
     let isRoleExist = proveKey('roleUser', 'string', req.body)
     if (isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist && isRoleExist) {
-        let userAlreadyCreated = await controllerDB.isUserCreated(req, res)
+        let userAlreadyCreated = await controllerDB.isUserCreated(req.body.username)
         if (userAlreadyCreated == false) {
             await controllerDB.createUser(req)
             console.log("OK - User created")
@@ -251,7 +252,7 @@ router.post('/createNewUser', async function(req, res) {
             }
             res.send("OK - Acount created")
         } else {
-            let userIsDeleted = await controllerDB.usernameDeleted(req.body.username)
+            let userIsDeleted = await controllerDB.isUserCreated(req.body.username)
             if (userIsDeleted) {
                 await controllerDB.createUser(req)
                 console.log("OK - User created")
@@ -403,14 +404,14 @@ function proveKey(nameKey, variableType, reqJson) {
         if (typeof reqJson[nameKey] == variableType) {
             if (typeof reqJson[nameKey] == 'string') {
                 if (reqJson[nameKey].length > 0) {
-                    console.log("Correct Type\n")
+                    console.log("Correct Type - Can continue\n")
                     return true
                 } else {
-                    console.log("Incorrect Type - Reason: Length of Key isn't correct\n")
+                    console.log("Incorrect Type - Reason: Length of key isn't correct\n")
                     return false
                 }
             } else {
-                console.log("Correc tType\n")
+                console.log("Correct Type - Can continue\n")
                 return true
             }
         } else {
@@ -418,7 +419,7 @@ function proveKey(nameKey, variableType, reqJson) {
             return false
         }
     } else {
-        console.log("Incorrect Type - Reason: Not exist\n")
+        console.log("Incorrect Type - Reason: Not exist key\n")
         return false
     }
 }
@@ -427,7 +428,7 @@ async function createBlock() {
     console.log("Time has passed, time for block creation. ¿There are pending transactions?")
     var validBlockchain = isValidBlockchain()
     if (pendingTransactions.length > 0 && validBlockchain) {
-        console.log("YES")
+        console.log("YES, there are pending Transactions")
         console.log(pendingTransactions)
         let lastIndex = await controllerDB.getLastBlockIndex()
         if (lastIndex == 0) {
@@ -443,7 +444,7 @@ async function createBlock() {
         pendingTransactions.splice(0, pendingTransactions.length)
         console.log(pendingTransactions)
     } else {
-        console.log("NO pending Transactions")
+        console.log("NO, there aren't pending Transactions")
     }
 
     async function isValidBlockchain() {
@@ -454,7 +455,7 @@ async function createBlock() {
             var genesisBlockObj = new Block(genesisBlock.index, genesisBlock.timestamp, genesisBlock.idsTransactions, "0")
                 //Prove genesisBlock
             if (genesisBlock.hash != genesisBlockObj.calculateHash()) {
-                console.log("NO")
+                console.log("NO, the blockchain isn't valid")
                 return false
             }
             //Prove other blocks
@@ -463,18 +464,18 @@ async function createBlock() {
                 const previousBlock = await controllerDB.getBlock(i - 1);
                 const blockCurrentObj = new Block(i, currentBlock.timestamp, currentBlock.idsTransactions, currentBlock.hashPrev)
                 if (currentBlock.hash != blockCurrentObj.calculateHash()) {
-                    console.log("NO")
+                    console.log("NO, the blockchain isn't valid")
                     return false;
                 }
 
                 if (currentBlock.hashPrev != previousBlock.hash) {
-                    console.log("NO")
+                    console.log("NO, the blockchain isn't valid")
                     return false;
                 }
             }
         }
 
-        console.log("YES")
+        console.log("YES, the blockchain is valid")
         return true;
     }
 }

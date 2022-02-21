@@ -2,9 +2,6 @@ const db = require('../models')
 const { Op } = require("sequelize");
 
 module.exports = {
-    allBlocks() {
-        return db.Blockchain.findAll();
-    },
     async getBlock(indexNumber) {
         return db.Blockchain.findOne({
             where: {
@@ -105,19 +102,6 @@ module.exports = {
                 }
             })
     },
-    deleteUniReward(req) {
-        db.UniRewards.update({
-            deleted: true
-        }, {
-            where: {
-                id: req.body.id
-            }
-        }).then(() => {
-            console.log("uniReward Eliminated")
-        }).catch((val) => {
-            console.log("Error: " + val.name)
-        });
-    },
     async getUniRewardId(uniRewardT) {
         return db.UniRewards.findOne({
                 where: {
@@ -132,48 +116,7 @@ module.exports = {
                 }
             })
     },
-    async findUniReward(idUR) {
-        if (idUR != null || idUR < 0) {
-            console.log("db.UniRewards.findByPk(" + idUR + ")")
-            db.UniRewards
-                .findOne({ where: { id: idUR }, raw: true })
-                .then(buscaPin => {
-                    if (!buscaPin) {
-                        console.log("Not found UniReward")
-                    } else {
-                        console.log("Found UniReward")
-                        return buscaPin
-                    }
 
-                })
-                .catch(
-                    (error) => console.log("Error: " + error)
-                )
-        } else {
-            console.log("Error in FindUniReward - WrongLastIndexUniReward")
-        }
-
-    },
-    async existUniReward(id) {
-        if (id != null && typeof id == 'number') {
-            return db.UniRewards.findOne({
-                where: {
-                    id: id
-                }
-            }).then((result) => {
-                if (result != null) {
-                    console.log("UniReward with id:" + id + " Find it")
-                    return true
-                } else {
-                    console.log("UniReward with id:" + id + " Not Find it")
-                    return false
-                }
-            })
-        } else {
-            console.log("Id administrated isn't correct")
-            return null
-        }
-    },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
                 where: {
@@ -188,17 +131,6 @@ module.exports = {
                     console.log("UniReward with id:" + idUniReward + " Not Find it")
                 }
             })
-    },
-    async ownableUniReward(idUniReward, username, userPassword) {
-        const idUser = await this.obtainUserId(username, userPassword)
-        const idUserUR = await this.obtainUserIdUR(idUniReward)
-        if (idUser == idUserUR) {
-            console.log("User " + username + " has de own property for UniReward with Id:" + idUniReward)
-            return true
-        } else {
-            console.log("User " + username + " hasn`t the own property for UniReward with Id:" + idUniReward)
-            return false
-        }
     },
 
     async getSpecificUR(idUniReward) {
@@ -416,10 +348,10 @@ module.exports = {
         })
     },
 
-    async isUserCreated(req) {
+    async isUserCreated(usName) {
         return db.Users.findOne({
             where: {
-                username: req.body.username
+                username: usName
             }
         }).then((result) => {
             if (result != null) {
@@ -433,19 +365,6 @@ module.exports = {
                 }
             } else {
                 console.log("User not find it")
-                return false
-            }
-        })
-    },
-    async usernameDeleted(usName) {
-        return db.Users.findOne({
-            where: {
-                username: usName
-            }
-        }).then((result) => {
-            if (result.delete) {
-                return true
-            } else {
                 return false
             }
         })
@@ -555,22 +474,6 @@ module.exports = {
 
 
     },
-    async isUsernameUsed(userName) {
-        return db.Users.findOne({
-            where: {
-                username: userName,
-                deleted: false
-            }
-        }).then((result) => {
-            if (result != null) {
-                console.log("Username find it")
-                return true
-            } else {
-                console.log("Username not find it")
-                return false
-            }
-        })
-    },
 
     //Wallet functions
     createWallet(req) {
@@ -639,11 +542,7 @@ module.exports = {
                             transactionList[i].fromAddress = nameAddress
                             transactionList[i].toAddress = nameAddress2
                         }
-                        console.log("==============================")
                         vectorURTransac.push(transactionList);
-                        console.log(vectorURTransac[0])
-                        console.log(vectorURTransac[1])
-                        console.log("==============================")
                     }
                     return vectorURTransac
                 } else {
@@ -722,8 +621,9 @@ module.exports = {
             return null
         }
     },
+
     async obtainWalletId(idUsu) {
-        if (typeof idUsu == 'number' || idUsu != null) {
+        if (typeof idUsu == 'number' && idUsu != null) {
             return db.Wallets.findOne({
                 where: {
                     UserId: idUsu
@@ -741,35 +641,7 @@ module.exports = {
             console.log("Id to obtain WalletId isnt correct")
         }
     },
-    async isWalletDeletedPK(privKey) {
-        if (typeof privKey == 'string') {
-            return db.Wallets.findOne({
-                where: {
-                    privateKey: privKey
-                }
-            }).then((result) => {
-                console.log("Getting delete field: " + result.delete)
-                return result.delete
-            })
-        } else {
-            console.log("Id to obtain WalletId isnt a number")
-        }
-    },
-    async isUniRDeleted(idUniReward) {
-        if (typeof idUniReward == 'number') {
-            return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            }).then((result) => {
-                console.log("Getting delete field: " + result.delete)
-                return result.delete
-            })
-        } else {
-            console.log("Id to obtain UniRin isnt a number")
-            return null
-        }
-    },
+
     async userHasWallet(idUsu) {
         return db.Wallets.findOne({
             where: {
