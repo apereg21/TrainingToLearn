@@ -104,26 +104,31 @@ router.post('/createNewReward', async function(req, res) {
                 let userFromAddressID = await controllerDB.findUserAddress("System")
                 let userToAddressID = await controllerDB.findUserAddress(req.body.username)
                 if (userFromAddressID != null) {
-                    let userFromId = await controllerDB.findUserAddressID(userFromAddressID)
-                    let userToId = await controllerDB.findUserAddressID(userToAddressID)
-                    var idsWallets = [userFromId, userToId]
-                    let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets)
-                    let transactionObj = await controllerDB.createTransaction(newTransac)
-                    addPendingTransaction(transactionObj)
-                    let userWalletId = await controllerDB.obtainWalletId(idUser)
-                    for (var i = 0; i < req.body.costReward; i++) {
-                        var jsonObj = {
-                            timestamp: new Date(),
-                            WalletId: userWalletId
-                        }
-                        arrayPoints.push(jsonObj)
-                    }
-                    var idPoints = await controllerDB.createPoint(arrayPoints)
-                    await controllerDB.updateMoneyFieldWallet(userWalletId, idPoints)
-                    idPoints.splice(0, idPoints.length)
                     let uniReward = await controllerDB.createUniReward(req, idUser)
-                    console.log(uniReward)
-                    res.send("OK - Reward created")
+                    if(uniReward!=null){
+                        let userFromId = await controllerDB.findUserAddressID(userFromAddressID)
+                        let userToId = await controllerDB.findUserAddressID(userToAddressID)
+                        var idsWallets = [userFromId, userToId]
+                        let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets)
+                        let transactionObj = await controllerDB.createTransaction(newTransac)
+                        addPendingTransaction(transactionObj)
+                        let userWalletId = await controllerDB.obtainWalletId(idUser)
+                        for (var i = 0; i < req.body.costReward; i++) {
+                            var jsonObj = {
+                                timestamp: new Date(),
+                                WalletId: userWalletId
+                            }
+                            arrayPoints.push(jsonObj)
+                        }
+                        var idPoints = await controllerDB.createPoint(arrayPoints)
+                        await controllerDB.paymentFromSystem(userWalletId, idPoints)
+                        idPoints.splice(0, idPoints.length)
+                        res.send("OK - Reward created")
+                    }
+                    else{
+                        res.send("Reward created - Something go wrong during the creation of UniReward")
+                    }
+                    
                 } else {
                     res.send("Reward not created - Reason: System User for points transation dosen't exist")
                 }
@@ -165,39 +170,71 @@ router.post('/createNewTransaction', async function(req, res) {
     var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
     var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
     if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist) {
-        let userId = await controllerDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
-        if (userId != null) {
+        let userId
+        if (req.body.typeT == "M") {
+            userId = await controllerDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
+        }else{
+            userId = await controllerDB.obtainUserId(req.body.toAddressUN, req.body.passwordFrom)
+        }
+        if (userId != null ) {
             let isUserDeleted = await controllerDB.isUserDeleted(userId)
             if (isUserDeleted != null && isUserDeleted == false) {
                 let userFromAddress = await controllerDB.findUserAddress(req.body.fromAddressUN)
                 let toAddress = await controllerDB.findUserAddress(req.body.toAddressUN)
                 if (req.body.typeT == "M") {
                     var isMoneyExist = proveKey('moneyTo', 'number', req.body)
-                    if (isMoneyExist) {
+                    if (isMoneyExist && (userFromAddress != toAddress)) {
                         let userFromId = await controllerDB.findUserAddressID(userFromAddress)
                         let userToId = await controllerDB.findUserAddressID(toAddress)
                         var idsWallets = [userFromId, userToId]
                         let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT, idsWallets)
                         let transactionObj = await controllerDB.createTransaction(newTransac)
-                        addPendingTransaction(transactionObj)
-                        res.send("OK - Transaction created")
+                        if(transactionObj !=null){
+                            addPendingTransaction(transactionObj)
+                            controllerDB.paymentInstructorToUser(userFromId, userToId, req.body.moneyTo)
+                            res.send("OK - Transaction created")
+                        }
+                        else{
+                            console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                            res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                        }
                     } else {
-                        console.log("Can't finish the Transaction - Reason: Not correct parameters")
-                        res.send("Can't finish the Transaction - Reason: Not correct paramaters")
+                        if(userFromAddress == toAddress){
+                            console.log("Can't finish the Transaction - Reason: User From and User Destiny can't be the same")
+                            res.send("Can't finish the Transaction - User From and User Destiny can't be the same") 
+                        }else{
+                            console.log("Can't finish the Transaction - Reason: Not correct parameters")
+                            res.send("Can't finish the Transaction - Reason: Not correct paramaters")  
+                        }
                     }
                 } else {
                     var isUniRewardTransactionExist = proveKey('uniRewardT', 'string', req.body)
                     if (isUniRewardTransactionExist) {
+                        var idMatch = 0
                         userFromAddress = await controllerDB.findUserAddress("System")
                         let userFromId = await controllerDB.findUserAddressID(userFromAddress)
                         let userToId = await controllerDB.findUserAddressID(toAddress)
                         var idsWallets = [userFromId, userToId]
                         let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
-                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets)
-                        let transactionObj = await controllerDB.createTransaction(newTransac)
-                        await controllerDB.updateIdArrayWallet(userId, uniRewardId)
-                        addPendingTransaction(transactionObj)
-                        res.send("OK - Transaction created")
+                        let uniRewardsInWallet = await controllerDB.getUniRewardInWallet(userId)
+                        let uniRewardPurchase = await controllerDB.getPurchaseField(uniRewardId)
+                        console.log("Prove that UniReward exist already in wallet")
+                        for(var i=0;i<uniRewardsInWallet.length;i++){
+                            if(uniRewardsInWallet[i] == uniRewardId){
+                                console.log("UniReward already exists")
+                                idMatch++
+                            }
+                        }
+                        if(!(idMatch>0) && !uniRewardPurchase){
+                            let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets)
+                            let transactionObj = await controllerDB.createTransaction(newTransac)
+                            await controllerDB.updateIdArrayWallet(userId, uniRewardId)
+                            await controllerDB.updatePurchaseField(uniRewardId)
+                            addPendingTransaction(transactionObj)
+                            res.send("OK - Transaction created")
+                        }else{
+                            res.send("Can't finish the Transaction - Reason: Reward already purchase")
+                        }
                     } else {
                         console.log("Can't finish the Transaction - Reason: Not correct parameters")
                         res.send("Can't finish the Transaction - Reason: Not correct paramaters")

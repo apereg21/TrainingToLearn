@@ -26,6 +26,11 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             type: DataTypes.JSON,
             defaultValue: []
+        },
+        purchase: {
+            allowNull: false,
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     }, {});
     UniRewards.associate = function(models) {

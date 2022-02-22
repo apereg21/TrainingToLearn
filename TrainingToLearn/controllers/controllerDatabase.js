@@ -70,8 +70,9 @@ module.exports = {
             return result
         })
     },
-    async createUniReward(req, idUser) {
-        if (((req.body.nameUR != null && req.body.nameUR.length > 0))) {
+    async createUniReward(req) {
+        var isUniRewardNameUsed = await this.isUniRewardNameUsed(req.body.nameUR)
+        if (!isUniRewardNameUsed) {
             return db.UniRewards
                 .create({
                     nameUR: req.body.nameUR,
@@ -81,19 +82,37 @@ module.exports = {
                     username: req.body.username,
                     password: req.body.password
                 }).then(data => {
-                    console.log(data);
-                    return data
+                    if (data != null) {
+                        console.log(data);
+                        return data
+                    } else {
+                        return null
+                    }
                 })
         } else {
-            console.log("Error in createUniReward")
+            console.log("UniReward don't created - Reason: Already Exists")
         }
+    },
+    isUniRewardNameUsed(nameUniR) {
+        return db.UniRewards.findOne({
+            where: {
+                nameUR: nameUniR
+            }
+        })
+            .then((result) => {
+                if (result != null) {
+                    return true
+                } else {
+                    return false
+                }
+            })
     },
     getUniRewardName(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return result.nameUR
@@ -104,10 +123,10 @@ module.exports = {
     },
     async getUniRewardId(uniRewardT) {
         return db.UniRewards.findOne({
-                where: {
-                    nameUR: uniRewardT
-                }
-            })
+            where: {
+                nameUR: uniRewardT
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -119,10 +138,10 @@ module.exports = {
 
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -135,10 +154,10 @@ module.exports = {
 
     async getSpecificUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -151,7 +170,7 @@ module.exports = {
 
     //User Functions
     async getAllUsers() {
-        return db.Users.findAll({}).then((result) => {
+        return db.Users.findAll({ where: { deleted: false } }).then((result) => {
             return result
         })
     },
@@ -487,6 +506,41 @@ module.exports = {
             console.log("Error: " + val);
         });
     },
+    async getUniRewardInWallet(idUser) {
+        return db.Wallets.findOne({
+            where: {
+                UserId: idUser
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result.idsUniRewards
+            } else {
+                return []
+            }
+        })
+    },
+    async updatePurchaseField(idUR) {
+        return db.UniRewards.update({
+            purchase: true
+        }, {
+            where: {
+                id: idUR
+            }
+        }).then(() => {
+            console.log("Reward Purchased")
+        }).catch((val) => {
+            console.log("Error: " + val)
+        });
+    },
+    async getPurchaseField(uniRewardId) {
+        return db.UniRewards.findOne({
+            where: {
+                id: uniRewardId
+            }
+        }).then((result) => {
+            return result.purchase
+        })
+    },
     deleteWallet(idUser) {
         if (typeof idUser == 'number') {
             db.Wallets.update({
@@ -513,7 +567,7 @@ module.exports = {
                 where: {
                     UserId: idUser
                 }
-            }).then(async(result) => {
+            }).then(async (result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
                     vectorURTransac.push(result)
@@ -573,12 +627,12 @@ module.exports = {
                         return null
                     }
 
-                }).catch((val) => {})
+                }).catch((val) => { })
             } else {
                 return null
             }
 
-        }).catch((val) => {})
+        }).catch((val) => { })
     },
     async updateIdArrayWallet(idUser, idUniReward) {
         return db.Wallets.findOne({
@@ -657,7 +711,7 @@ module.exports = {
             }
         })
     },
-    async updateMoneyFieldWallet(userWalletId, moneyIds) {
+    async paymentFromSystem(userWalletId, moneyIds) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
@@ -675,6 +729,85 @@ module.exports = {
             }).then(
                 console.log("User wallet updated")
             )
+        })
+    },
+
+    async paymentInstructorToUser(userFromWalletId, userToWalletId, numbPoints) {
+        var pointsToChange = []
+        var idsMoney = []
+        console.log("===================================================")
+        console.log(userFromWalletId +""+ userToWalletId +""+ numbPoints)
+        console.log("===================================================")
+        //Obtain first n elements -->Furrula            
+        return db.UniPoints.findAll({
+            limit: numbPoints,
+            where: {
+                WalletId: userFromWalletId,
+            },
+            order: [
+                ['id', 'ASC'],
+            ]
+        }).then((points) => {
+            //Load info about Dest's Wallet
+            if (points != null) {
+                pointsToChange = points.map((point) => point.id)
+                console.log(pointsToChange)
+                return db.Wallets.findOne({
+                    where: {
+                        id: userToWalletId
+                    }
+                }).then((result) => {
+                    //Update in toAddress --> Furrula
+                    idsMoney = result.money.concat(pointsToChange)
+                    console.log("===================IdsMoney========================")
+                    console.log(idsMoney)
+                    console.log("===================================================")
+                    
+                    return db.Wallets.update({
+                        money: idsMoney
+                    }, {
+                        where: {
+                            id: userToWalletId
+                        }
+                    }).then(() => {
+                        //Update in Points Table -->Furrula
+                        return db.UniPoints.update({
+                            WalletId: userToWalletId
+                        }, {
+                            where: {
+                                id: idsMoney
+                            }
+                        }).then(() => {
+                            //Get actual info --> Furrula
+                            return db.Wallets.findOne({
+                                where: {
+                                    id: userFromWalletId
+                                }
+                            }).then((result2) => {
+                                //Update in FromAddress deleted the points delivered --> No furrula
+                                var vectorOriginal = result2.money
+                                var vectorFinal = vectorOriginal.filter(value=>!pointsToChange.includes(value))
+                                console.log("===================VectorFinal=====================")
+                                console.log(vectorFinal)
+                                console.log("===================================================")
+                                return db.Wallets.update({
+                                    money: vectorFinal
+                                }, {
+                                    where: {
+                                        id: userFromWalletId
+                                    }
+                                }).then(()=>{
+                                    console.log("Transaction complete")
+                                })
+                            })
+                        })
+                    }).catch((val)=>{
+                        console.log(val)
+                    })
+                })
+            } else {
+                return false
+            }
         })
     },
 
@@ -728,7 +861,7 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => {})
+        }).catch((val) => { })
     },
     async getUserWalletTransaction(idWallet) {
         return db.Transactions.findAll({
