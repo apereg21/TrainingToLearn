@@ -109,7 +109,8 @@ router.post('/createNewReward', async function(req, res) {
                         let userFromId = await controllerDB.findUserAddressID(userFromAddressID)
                         let userToId = await controllerDB.findUserAddressID(userToAddressID)
                         var idsWallets = [userFromId, userToId]
-                        let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets)
+                        let concept = "Giving UniPoints referrer to UniReward: "+ req.body.nameUR
+                        let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets, concept)
                         let transactionObj = await controllerDB.createTransaction(newTransac)
                         addPendingTransaction(transactionObj)
                         let userWalletId = await controllerDB.obtainWalletId(idUser)
@@ -125,7 +126,7 @@ router.post('/createNewReward', async function(req, res) {
                         idPoints.splice(0, idPoints.length)
                         res.send("OK - Reward created")
                     } else {
-                        res.send("Reward created - Something go wrong during the creation of UniReward")
+                        res.send("Reward not created - UniReward already exists")
                     }
 
                 } else {
@@ -168,7 +169,8 @@ router.post('/createNewTransaction', async function(req, res) {
     var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
     var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
     var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
-    if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist) {
+    var isConceptExist = proveKey('concept', 'string', req.body)
+    if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist) {
         let userId
         if (req.body.typeT == "M") {
             userId = await controllerDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
@@ -186,13 +188,19 @@ router.post('/createNewTransaction', async function(req, res) {
                         let userFromId = await controllerDB.findUserAddressID(userFromAddress)
                         let userToId = await controllerDB.findUserAddressID(toAddress)
                         var idsWallets = [userFromId, userToId]
-                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT, idsWallets)
-                        let transactionObj = await controllerDB.createTransaction(newTransac)
-                        if (transactionObj != null) {
+                        let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT, idsWallets, req.body.concept)
+                        let userMoneyWallet = await controllerDB.getUserMoney(userFromId)
+                        if ((userToId!=null && userFromId!=null) && userMoneyWallet >= req.body.moneyTo) {
+                            let transactionObj = await controllerDB.createTransaction(newTransac)
                             addPendingTransaction(transactionObj)
-                            controllerDB.paymentInstructorToUser(userFromId, userToId, req.body.moneyTo)
+                            controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo)
                             res.send("OK - Transaction created")
-                        } else {
+                        } 
+                        else if(userMoneyWallet < req.body.moneyTo){
+                            console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
+                            res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
+                        }
+                        else {
                             console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
                             res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
                         }
@@ -200,7 +208,8 @@ router.post('/createNewTransaction', async function(req, res) {
                         if (userFromAddress == toAddress) {
                             console.log("Can't finish the Transaction - Reason: User From and User Destiny can't be the same")
                             res.send("Can't finish the Transaction - User From and User Destiny can't be the same")
-                        } else {
+                        } 
+                        else {
                             console.log("Can't finish the Transaction - Reason: Not correct parameters")
                             res.send("Can't finish the Transaction - Reason: Not correct paramaters")
                         }
@@ -210,9 +219,9 @@ router.post('/createNewTransaction', async function(req, res) {
                     if (isUniRewardTransactionExist) {
                         var idMatch = 0
                         userFromAddress = await controllerDB.findUserAddress("System")
-                        let userFromId = await controllerDB.findUserAddressID(userFromAddress)
+                        let systemId = await controllerDB.findUserAddressID(userFromAddress)
                         let userToId = await controllerDB.findUserAddressID(toAddress)
-                        var idsWallets = [userFromId, userToId]
+                        var idsWallets = [systemId, userToId]
                         let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
                         let uniRewardsInWallet = await controllerDB.getUniRewardInWallet(userId)
                         let uniRewardPurchase = await controllerDB.getPurchaseField(uniRewardId)
@@ -223,23 +232,35 @@ router.post('/createNewTransaction', async function(req, res) {
                                 idMatch++
                             }
                         }
-                        if (!(idMatch > 0) && !uniRewardPurchase) {
-                            let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets)
-                            let transactionObj = await controllerDB.createTransaction(newTransac)
-                            if (transactionObj != null) {
+                        if (!(idMatch > 0) && !uniRewardPurchase && (userToId!=null && systemId!=null)) {
+                            let nameTo = await controllerDB.getUserWalletName(userToId) 
+                            let concept = "Giving to "+ nameTo + " the UniReward: "+ req.body.uniRewardT
+                            let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets, concept)
+                            let userMoneyWallet = await controllerDB.getUserMoney(userToId)
+                            let specificUR = await controllerDB.getSpecificUR(uniRewardId)
+                            let user = await controllerDB.getUserData(userId)
+                            if (userMoneyWallet >= specificUR.cost && req.body.moneyTo==specificUR.cost && userMoneyWallet >= req.body.moneyTo && user.typeUser != "I") {
+                                let transactionObj = await controllerDB.createTransaction(newTransac)
                                 await controllerDB.updateIdArrayWallet(userId, uniRewardId)
                                 await controllerDB.updatePurchaseField(uniRewardId)
-                                var idsToChange = await controllerDB.paymentOfReward(userToId, userFromId, req.body.moneyTo)
-                                console.log("==================================================")
-                                console.log(idsToChange)
-                                console.log("==================================================")
-                                await controllerDB.moveToMoneyExp(idsToChange, userFromId)
+                                var idsToChange = await controllerDB.paymentPersonToPerson(userToId, systemId, req.body.moneyTo)
+                                await controllerDB.moveToMoneyExp(idsToChange, systemId, uniRewardId)
                                 await controllerDB.updatePurchasePoints(idsToChange)
                                 addPendingTransaction(transactionObj)
                                 res.send("OK - Transaction created")
                             } else {
-                                console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
-                                res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                                if(user.typeUser == "I"){
+                                    console.log("Can't do the payment - Reason: Instructor can't purchase a UniReward")
+                                    res.send("Can't do the payment - Reason: Instructor can't purchase a UniReward")
+                                }
+                                else if(userMoneyWallet < specificUR.cost){
+                                    console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
+                                    res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
+                                }
+                                else{
+                                    console.log("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: "+ specificUR.cost +" UniPoints)")
+                                    res.send("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: "+ specificUR.cost +" UniPoints)")  
+                                }
                             }
                         } else {
                             res.send("Can't finish the Transaction - Reason: Reward already purchase")

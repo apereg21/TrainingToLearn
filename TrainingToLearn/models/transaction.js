@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.STRING
         },
+        concept: {
+            allowNull: false,
+            type: DataTypes.STRING
+        },
         typeTransaction: {
             allowNull: false,
             type: DataTypes.STRING

@@ -6,10 +6,11 @@ class Transaction {
     /*  El contructor necesita, la fecha de la transacción, destinatario, remitente
      *   y la cantidad que se deseea traspasar de una cartera a otra
      */
-    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets) {
+    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
             this.fromAddress = fromAddress;
             this.toAddress = toAddress;
             this.timestamp = Date.now();
+            this.concept = concept;
             this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
             if (typeTr == "M") {
                 this.UniRewardId = null;
@@ -54,7 +55,7 @@ class Transaction {
      *   Función para generar hash de la trasaccion
      */
     calHashTransaction() {
-        return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp).digest('hex');
+        return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp + this.concept + this.idWalletFrom + this.idWalletTo + this.typeT).digest('hex');
     }
 
     isValid() {
