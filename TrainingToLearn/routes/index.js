@@ -8,7 +8,8 @@ const controllerDB = require('../controllers/controllerDatabase');
 //Configuration zone
 var router = express.Router();
 var pendingTransactions = [];
-var periodicFunct = setInterval(() => createBlock(), 60000);
+var periodicFunct = setInterval(() => createBlock(), 10000);
+var valid = true
 /*
  * Default Route
  */
@@ -476,7 +477,7 @@ function proveKey(nameKey, variableType, reqJson) {
 
 async function createBlock() {
     console.log("Time has passed, time for block creation. ¿There are pending transactions?")
-    var validBlockchain = isValidBlockchain()
+    var validBlockchain = await isValidBlockchain()
     if (pendingTransactions.length > 0 && validBlockchain) {
         console.log("YES, there are pending Transactions")
         console.log(pendingTransactions)
@@ -494,11 +495,17 @@ async function createBlock() {
         pendingTransactions.splice(0, pendingTransactions.length)
         console.log(pendingTransactions)
     } else {
-        console.log("NO, there aren't pending Transactions")
+        if(validBlockchain == false){
+            valid=false
+            console.log("Error - Blockchain ins't correct") 
+        }else{
+            console.log("NO, there aren't pending Transactions") 
+        }
     }
 
     async function isValidBlockchain() {
         console.log("¿Is Blockchain valid?")
+        console.log("valid="+valid)
         var blockchainLength = await controllerDB.getLastBlockIndex()
         if (blockchainLength > 0) {
             const genesisBlock = await controllerDB.getBlock(0)
