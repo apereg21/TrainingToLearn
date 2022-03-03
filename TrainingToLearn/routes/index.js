@@ -111,27 +111,37 @@ router.post('/createNewReward', async function(req, res) {
                             let userFromId = await controllerDB.findUserAddressID(userFromAddressID)
                             let userToId = await controllerDB.findUserAddressID(userToAddressID)
                             var idsWallets = [userFromId, userToId]
+                            let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId,1)
+                            let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId,1)
                             let concept = "Giving UniPoints referrer to UniReward: " + req.body.nameUR
-                            let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets, concept)
-                            let transactionObj = await controllerDB.createTransaction(newTransac)
-                            addPendingTransaction(transactionObj)
-                            let userWalletId = await controllerDB.obtainWalletId(idUser)
-                            for (var i = 0; i < req.body.costReward; i++) {
-                                var jsonObj = {
-                                    timestamp: new Date(),
-                                    WalletId: userWalletId
+                            if(!isDeletedWallet1 && !isDeletedWallet2){
+                                let newTransac = new Transaction(userFromAddressID, userToAddressID, req.body.costReward, null, "M", idsWallets, concept)
+                                let transactionObj = await controllerDB.createTransaction(newTransac)
+                                addPendingTransaction(transactionObj)
+                                let userWalletId = await controllerDB.obtainWalletId(idUser)
+                                for (var i = 0; i < req.body.costReward; i++) {
+                                    var jsonObj = {
+                                        timestamp: new Date(),
+                                        WalletId: userWalletId
+                                    }
+                                    arrayPoints.push(jsonObj)
                                 }
-                                arrayPoints.push(jsonObj)
+                                var idPoints = await controllerDB.createPoint(arrayPoints)
+                                await controllerDB.paymentFromSystem(userWalletId, idPoints)
+                                idPoints.splice(0, idPoints.length)
+                                console.log("OK - Reward created")
+                                res.send("OK - Reward created")
+                            }else{
+                                console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
+                                res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
                             }
-                            var idPoints = await controllerDB.createPoint(arrayPoints)
-                            await controllerDB.paymentFromSystem(userWalletId, idPoints)
-                            idPoints.splice(0, idPoints.length)
-                            res.send("OK - Reward created")
                         } else {
+                            console.log("Reward not created - UniReward already exists")
                             res.send("Reward not created - UniReward already exists")
                         }
 
                     } else {
+                        console.log("Reward not created - Reason: System User for points transation dosen't exist")
                         res.send("Reward not created - Reason: System User for points transation dosen't exist")
                     }
                 } else {
@@ -197,7 +207,9 @@ router.post('/createNewTransaction', async function(req, res) {
                             var idsWallets = [userFromId, userToId]
                             let newTransac = new Transaction(userFromAddress, toAddress, req.body.moneyTo, null, req.body.typeT, idsWallets, req.body.concept)
                             let userMoneyWallet = await controllerDB.getUserMoney(userFromId)
-                            if ((userToId != null && userFromId != null) && userMoneyWallet >= req.body.moneyTo) {
+                            let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId,1)
+                            let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId,1)
+                            if ((userToId != null && userFromId != null) && userMoneyWallet >= req.body.moneyTo && (!isDeletedWallet1 && !isDeletedWallet2)) {
                                 let transactionObj = await controllerDB.createTransaction(newTransac)
                                 addPendingTransaction(transactionObj)
                                 controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo)
@@ -206,8 +218,13 @@ router.post('/createNewTransaction', async function(req, res) {
                                 console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                 res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                             } else {
-                                console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
-                                res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                                if(isDeletedWallet1==true || isDeletedWallet2==true){
+                                    console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
+                                    res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
+                                }else{
+                                    console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                                    res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                                }
                             }
                         } else {
                             if (userFromAddress == toAddress) {
@@ -226,6 +243,8 @@ router.post('/createNewTransaction', async function(req, res) {
                             let systemId = await controllerDB.findUserAddressID(userFromAddress)
                             let userToId = await controllerDB.findUserAddressID(toAddress)
                             var idsWallets = [systemId, userToId]
+                            let isDeletedWallet1 = await controllerDB.obtainDeleteField(systemId,1)
+                            let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId,1)
                             let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
                             let uniRewardsInWallet = await controllerDB.getUniRewardInWallet(userId)
                             let uniRewardPurchase = await controllerDB.getPurchaseField(uniRewardId)
@@ -243,7 +262,7 @@ router.post('/createNewTransaction', async function(req, res) {
                                 let userMoneyWallet = await controllerDB.getUserMoney(userToId)
                                 let specificUR = await controllerDB.getSpecificUR(uniRewardId)
                                 let user = await controllerDB.getUserData(userId)
-                                if (userMoneyWallet >= specificUR.cost && req.body.moneyTo == specificUR.cost && userMoneyWallet >= req.body.moneyTo && user.typeUser != "I") {
+                                if ((!isDeletedWallet1 && !isDeletedWallet2) && userMoneyWallet >= specificUR.cost && req.body.moneyTo == specificUR.cost && userMoneyWallet >= req.body.moneyTo && user.typeUser != "I") {
                                     let transactionObj = await controllerDB.createTransaction(newTransac)
                                     await controllerDB.updateIdArrayWallet(userId, uniRewardId)
                                     await controllerDB.updatePurchaseField(uniRewardId)
@@ -260,8 +279,13 @@ router.post('/createNewTransaction', async function(req, res) {
                                         console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                         res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                     } else {
-                                        console.log("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
-                                        res.send("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
+                                        if(isDeletedWallet1==true || isDeletedWallet2==true){
+                                            console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
+                                            res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
+                                        }else{
+                                            console.log("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
+                                            res.send("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
+                                        }
                                     }
                                 }
                             } else {
@@ -324,13 +348,14 @@ router.post('/createNewUser', async function(req, res) {
                     const newWallet = new Wallet(ownerId)
                     controllerDB.createWallet(newWallet)
                     console.log("OK - Wallet Created")
+                    res.send("OK - Acount created")
                 } else {
                     console.log("Wallet dont created - Reason: User has a Wallet already")
+                    res.send("Wallet dont created - Reason: User has a Wallet already")
                 }
-                res.send("OK - Acount created")
             } else {
-                console.log("Wallet dont created - Reason: Username already is used")
-                res.send("OK - Acount created")
+                console.log("Acount dont created - Reason: Username already is used")
+                res.send("Acount dont created - Reason: Username already is used")
             }
         } else {
             console.log("User dont created - Reason: The data of parameters isn't correct")
@@ -447,12 +472,21 @@ function proveKey(nameKey, variableType, reqJson) {
         console.log(typeof reqJson[nameKey] + " = " + variableType)
         if (typeof reqJson[nameKey] == variableType) {
             if (typeof reqJson[nameKey] == 'string') {
-                if (reqJson[nameKey].length > 0 && !isNaN(reqJson[nameKey]) && proveNormalString(reqJson[nameKey])) {
+                var isCorrect = proveNormalString(reqJson[nameKey],nameKey)
+                console.log("==================================\n"+isCorrect+"\n==================================")
+                if (reqJson[nameKey].length > 0 && isCorrect==true) {
                     console.log("Correct Type - Can continue\n")
                     return true
                 } else {
-                    console.log("Incorrect Type - Reason: Length of " + nameKey + " or " + nameKey + " value isn't correct\n")
-                    return false
+                    if(reqJson[nameKey].length <= 0){
+                        console.log("Incorrect Type - Reason: Length of " + nameKey+"\n")
+                        return false
+                    }else if(!isCorrect){
+                        console.log("Incorrect Type - Reason: The structure of string, ins't correct\n")
+                        return false
+                    }else{
+
+                    }
                 }
             } else {
                 console.log("Correct Type - Can continue\n")
@@ -530,10 +564,17 @@ async function isValidBlockchain() {
     return true;
 }
 
-function proveNormalString(string) {
-    var cadena = string;
-    var result = !/^\s|^\d/.test(cadena);
-    console.log(result);
+function proveNormalString(string, nameKey) {
+    console.log("Prove "+nameKey+" : "+ string+" with regular expresion")
+    if(nameKey=="password" || nameKey=="passwordFrom"){
+        return true
+    }else{
+        console.log("Hey")
+        var cadena = string;
+        var result = !/^\s|^\d/.test(cadena);
+        console.log(result)
+        return result
+    }
 }
 
 module.exports = router;

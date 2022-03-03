@@ -91,6 +91,7 @@ module.exports = {
                 })
         } else {
             console.log("UniReward don't created - Reason: Already Exists")
+            return null
         }
     },
     isUniRewardNameUsed(nameUniR) {
