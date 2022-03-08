@@ -1,6 +1,6 @@
 /*
-*Imports
-*/
+ *Imports
+ */
 const Block = require('../block');
 const Wallet = require('../wallet');
 const Transaction = require('../transaction');
@@ -8,16 +8,16 @@ var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
 
 /*
-*Configuration zone
-*/
+ *Configuration zone
+ */
 var router = express.Router();
 var pendingTransactions = [];
 var periodicFunct = setInterval(() => createBlock(), 10000);
 var valid = true
 
 /*
-* Default Route
-*/
+ * Default Route
+ */
 
 router.get('/', (req) => {
 
@@ -26,23 +26,23 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function (req, res) {
-    
+router.get('/getAllUsersList', async function(req, res) {
+
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 
 });
 
-router.get('/getAllRewardsList', async function (req, res) {
-    
+router.get('/getAllRewardsList', async function(req, res) {
+
     var rewardsList = await controllerDB.getAllRewards()
     res.send(rewardsList)
 
 });
 
 
-router.get('/getSpecificUser/:id', async function (req, res) {
-    
+router.get('/getSpecificUser/:id', async function(req, res) {
+
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
 
@@ -52,22 +52,20 @@ router.get('/getSpecificUser/:id', async function (req, res) {
 
 });
 
-router.post('/getSpecificUserID', async function (req, res) {
-    
+router.post('/getSpecificUserID', async function(req, res) {
+
     var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
 
     if (userID != null) {
         res.send("" + userID)
-    } 
-    
-    else {
+    } else {
         res.send(null)
     }
 
 });
 
-router.get('/getSpecificWallet/:id', async function (req, res) {
-    
+router.get('/getSpecificWallet/:id', async function(req, res) {
+
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
 
@@ -81,7 +79,7 @@ router.get('/getSpecificWallet/:id', async function (req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function (req, res) {
+router.post('/createNewReward', async function(req, res) {
     if (valid) {
 
         var arrayPoints = []
@@ -141,59 +139,45 @@ router.post('/createNewReward', async function (req, res) {
 
                                 console.log("OK - Reward created")
                                 res.send("OK - Reward created")
-                            } 
-                            
-                            else {
+                            } else {
 
                                 console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
                                 res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
 
                             }
-                        } 
-                        
-                        else {
+                        } else {
 
                             console.log("Reward not created - UniReward already exists")
                             res.send("Reward not created - UniReward already exists")
 
                         }
 
-                    } 
-                    
-                    else {
+                    } else {
 
                         if (req.body.typeT != "M" || req.body.typeT != "U") {
 
                             console.log("Reward not created - Reason: Not correct type of transaction")
                             res.send("Reward not created - Reason: Not correct type of transaction")
 
-                        } 
-                        
-                        else {
+                        } else {
 
                             console.log("Reward not created - Reason: System User for points transation dosen't exist")
                             res.send("Reward not created - Reason: System User for points transation dosen't exist")
 
                         }
                     }
-                } 
-                
-                else {
+                } else {
 
                     console.log("Reward not created - Reason: Username without permissions")
                     res.send("Reward not created - Reason: Username without permissions")
 
                 }
-            } 
-            
-            else {
+            } else {
 
                 if (req.body.costReward <= 0) {
                     console.log("Reward not created - Reason: Can't create a free UniReward")
                     res.send("Reward not created - Reason: Can't create a free UniReward")
-                } 
-                
-                else {
+                } else {
 
                     console.log("Reward not created - Reason: Username or password isn't correct")
                     res.send("Reward not created - Reason: Username or password isn't correct")
@@ -201,17 +185,13 @@ router.post('/createNewReward', async function (req, res) {
                 }
             }
 
-        } 
-        
-        else {
+        } else {
 
             console.log("Reward not created - Reason: Incorrect params, someone of the params are not correct")
             res.send("Reward not created - Reason: Incorrect params, someone of the params are not correct")
 
         }
-    }
-    
-    else {
+    } else {
 
         console.log("Reward not created - Reason: Blockchain isn't valid")
         res.send("Reward not created - Reason: Blockchain isn't valid")
@@ -219,7 +199,7 @@ router.post('/createNewReward', async function (req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function (req, res) {
+router.post('/createNewTransaction', async function(req, res) {
     if (valid) {
 
         var isFromAddressNameExist = proveKey('fromAddressUN', 'string', req.body)
@@ -270,25 +250,19 @@ router.post('/createNewTransaction', async function (req, res) {
                                 controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo)
                                 res.send("OK - Transaction created")
 
-                            } 
-                            
-                            else if (userMoneyWallet < req.body.moneyTo) {
+                            } else if (userMoneyWallet < req.body.moneyTo) {
 
                                 console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                 res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
 
-                            } 
-                            
-                            else {
+                            } else {
 
                                 if (isDeletedWallet1 == true || isDeletedWallet2 == true) {
 
                                     console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
                                     res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
 
-                                } 
-                                
-                                else {
+                                } else {
 
                                     console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
                                     res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
@@ -296,27 +270,21 @@ router.post('/createNewTransaction', async function (req, res) {
                                 }
                             }
 
-                        } 
-                        
-                        else {
+                        } else {
 
                             if (userFromAddress == toAddress) {
 
                                 console.log("Can't finish the Transaction - Reason: User From and User Destiny can't be the same")
                                 res.send("Can't finish the Transaction - User From and User Destiny can't be the same")
 
-                            } 
-                            
-                            else {
+                            } else {
 
                                 console.log("Can't finish the Transaction - Reason: Not correct parameters")
                                 res.send("Can't finish the Transaction - Reason: Not correct paramaters")
 
                             }
                         }
-                    } 
-                    
-                    else {
+                    } else {
 
                         if (req.body.typeT == "U") {
 
@@ -362,80 +330,58 @@ router.post('/createNewTransaction', async function (req, res) {
                                         addPendingTransaction(transactionObj)
                                         console.log("OK - Transaction created")
                                         res.send("OK - Transaction created")
-                                    } 
-                                    
-                                    else {
+                                    } else {
 
                                         if (user.typeUser == "I") {
                                             console.log("Can't do the payment - Reason: Instructor can't purchase a UniReward")
                                             res.send("Can't do the payment - Reason: Instructor can't purchase a UniReward")
-                                        }
-
-                                        else if (userMoneyWallet < specificUR.cost) {
+                                        } else if (userMoneyWallet < specificUR.cost) {
                                             console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                             res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
-                                        }
-
-                                        else {
+                                        } else {
 
                                             if (isDeletedWallet1 == true || isDeletedWallet2 == true) {
                                                 console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
                                                 res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
-                                            } 
-                                            
-                                            else {
+                                            } else {
                                                 console.log("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
                                                 res.send("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
                                             }
                                         }
 
                                     }
-                                } 
-                                
-                                else {
+                                } else {
                                     console.log("Can't finish the Transaction - Reason: Reward already purchase")
                                     res.send("Can't finish the Transaction - Reason: Reward already purchase")
                                 }
-                            } 
-                            
-                            else {
+                            } else {
                                 console.log("Can't finish the Transaction - Reason: Not correct parameters")
                                 res.send("Can't finish the Transaction - Reason: Not correct paramaters")
                             }
-                        }
-                        
-                        else {
+                        } else {
                             console.log("Can't finish the Transaction - Reason: Not correct type of transaction")
                             res.send("Can't finish the Transaction - Reason: Not correct type of transaction")
                         }
                     }
-                } 
-                
-                else {
+                } else {
                     console.log("Can't finish the Transaction - Reason: User dosen't Exist")
                     res.send("Can't finish the Transaction - Reason: User dosen't Exists")
                 }
-            } 
-            
-            else {
+            } else {
                 console.log("Some isn't correct in params of username or password in Transaction")
                 res.send("Some isn't correct in params of username or password in Transaction")
             }
-        } 
-        
-        else {
+        } else {
             console.log("Can't finish the Transaction - Reason: Not correct parameters")
             res.send("Can't finish the Transaction - Reason: Not correct paramaters")
         }
-    } 
-    
-    else {
+    } else {
         console.log("Transaction not created - Reason: Blockchain isn't valid")
         res.send("Transaction not created - Reason: Blockchain isn't valid")
     }
 });
 
-router.post('/createNewUser', async function (req, res) {
+router.post('/createNewUser', async function(req, res) {
     if (valid) {
 
         let isNameExist = proveKey('name', 'string', req.body)
@@ -450,38 +396,39 @@ router.post('/createNewUser', async function (req, res) {
 
             if (userAlreadyCreated == false) {
 
-                await controllerDB.createUser(req)
-                console.log("OK - User created")
-                const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-                const hasWallet = await controllerDB.userHasWallet(ownerId)
+                if (req.body.roleUser == "N" || req.body.roleUser == "I") {
 
-                if (!hasWallet) {
-                    const newWallet = new Wallet(ownerId)
-                    controllerDB.createWallet(newWallet)
-                    console.log("OK - Wallet Created")
-                    res.send("OK - Acount created")
-                }
-                
-                else {
-                    console.log("Wallet dont created - Reason: User has a Wallet already")
-                    res.send("Wallet dont created - Reason: User has a Wallet already")
+                    await controllerDB.createUser(req)
+                    console.log("OK - User created")
+                    const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+                    const hasWallet = await controllerDB.userHasWallet(ownerId)
+
+                    if (!hasWallet) {
+
+                        const newWallet = new Wallet(ownerId)
+                        controllerDB.createWallet(newWallet)
+                        console.log("OK - Wallet Created")
+                        res.send("OK - Acount created")
+
+                    } else {
+                        console.log("Wallet dont created - Reason: User has a Wallet already")
+                        res.send("Wallet dont created - Reason: User has a Wallet already")
+                    }
+
+                } else {
+                    console.log("User not created dont created - Reason: User role invalid")
+                    res.send("User not created dont created - Reason: User role invalid")
                 }
 
-            } 
-            
-            else {
+            } else {
                 console.log("Acount dont created - Reason: Username already is used")
                 res.send("Acount dont created - Reason: Username already is used")
             }
-        } 
-        
-        else {
+        } else {
             console.log("User dont created - Reason: The data of parameters isn't correct")
             res.send("User dont created - Reason: The data of parameters isn't correct")
         }
-    } 
-    
-    else {
+    } else {
         console.log("User dont created - Reason: The blockchain isn't valid")
         res.send("User dont created - Reason: The blockchain isn't valid")
     }
@@ -491,7 +438,7 @@ router.post('/createNewUser', async function (req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function (req, res) {
+router.post('/changeUserData', async function(req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
@@ -540,34 +487,26 @@ router.post('/changeUserData', async function (req, res) {
                 if (userModify == true) {
                     console.log("User data chaged")
                     res.send("User data chaged")
-                } 
-                
-                else {
+                } else {
                     console.log("User data not chaged - Reason: Username Already Exists")
                     res.send("User data not chaged - Reason: Username Already Exists")
                 }
 
-            } 
-            
-            else {
+            } else {
                 console.log("User not modify - Reason: Parameters are not corrects")
                 res.send("User not modify - Reason: Parameters are not corrects")
             }
-        } 
-        
-        else {
+        } else {
             console.log("User data dont change - Reason: Username or password ins't correct")
             res.send("User data dont change - Reason: Username or password ins't correct")
         }
-    } 
-    
-    else {
+    } else {
         console.log("User not modify - Reason: Parameters not corrects")
         res.send("User not modify - Reason: Parameters not corrects")
     }
 });
 
-router.post('/deleteUser', async function (req, res) {
+router.post('/deleteUser', async function(req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
@@ -586,21 +525,15 @@ router.post('/deleteUser', async function (req, res) {
                 controllerDB.deleteUser(idUser)
                 console.log("OK - " + req.body.username + "'s data eliminated")
                 res.send("OK - " + req.body.username + "'s data eliminated")
-            } 
-            
-            else {
+            } else {
                 console.log(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
                 res.send(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
             }
-        } 
-        
-        else {
+        } else {
             console.log(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
             res.send(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
         }
-    } 
-    
-    else {
+    } else {
         console.log("Wallet don't deleted - Reason: Not correct parammeters")
         res.send("Wallet don't deleted - Reason: Not correct parammeters")
     }
@@ -631,23 +564,17 @@ function proveKey(nameKey, variableType, reqJson) {
                 if (reqJson[nameKey].length > 0 && isCorrect == true) {
                     console.log("Correct Type - Can continue\n")
                     return true
-                } 
-                
-                else {
+                } else {
 
                     if (reqJson[nameKey].length <= 0) {
                         console.log("Incorrect Type - Reason: Length of " + nameKey + "\n")
                         return false
-                    } 
-                    
-                    else {
+                    } else {
                         console.log("Incorrect Type - Reason: The structure of string, ins't correct\n")
                         return false
                     }
                 }
-            } 
-            
-            else {
+            } else {
 
                 if (typeof reqJson[nameKey] == 'number') {
 
@@ -658,22 +585,16 @@ function proveKey(nameKey, variableType, reqJson) {
                         console.log("Incorrect Type - Reason: The structure of number, ins't correct. Positive values\n")
                         return false
                     }
-                } 
-                
-                else {
+                } else {
                     console.log("Correct Type - Can continue\n")
                     return true
                 }
             }
-        } 
-        
-        else {
+        } else {
             console.log("Incorrect Type - Reason: Not correct type for key: " + nameKey + " \n")
             return false
         }
-    } 
-    
-    else {
+    } else {
         console.log("Incorrect Type - Reason: Not exist key\n")
         return false
     }
@@ -705,16 +626,12 @@ async function createBlock() {
         pendingTransactions.splice(0, pendingTransactions.length)
         console.log(pendingTransactions)
 
-    } 
-    
-    else {
+    } else {
 
         if (validBlockchain == false) {
             valid = false
             console.log("Error - Blockchain ins't correct")
-        } 
-        
-        else {
+        } else {
             console.log("NO, there aren't pending Transactions")
         }
     }
@@ -762,9 +679,7 @@ function proveNormalString(string, nameKey) {
     console.log("Prove " + nameKey + " : " + string + " with regular expresion")
     if (nameKey == "password" || nameKey == "passwordFrom") {
         return true
-    } 
-    
-    else {
+    } else {
         var cadena = string;
         var result = !/^\s|^\d/.test(cadena);
         return result
