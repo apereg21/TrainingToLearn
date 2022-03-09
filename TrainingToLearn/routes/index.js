@@ -104,7 +104,7 @@ router.post('/createNewReward', async function(req, res) {
                     let userFromAddressID = await controllerDB.findUserAddress("System")
                     let userToAddressID = await controllerDB.findUserAddress(req.body.username)
 
-                    if (userFromAddressID != null && (req.body.typeT == "M" || req.body.typeT == "U")) {
+                    if (userFromAddressID != null) {
 
                         let uniReward = await controllerDB.createUniReward(req, idUser)
 
