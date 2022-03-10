@@ -154,17 +154,9 @@ router.post('/createNewReward', async function(req, res) {
 
                     } else {
 
-                        if (req.body.typeT != "M" || req.body.typeT != "U") {
+                        console.log("Reward not created - Reason: System User for points transation dosen't exist")
+                        res.send("Reward not created - Reason: System User for points transation dosen't exist")
 
-                            console.log("Reward not created - Reason: Not correct type of transaction")
-                            res.send("Reward not created - Reason: Not correct type of transaction")
-
-                        } else {
-
-                            console.log("Reward not created - Reason: System User for points transation dosen't exist")
-                            res.send("Reward not created - Reason: System User for points transation dosen't exist")
-
-                        }
                     }
                 } else {
 
@@ -175,8 +167,10 @@ router.post('/createNewReward', async function(req, res) {
             } else {
 
                 if (req.body.costReward <= 0) {
+
                     console.log("Reward not created - Reason: Can't create a free UniReward")
                     res.send("Reward not created - Reason: Can't create a free UniReward")
+
                 } else {
 
                     console.log("Reward not created - Reason: Username or password isn't correct")
@@ -243,7 +237,8 @@ router.post('/createNewTransaction', async function(req, res) {
                             let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
                             let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
 
-                            if ((userToId != null && userFromId != null) && userMoneyWallet >= req.body.moneyTo && (!isDeletedWallet1 && !isDeletedWallet2)) {
+                            if ((userToId != null && userFromId != null) && userMoneyWallet >= req.body.moneyTo &&
+                                (!isDeletedWallet1 && !isDeletedWallet2) && newTransac.amount > 0) {
 
                                 let transactionObj = await controllerDB.createTransaction(newTransac)
                                 addPendingTransaction(transactionObj)
@@ -254,6 +249,11 @@ router.post('/createNewTransaction', async function(req, res) {
 
                                 console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                 res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
+
+                            } else if (newTransac.amount <= 0) {
+
+                                console.log("Can't do the payment - Reason: Amount of money can't be 0 cost or negative cost")
+                                res.send("Can't do the payment - Reason: Amount of money can't be 0 cost or negative cost")
 
                             } else {
 
