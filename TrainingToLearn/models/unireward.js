@@ -31,10 +31,15 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.BOOLEAN,
             defaultValue: false
+        },
+        hash: {
+            allowNull: true,
+            type: DataTypes.STRING
         }
     }, {});
     UniRewards.associate = function(models) {
         UniRewards.hasMany(models.Transactions, { onDelete: 'cascade' })
+        UniRewards.hasMany(models.UniPoints, { onDelete: 'cascade' })
     };
     return UniRewards;
 };

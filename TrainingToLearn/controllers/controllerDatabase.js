@@ -375,11 +375,10 @@ async getUserWalletName(userToId) {
         })
     },
 
-    async obtainUserType(usName, usPass) {
+    async obtainUserType(idUser) {
         return db.Users.findOne({
             where: {
-                username: usName,
-                password: usPass
+                id:idUser
             }
         }).then((result) => {
             if (result != null) {
@@ -913,6 +912,7 @@ async getUserWalletName(userToId) {
 
     async createPoint(pointsArray) {
         return db.UniPoints.bulkCreate(pointsArray).then((points) => {
+            console.log("OK - All points craeted")
             return points.map((point) => point.id)
         });
     },
