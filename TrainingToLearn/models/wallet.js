@@ -25,6 +25,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.JSON,
             defaultValue: []
         },
+        idsTransactions: {
+            allowNull: false,
+            type: DataTypes.JSON,
+            defaultValue: []
+        },
         deleted: {
             allowNull: false,
             type: DataTypes.BOOLEAN,

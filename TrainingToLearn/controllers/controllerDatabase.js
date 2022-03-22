@@ -735,7 +735,7 @@ async getUserWalletName(userToId) {
             }
         })
     },
-    async paymentFromSystem(userWalletId, moneyIds) {
+    async paymentToSystem(userWalletId, moneyIds) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
@@ -750,8 +750,18 @@ async getUserWalletName(userToId) {
                 where: {
                     id: userWalletId
                 }
-            }).then(
-                console.log("User wallet updated")
+            }).then(()=>{
+                return db.UniPoints.update({
+                    WalletId: userWalletId
+                }, {
+                    where: {
+                        id: vectorIds
+                    }
+                }).then(()=>{
+                    console.log("UniPoints updated")
+                    console.log("User wallet updated")
+                })
+                }   
             )
         })
     },
@@ -773,7 +783,7 @@ async getUserWalletName(userToId) {
     async paymentPersonToPerson(userFromWalletId, userToWalletId, numbPoints) {
         var pointsToChange = []
         var idsMoney = []
-            //Obtain first n elements -->Furrula            
+            //Obtain first n elements           
         return db.UniPoints.findAll({
             limit: numbPoints,
             where: {
@@ -792,7 +802,7 @@ async getUserWalletName(userToId) {
                         id: userToWalletId
                     }
                 }).then((result) => {
-                    //Update in toAddress --> Furrula
+                    //Update in toAddress 
                     idsMoney = result.money.concat(pointsToChange)
                     return db.Wallets.update({
                         money: idsMoney
@@ -801,7 +811,7 @@ async getUserWalletName(userToId) {
                             id: userToWalletId
                         }
                     }).then(() => {
-                        //Update in Points Table -->Furrula
+                        //Update in Points Table
                         return db.UniPoints.update({
                             WalletId: userToWalletId
                         }, {
@@ -809,13 +819,13 @@ async getUserWalletName(userToId) {
                                 id: idsMoney
                             }
                         }).then(() => {
-                            //Get actual info --> Furrula
+                            //Get actual info
                             return db.Wallets.findOne({
                                 where: {
                                     id: userFromWalletId
                                 }
                             }).then((result2) => {
-                                //Update in FromAddress deleted the points delivered --> No furrula
+                                //Update in FromAddress deleted the points delivered
                                 var vectorOriginal = result2.money
                                 var vectorFinal = vectorOriginal.filter(value => !pointsToChange.includes(value))
                                 return db.Wallets.update({
