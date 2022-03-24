@@ -1,5 +1,6 @@
 const db = require('../models')
 const { Op } = require("sequelize");
+const unireward = require('../models/unireward');
 
 module.exports = {
     async getBlock(indexNumber) {
@@ -70,7 +71,7 @@ module.exports = {
             return result
         })
     },
-    async createUniReward(req) {
+    async createUniReward(req,idFinalUser) {
         var isUniRewardNameUsed = await this.isUniRewardNameUsed(req.body.nameUR)
         if (!isUniRewardNameUsed) {
             return db.UniRewards
@@ -80,7 +81,8 @@ module.exports = {
                     imageUR: req.body.imageUR,
                     cost: req.body.costReward,
                     username: req.body.username,
-                    password: req.body.password
+                    password: req.body.password,
+                    WalletId: idFinalUser
                 }).then(data => {
                     if (data != null) {
                         console.log(data);
@@ -599,7 +601,9 @@ async getUserWalletName(userToId) {
                         var uniRewardsList = []
                         for (var i = 0; i < result.idsUniRewards.length; i++) {
                             var uniReward = await this.getSpecificUR(result.idsUniRewards[i])
-                            uniRewardsList.push(uniReward)
+                            if(unireward.purchase!=0){
+                                uniRewardsList.push(uniReward)
+                            }
                         }
                         vectorURTransac.push(uniRewardsList)
                         var transactionList = await this.getUserWalletTransaction(result.UserId)
