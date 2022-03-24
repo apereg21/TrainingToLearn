@@ -26,30 +26,30 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function (req, res) {
+router.get('/getAllUsersList', async function(req, res) {
 
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 
 });
 
-router.post('/loginUser', async function (req, res) {
-    var isUsernameExist = proveKey('username', 'string', req.body)   
+router.post('/loginUser', async function(req, res) {
+    var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
-    if(isUsernameExist && isPasswordExist){
+    if (isUsernameExist && isPasswordExist) {
         var userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-        if(userId!=null){
-            res.send(""+userId)
-        }else{
+        if (userId != null) {
+            res.send("" + userId)
+        } else {
             res.send("No login - Reason: Don't exist an user with this password or username")
         }
-        
-    }else{
+
+    } else {
         res.send("No login - Reason: Not correct parameters")
     }
 });
 
-router.get('/getAllRewardsList', async function (req, res) {
+router.get('/getAllRewardsList', async function(req, res) {
 
     var rewardsList = await controllerDB.getAllRewards()
     res.send(rewardsList)
@@ -57,7 +57,14 @@ router.get('/getAllRewardsList', async function (req, res) {
 });
 
 
-router.get('/getSpecificUser/:id', async function (req, res) {
+router.get('/getSpecificUser/:id', async function(req, res) {
+
+    console.log("====================================================")
+    console.log("====================================================")
+    console.log("====================================================")
+    console.log("====================================================")
+    console.log("====================================================")
+
 
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
@@ -68,7 +75,7 @@ router.get('/getSpecificUser/:id', async function (req, res) {
 
 });
 
-router.post('/getSpecificUserID', async function (req, res) {
+router.post('/getSpecificUserID', async function(req, res) {
 
     var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
 
@@ -80,7 +87,7 @@ router.post('/getSpecificUserID', async function (req, res) {
 
 });
 
-router.get('/getSpecificWallet/:id', async function (req, res) {
+router.get('/getSpecificWallet/:id', async function(req, res) {
 
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
@@ -95,7 +102,7 @@ router.get('/getSpecificWallet/:id', async function (req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function (req, res) {
+router.post('/createNewReward', async function(req, res) {
     if (valid) {
 
         var arrayPoints = []
@@ -111,7 +118,7 @@ router.post('/createNewReward', async function (req, res) {
 
             let idUserInstructor = await controllerDB.obtainUserId(req.body.username, req.body.password)
             let isUserDelete = await controllerDB.isUserDeleted(idUserInstructor)
-            //One place to do funtions with Smart Contracts
+                //One place to do funtions with Smart Contracts
             if (idUserInstructor != null && !isUserDelete && req.body.costReward > 0) {
 
                 let userType = await controllerDB.obtainUserType(idUserInstructor)
@@ -216,7 +223,7 @@ router.post('/createNewReward', async function (req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function (req, res) {
+router.post('/createNewTransaction', async function(req, res) {
     if (valid) {
 
         var isFromAddressNameExist = proveKey('fromAddressUN', 'string', req.body)
@@ -227,7 +234,7 @@ router.post('/createNewTransaction', async function (req, res) {
 
         if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist) {
 
-            let userToId,userDestAdd,userFromId, userInstructor,userFromAdd
+            let userToId, userDestAdd, userFromId, userInstructor, userFromAdd
 
             if (req.body.typeT == "M") {
                 userDestAdd = await controllerDB.findUserAddress(req.body.toAddressUN)
@@ -239,23 +246,23 @@ router.post('/createNewTransaction', async function (req, res) {
                 //Reclamador recompensa
                 userFromAdd = await controllerDB.findUserAddress(req.body.toAddressUN)
                 userFromId = await controllerDB.findUserAddressID(userFromAdd)
-                //Recividor dinero
+                    //Recividor dinero
                 userDestAdd = await controllerDB.findUserAddress("System")
                 userToId = await controllerDB.findUserAddressID(userDestAdd)
             }
-            
-            if (userToId != null && userFromId!=null) {
-                
+
+            if (userToId != null && userFromId != null) {
+
                 let isUserToDeleted = await controllerDB.isUserDeleted(userToId)
                 let isUserFromDeleted = await controllerDB.isUserDeleted(userFromId)
-                if ((isUserToDeleted != null && isUserToDeleted == false)&& (isUserFromDeleted != null && isUserFromDeleted == false)) {
+                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false)) {
 
                     if (req.body.typeT == "M") {
 
                         var isMoneyExist = proveKey('moneyTo', 'number', req.body)
                         var isUniReward = proveKey('uniReward', 'string', req.body)
                         if (isMoneyExist && (userFromId != userToId) && isUniReward) {
-                            
+
                             var idsWallets = [userFromId, userToId]
 
                             let newTransac = new Transaction(userFromAdd, userDestAdd, req.body.moneyTo, null, req.body.typeT, idsWallets, req.body.concept)
@@ -320,12 +327,12 @@ router.post('/createNewTransaction', async function (req, res) {
                             if (isUniRewardTransactionExist) {
 
                                 var idMatch = 0
-                                var idsWallets = [userToId,userFromId]
+                                var idsWallets = [userToId, userFromId]
 
                                 let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
                                 let uniRewardPurchase = await controllerDB.getPurchaseField(uniRewardId)
                                 let uniRewardsInWallet = await controllerDB.getUniRewardInWallet(userFromId)
-                                
+
                                 console.log("Prove that UniReward exist already in wallet")
 
                                 for (var i = 0; i < uniRewardsInWallet.length; i++) {
@@ -336,18 +343,18 @@ router.post('/createNewTransaction', async function (req, res) {
                                 }
 
                                 if (!(idMatch > 0) && !uniRewardPurchase) {
-                                    
+
                                     let nameTo = await controllerDB.getUserWalletName(userFromId)
                                     let concept = "Giving to " + nameTo + " the UniReward: " + req.body.uniRewardT
                                     let newTransac = new Transaction(userDestAdd, userFromAdd, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets, concept)
-                                    
+
                                     let userMoneyWallet = await controllerDB.getUserMoney(userFromId)
                                     let specificUR = await controllerDB.getSpecificUR(uniRewardId)
 
-                                    if (userMoneyWallet >= specificUR.cost && 
-                                        req.body.moneyTo == specificUR.cost && 
+                                    if (userMoneyWallet >= specificUR.cost &&
+                                        req.body.moneyTo == specificUR.cost &&
                                         userMoneyWallet >= req.body.moneyTo) {
-                                        
+
                                         let transactionObj = await controllerDB.createTransaction(newTransac)
                                         await controllerDB.updateIdArrayWallet(userFromId, uniRewardId)
                                         await controllerDB.updatePurchaseField(uniRewardId)
@@ -357,7 +364,7 @@ router.post('/createNewTransaction', async function (req, res) {
                                         addPendingTransaction(transactionObj)
                                         console.log("OK - Transaction created")
                                         res.send("OK - Transaction created")
-                                    
+
                                     } else {
 
                                         if (userMoneyWallet < specificUR.cost) {
@@ -390,7 +397,7 @@ router.post('/createNewTransaction', async function (req, res) {
                 if ((isUserToDeleted == null || isUserToDeleted != false) || (isUserFromDeleted == null || isUserFromDeleted != false)) {
                     console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
                     res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
-                } else{
+                } else {
                     console.log("Some isn't correct in params of username or password in Transaction")
                     res.send("Some isn't correct in params of username or password in Transaction")
                 }
@@ -405,7 +412,7 @@ router.post('/createNewTransaction', async function (req, res) {
     }
 });
 
-router.post('/createNewUser', async function (req, res) {
+router.post('/createNewUser', async function(req, res) {
     if (valid) {
 
         let isNameExist = proveKey('name', 'string', req.body)
@@ -462,7 +469,7 @@ router.post('/createNewUser', async function (req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function (req, res) {
+router.post('/changeUserData', async function(req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
@@ -530,7 +537,7 @@ router.post('/changeUserData', async function (req, res) {
     }
 });
 
-router.post('/deleteUser', async function (req, res) {
+router.post('/deleteUser', async function(req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
