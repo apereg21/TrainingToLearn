@@ -33,6 +33,22 @@ router.get('/getAllUsersList', async function (req, res) {
 
 });
 
+router.post('/loginUser', async function (req, res) {
+    var isUsernameExist = proveKey('username', 'string', req.body)   
+    var isPasswordExist = proveKey('password', 'string', req.body)
+    if(isUsernameExist && isPasswordExist){
+        var userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        if(userId!=null){
+            res.send(""+userId)
+        }else{
+            res.send("No login - Reason: Don't exist an user with this password or username")
+        }
+        
+    }else{
+        res.send("No login - Reason: Not correct parameters")
+    }
+});
+
 router.get('/getAllRewardsList', async function (req, res) {
 
     var rewardsList = await controllerDB.getAllRewards()
