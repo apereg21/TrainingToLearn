@@ -66,12 +66,18 @@ module.exports = {
     },
 
     //uniRewards functions
-    async getAllRewards() {
-        return db.UniRewards.findAll({}).then((result) => {
+    async getAllRewards(idUser) {
+        return db.UniRewards.findAll({
+            where: {
+                WalletId: idUser,
+                purchase: 0
+            }
+        }).then((result) => {
             return result
         })
     },
-    async createUniReward(req,idFinalUser) {
+
+    async createUniReward(req, idFinalUser) {
         var isUniRewardNameUsed = await this.isUniRewardNameUsed(req.body.nameUR)
         if (!isUniRewardNameUsed) {
             return db.UniRewards
@@ -138,31 +144,44 @@ module.exports = {
                 }
             })
     },
-async getUserWalletName(userToId) {
-    return db.Wallets.findOne({
-        where: {
-            id: userToId
-        }
-    })
-    .then((result) => {
-        if (result != null) {
-            return db.Users.findOne({
+    async getUsername(userId) {
+        return db.Users.findOne({
+            where: {
+                id: userId
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result.username
+            } else {
+                return null
+            }
+        })
+    },
+    async getUserWalletName(userToId) {
+        return db.Wallets.findOne({
                 where: {
-                    id: result.UserId
+                    id: userToId
                 }
             })
-            .then((result2) => {
-                if (result2 != null) {
-                    return result2.username
+            .then((result) => {
+                if (result != null) {
+                    return db.Users.findOne({
+                            where: {
+                                id: result.UserId
+                            }
+                        })
+                        .then((result2) => {
+                            if (result2 != null) {
+                                return result2.username
+                            } else {
+                                return null
+                            }
+                        })
                 } else {
                     return null
                 }
             })
-        } else {
-            return null
-        }
-    })
-},
+    },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
                 where: {
@@ -380,7 +399,7 @@ async getUserWalletName(userToId) {
     async obtainUserType(idUser) {
         return db.Users.findOne({
             where: {
-                id:idUser
+                id: idUser
             }
         }).then((result) => {
             if (result != null) {
@@ -601,7 +620,7 @@ async getUserWalletName(userToId) {
                         var uniRewardsList = []
                         for (var i = 0; i < result.idsUniRewards.length; i++) {
                             var uniReward = await this.getSpecificUR(result.idsUniRewards[i])
-                            if(unireward.purchase!=0){
+                            if (unireward.purchase != 0) {
                                 uniRewardsList.push(uniReward)
                             }
                         }
@@ -739,46 +758,48 @@ async getUserWalletName(userToId) {
             }
         })
     },
-    async paymentToSystem(userWalletId, moneyIds) {
+    async paymentToSystem(userWalletId, moneyIds, idTransaction) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
             }
         }).then((result) => {
             console.log(result.money)
-            var vectorIds = []
-            vectorIds = result.money.concat(moneyIds)
+            var vectorMoneyIds = [],
+                vectorTransIds = []
+            vectorMoneyIds = result.money.concat(moneyIds)
+            vectorTransIds = result.idsTransactions.concat(idTransaction)
             return db.Wallets.update({
-                money: vectorIds
+                money: vectorMoneyIds,
+                idsTransactions: vectorTransIds
             }, {
                 where: {
                     id: userWalletId
                 }
-            }).then(()=>{
+            }).then(() => {
                 return db.UniPoints.update({
                     WalletId: userWalletId
                 }, {
                     where: {
-                        id: vectorIds
+                        id: vectorMoneyIds
                     }
-                }).then(()=>{
+                }).then(() => {
                     console.log("UniPoints updated")
                     console.log("User wallet updated")
                 })
-                }   
-            )
+            })
         })
     },
 
-    async getUserMoney(userWalletId){
+    async getUserMoney(userWalletId) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
             }
         }).then((result) => {
-            if(result!=null){
+            if (result != null) {
                 return result.money.length
-            }else{
+            } else {
                 return []
             }
         })

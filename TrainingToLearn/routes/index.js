@@ -33,6 +33,16 @@ router.get('/getAllUsersList', async function(req, res) {
 
 });
 
+router.get('/getUsersName/:id', async function(req, res) {
+    var userName = await controllerDB.getUsername(parseInt((req.params.id).replace(':', '')))
+    res.send(userName)
+});
+
+router.get('/getUserRole/:id', async function(req, res) {
+    var user = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
+    res.send(user.typeUser)
+});
+
 router.post('/loginUser', async function(req, res) {
     var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
@@ -49,24 +59,16 @@ router.post('/loginUser', async function(req, res) {
     }
 });
 
-router.get('/getAllRewardsList', async function(req, res) {
+router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
+    console.log(parseInt((req.params.id).replace(':', '')))
 
-    var rewardsList = await controllerDB.getAllRewards()
+    var rewardsList = await controllerDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
     res.send(rewardsList)
 
 });
 
-
 router.get('/getSpecificUser/:id', async function(req, res) {
 
-    console.log("====================================================")
-    console.log("====================================================")
-    console.log("====================================================")
-    console.log("====================================================")
-    console.log("====================================================")
-
-
-    console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
 
     var userData = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
@@ -136,7 +138,7 @@ router.post('/createNewReward', async function(req, res) {
                             let uniReward = await controllerDB.createUniReward(req, userToId)
 
                             if (uniReward != null) {
-                                var idsWallets = [userFromId, userToId]
+                                var idsWallets = [userFromId, userFromId]
 
                                 let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
                                 let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
@@ -145,8 +147,8 @@ router.post('/createNewReward', async function(req, res) {
                                 if (!isDeletedWallet1 && !isDeletedWallet2) {
 
                                     let newTransac = new Transaction(systemId, systemId, uniReward.cost, null, "M", idsWallets, concept)
-                                    let transactionObj = await controllerDB.createTransaction(newTransac)
-                                    addPendingTransaction(transactionObj)
+                                    let transactionObjId = await controllerDB.createTransaction(newTransac)
+                                    addPendingTransaction(transactionObjId)
                                     let userWalletId = await controllerDB.obtainWalletId(userFromId)
 
                                     for (var i = 0; i < req.body.costReward; i++) {
@@ -157,7 +159,9 @@ router.post('/createNewReward', async function(req, res) {
                                         arrayPoints.push(jsonObj)
                                     }
                                     var idPoints = await controllerDB.createPoint(arrayPoints)
-                                    await controllerDB.paymentToSystem(userWalletId, idPoints)
+                                    console.log("Heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey")
+                                    console.log(transactionObjId)
+                                    await controllerDB.paymentToSystem(userWalletId, idPoints, transactionObjId)
                                     idPoints.splice(0, idPoints.length)
 
                                     console.log("OK - Reward created")
@@ -237,16 +241,17 @@ router.post('/createNewTransaction', async function(req, res) {
             let userToId, userDestAdd, userFromId, userInstructor, userFromAdd
 
             if (req.body.typeT == "M") {
+
                 userDestAdd = await controllerDB.findUserAddress(req.body.toAddressUN)
                 userToId = await controllerDB.findUserAddressID(userDestAdd)
                 userFromAdd = await controllerDB.findUserAddress("System")
                 userFromId = await controllerDB.findUserAddressID(userFromAdd)
                 userInstructor = await controllerDB.obtainUserId(req.body.toAddressUN, req.body.passwordFrom)
+
             } else {
-                //Reclamador recompensa
+
                 userFromAdd = await controllerDB.findUserAddress(req.body.toAddressUN)
                 userFromId = await controllerDB.findUserAddressID(userFromAdd)
-                    //Recividor dinero
                 userDestAdd = await controllerDB.findUserAddress("System")
                 userToId = await controllerDB.findUserAddressID(userDestAdd)
             }
