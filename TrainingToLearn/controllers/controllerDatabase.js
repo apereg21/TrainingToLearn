@@ -791,7 +791,7 @@ module.exports = {
         })
     },
 
-    async getUserMoney(userWalletId) {
+    async getUserMoney(userWalletId, idUniR) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
@@ -805,7 +805,7 @@ module.exports = {
         })
     },
 
-    async paymentPersonToPerson(userFromWalletId, userToWalletId, numbPoints) {
+    async paymentPersonToPerson(userFromWalletId, userToWalletId, numbPoints, uniRewardId) {
         var pointsToChange = []
         var idsMoney = []
             //Obtain first n elements           
@@ -813,6 +813,7 @@ module.exports = {
             limit: numbPoints,
             where: {
                 WalletId: userFromWalletId,
+                UniRewardId: uniRewardId
             },
             order: [
                 ['id', 'ASC'],
@@ -841,7 +842,8 @@ module.exports = {
                             WalletId: userToWalletId
                         }, {
                             where: {
-                                id: idsMoney
+                                id: idsMoney,
+                                UniRewardId: uniRewardId
                             }
                         }).then(() => {
                             //Get actual info

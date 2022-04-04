@@ -159,8 +159,6 @@ router.post('/createNewReward', async function(req, res) {
                                         arrayPoints.push(jsonObj)
                                     }
                                     var idPoints = await controllerDB.createPoint(arrayPoints)
-                                    console.log("Heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey")
-                                    console.log(transactionObjId)
                                     await controllerDB.paymentToSystem(userWalletId, idPoints, transactionObjId)
                                     idPoints.splice(0, idPoints.length)
 
@@ -239,7 +237,6 @@ router.post('/createNewTransaction', async function(req, res) {
         if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist) {
 
             let userToId, userDestAdd, userFromId, userInstructor, userFromAdd
-
             if (req.body.typeT == "M") {
 
                 userDestAdd = await controllerDB.findUserAddress(req.body.toAddressUN)
@@ -265,14 +262,14 @@ router.post('/createNewTransaction', async function(req, res) {
                     if (req.body.typeT == "M") {
 
                         var isMoneyExist = proveKey('moneyTo', 'number', req.body)
-                        var isUniReward = proveKey('uniReward', 'string', req.body)
-                        if (isMoneyExist && (userFromId != userToId) && isUniReward) {
+                        var isUniRewardId = proveKey('uniRewardId', 'string', req.body)
+                        if (isMoneyExist && (userFromId != userToId) && isUniRewardId) {
 
                             var idsWallets = [userFromId, userToId]
-
+                            var idUniReward = await controllerDB.getUniRewardId(req.body.uniRewardId)
                             let newTransac = new Transaction(userFromAdd, userDestAdd, req.body.moneyTo, null, req.body.typeT, idsWallets, req.body.concept)
 
-                            let userMoneyWallet = await controllerDB.getUserMoney(userFromId)
+                            let userMoneyWallet = await controllerDB.getUserMoney(userFromId, idUniReward)
                             let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
                             let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
 
@@ -281,7 +278,7 @@ router.post('/createNewTransaction', async function(req, res) {
 
                                 let transactionObj = await controllerDB.createTransaction(newTransac)
                                 addPendingTransaction(transactionObj)
-                                controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo)
+                                var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
                                 res.send("OK - Transaction created")
 
                             } else if (userMoneyWallet < req.body.moneyTo) {
@@ -399,13 +396,8 @@ router.post('/createNewTransaction', async function(req, res) {
                     res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
                 }
             } else {
-                if ((isUserToDeleted == null || isUserToDeleted != false) || (isUserFromDeleted == null || isUserFromDeleted != false)) {
-                    console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
-                    res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
-                } else {
-                    console.log("Some isn't correct in params of username or password in Transaction")
-                    res.send("Some isn't correct in params of username or password in Transaction")
-                }
+                console.log("Some isn't correct in params of username or password in Transaction")
+                res.send("Some isn't correct in params of username or password in Transaction")
             }
         } else {
             console.log("Can't finish the Transaction - Reason: Not correct parameters")
