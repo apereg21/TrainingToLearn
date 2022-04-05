@@ -27,7 +27,6 @@ router.get('/', (req) => {
 
 
 router.get('/getAllUsersList', async function(req, res) {
-
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 
@@ -41,6 +40,11 @@ router.get('/getUsersName/:id', async function(req, res) {
 router.get('/getUserRole/:id', async function(req, res) {
     var user = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
     res.send(user.typeUser)
+});
+
+router.get('/getUserID/:username', async function(req, res) {
+    var userId=await controllerDB.getUserID((req.params.username).replace(':', ''))
+    res.send(""+userId)
 });
 
 router.post('/loginUser', async function(req, res) {
@@ -233,8 +237,9 @@ router.post('/createNewTransaction', async function(req, res) {
         var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
         var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
         var isConceptExist = proveKey('concept', 'string', req.body)
+        var isMoneyExist = proveKey('moneyTo', 'number', req.body)
 
-        if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist) {
+        if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist && isMoneyExist) {
 
             let userToId, userDestAdd, userFromId, userInstructor, userFromAdd
             if (req.body.typeT == "M") {
@@ -260,10 +265,8 @@ router.post('/createNewTransaction', async function(req, res) {
                 if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false)) {
 
                     if (req.body.typeT == "M") {
-
-                        var isMoneyExist = proveKey('moneyTo', 'number', req.body)
                         var isUniRewardId = proveKey('uniRewardId', 'string', req.body)
-                        if (isMoneyExist && (userFromId != userToId) && isUniRewardId) {
+                        if ((userFromId != userToId) && isUniRewardId) {
 
                             var idsWallets = [userFromId, userToId]
                             var idUniReward = await controllerDB.getUniRewardId(req.body.uniRewardId)
@@ -276,8 +279,10 @@ router.post('/createNewTransaction', async function(req, res) {
                             if ((userToId != null && userFromId != null) && userMoneyWallet >= req.body.moneyTo &&
                                 (!isDeletedWallet1 && !isDeletedWallet2) && newTransac.amount > 0) {
 
-                                let transactionObj = await controllerDB.createTransaction(newTransac)
-                                addPendingTransaction(transactionObj)
+                                let transactionObjId = await controllerDB.createTransaction(newTransac)
+                                await controllerDB.updateTransactionIds(idsWallets[0],transactionObjId)
+                                await controllerDB.updateTransactionIds(idsWallets[1],transactionObjId)
+                                addPendingTransaction(transactionObjId)
                                 var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
                                 res.send("OK - Transaction created")
 
@@ -350,20 +355,22 @@ router.post('/createNewTransaction', async function(req, res) {
                                     let concept = "Giving to " + nameTo + " the UniReward: " + req.body.uniRewardT
                                     let newTransac = new Transaction(userDestAdd, userFromAdd, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets, concept)
 
-                                    let userMoneyWallet = await controllerDB.getUserMoney(userFromId)
+                                    let userMoneyWallet = await controllerDB.getUserMoney(userFromId,uniRewardId)
                                     let specificUR = await controllerDB.getSpecificUR(uniRewardId)
 
                                     if (userMoneyWallet >= specificUR.cost &&
                                         req.body.moneyTo == specificUR.cost &&
                                         userMoneyWallet >= req.body.moneyTo) {
 
-                                        let transactionObj = await controllerDB.createTransaction(newTransac)
+                                        let transactionObjId = await controllerDB.createTransaction(newTransac)
+                                        await controllerDB.updateTransactionIds(idsWallets[0],transactionObjId)
+                                        await controllerDB.updateTransactionIds(idsWallets[1],transactionObjId)
                                         await controllerDB.updateIdArrayWallet(userFromId, uniRewardId)
                                         await controllerDB.updatePurchaseField(uniRewardId)
-                                        var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo)
+                                        var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, uniRewardId)
                                         await controllerDB.moveToMoneyExp(idsToChange, userFromId, uniRewardId)
                                         await controllerDB.updatePurchasePoints(idsToChange)
-                                        addPendingTransaction(transactionObj)
+                                        addPendingTransaction(transactionObjId)
                                         console.log("OK - Transaction created")
                                         res.send("OK - Transaction created")
 
