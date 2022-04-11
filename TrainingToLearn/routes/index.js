@@ -355,23 +355,12 @@ router.post('/createNewTransaction', async function(req, res) {
 
                             if (isUniRewardTransactionExist) {
 
-                                var idMatch = 0
                                 var idsWallets = [userToId, userFromId]
 
                                 let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
                                 let uniRewardPurchase = await controllerDB.getPurchaseField(uniRewardId)
-                                let uniRewardsInWallet = await controllerDB.getUniRewardInWallet(userFromId)
 
-                                console.log("Prove that UniReward exist already in wallet")
-
-                                for (var i = 0; i < uniRewardsInWallet.length; i++) {
-                                    if (uniRewardsInWallet[i] == uniRewardId) {
-                                        console.log("UniReward already exists")
-                                        idMatch++
-                                    }
-                                }
-
-                                if (!(idMatch > 0) && !uniRewardPurchase && uniRewardId != null) {
+                                if (!uniRewardPurchase && uniRewardId != null) {
 
                                     let nameTo = await controllerDB.getUserWalletName(userFromId)
                                     let concept = "Giving to " + nameTo + " the UniReward: " + req.body.uniRewardT
@@ -413,7 +402,7 @@ router.post('/createNewTransaction', async function(req, res) {
 
                                     }
                                 } else {
-                                    if (uniRewardPurchase || idMatch > 0) {
+                                    if (uniRewardPurchase) {
 
                                         console.log("Can't finish the Transaction - Reason: Reward already purchase")
                                         res.send("Can't finish the Transaction - Reason: Reward already purchase")
