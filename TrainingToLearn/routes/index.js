@@ -259,10 +259,14 @@ router.post('/createNewTransaction', async function(req, res) {
             }
 
             if (userToId != null && userFromId != null) {
-
-                let isUserToDeleted = await controllerDB.isUserDeleted(userToId)
-                let isUserFromDeleted = await controllerDB.isUserDeleted(userFromId)
-                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false)) {
+                let userTo = await controllerDB.getUserData(userToId)
+                let userFrom = await controllerDB.getUserData(userToId)
+                let isUserToDeleted = userTo.deleted
+                let isUserFromDeleted = userFrom.deleted
+                let typeUserTo = userTo.typeUser
+                let typeUserFrom = userFrom.typeUser
+                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false) &&
+                    (typeUserTo != typeUserFrom)) {
 
                     if (req.body.typeT == "M") {
                         var isUniRewardId = proveKey('uniRewardId', 'string', req.body)
@@ -413,8 +417,13 @@ router.post('/createNewTransaction', async function(req, res) {
                         }
                     }
                 } else {
-                    console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
-                    res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+                    if (typeUserTo == typeUserFrom) {
+                        console.log("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+                        res.send("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+                    } else {
+                        console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+                        res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+                    }
                 }
             } else {
                 console.log("Some isn't correct in params of username or password in Transaction")
