@@ -611,7 +611,11 @@ module.exports = {
                 id: uniRewardId
             }
         }).then((result) => {
-            return result.purchase
+            if (result != null) {
+                return result.purchase
+            } else {
+                return false
+            }
         })
     },
     deleteWallet(idUser) {

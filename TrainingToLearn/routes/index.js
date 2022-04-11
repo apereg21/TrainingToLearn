@@ -260,17 +260,16 @@ router.post('/createNewTransaction', async function(req, res) {
 
             if (userToId != null && userFromId != null) {
                 let userTo = await controllerDB.getUserData(userToId)
-                let userFrom = await controllerDB.getUserData(userToId)
+                let userFrom = await controllerDB.getUserData(userFromId)
                 let isUserToDeleted = userTo.deleted
                 let isUserFromDeleted = userFrom.deleted
                 let typeUserTo = userTo.typeUser
                 let typeUserFrom = userFrom.typeUser
-                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false) &&
-                    (typeUserTo != typeUserFrom)) {
+                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false)) {
 
                     if (req.body.typeT == "M") {
                         var isUniRewardId = proveKey('uniRewardId', 'string', req.body)
-                        if ((userFromId != userToId) && isUniRewardId) {
+                        if ((userFromId != userToId) && isUniRewardId && (typeUserTo != typeUserFrom)) {
 
                             var idsWallets = [userFromId, userToId]
                             var idUniReward = await controllerDB.getUniRewardId(req.body.uniRewardId)
@@ -331,7 +330,12 @@ router.post('/createNewTransaction', async function(req, res) {
 
                         } else {
 
-                            if (userFromAddress == toAddress) {
+                            if (typeUserTo == typeUserFrom) {
+
+                                console.log("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+                                res.send("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+
+                            } else if (userFromId == userToId) {
 
                                 console.log("Can't finish the Transaction - Reason: User From and User Destiny can't be the same")
                                 res.send("Can't finish the Transaction - User From and User Destiny can't be the same")
@@ -367,7 +371,7 @@ router.post('/createNewTransaction', async function(req, res) {
                                     }
                                 }
 
-                                if (!(idMatch > 0) && !uniRewardPurchase) {
+                                if (!(idMatch > 0) && !uniRewardPurchase && uniRewardId != null) {
 
                                     let nameTo = await controllerDB.getUserWalletName(userFromId)
                                     let concept = "Giving to " + nameTo + " the UniReward: " + req.body.uniRewardT
@@ -385,6 +389,7 @@ router.post('/createNewTransaction', async function(req, res) {
                                         await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
                                         await controllerDB.updateIdArrayWallet(userFromId, uniRewardId)
                                         await controllerDB.updatePurchaseField(uniRewardId)
+
                                         var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, uniRewardId)
                                         await controllerDB.moveToMoneyExp(idsToChange, userFromId, uniRewardId)
                                         await controllerDB.updatePurchasePoints(idsToChange)
@@ -395,47 +400,68 @@ router.post('/createNewTransaction', async function(req, res) {
                                     } else {
 
                                         if (userMoneyWallet < specificUR.cost) {
+
                                             console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                             res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
+
                                         } else {
+
                                             console.log("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
                                             res.send("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
+
                                         }
 
                                     }
                                 } else {
-                                    console.log("Can't finish the Transaction - Reason: Reward already purchase")
-                                    res.send("Can't finish the Transaction - Reason: Reward already purchase")
+                                    if (uniRewardPurchase || idMatch > 0) {
+
+                                        console.log("Can't finish the Transaction - Reason: Reward already purchase")
+                                        res.send("Can't finish the Transaction - Reason: Reward already purchase")
+
+                                    } else {
+
+                                        console.log("Can't finish the Transaction - Reason: Not existing uniReward")
+                                        res.send("Can't finish the Transaction - Reason: Not existing uniReward")
+
+                                    }
+
                                 }
                             } else {
+
                                 console.log("Can't finish the Transaction - Reason: Not correct parameters")
                                 res.send("Can't finish the Transaction - Reason: Not correct paramaters")
+
                             }
                         } else {
+
                             console.log("Can't finish the Transaction - Reason: Not correct type of transaction")
                             res.send("Can't finish the Transaction - Reason: Not correct type of transaction")
+
                         }
                     }
                 } else {
-                    if (typeUserTo == typeUserFrom) {
-                        console.log("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
-                        res.send("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
-                    } else {
-                        console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
-                        res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
-                    }
+
+                    console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+                    res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+
                 }
             } else {
+
                 console.log("Some isn't correct in params of username or password in Transaction")
                 res.send("Some isn't correct in params of username or password in Transaction")
+
             }
         } else {
+
             console.log("Can't finish the Transaction - Reason: Not correct parameters")
             res.send("Can't finish the Transaction - Reason: Not correct paramaters")
+
         }
     } else {
+
         console.log("Transaction not created - Reason: Blockchain isn't valid")
         res.send("Transaction not created - Reason: Blockchain isn't valid")
+
     }
 });
 
