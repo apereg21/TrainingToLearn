@@ -66,7 +66,7 @@ module.exports = {
     },
 
     //uniRewards functions
-    async getAllRewards(idUser,pruch) {
+    async getAllRewards(idUser, pruch) {
         return db.UniRewards.findAll({
             where: {
                 WalletId: idUser,
@@ -104,10 +104,10 @@ module.exports = {
     },
     isUniRewardNameUsed(nameUniR) {
         return db.UniRewards.findOne({
-            where: {
-                nameUR: nameUniR
-            }
-        })
+                where: {
+                    nameUR: nameUniR
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     return true
@@ -118,10 +118,10 @@ module.exports = {
     },
     getUniRewardName(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     return result.nameUR
@@ -130,12 +130,25 @@ module.exports = {
                 }
             })
     },
-    async getUniRewardId(uniRewardT) {
+    async getUserIDFromReward(uniRewardN) {
         return db.UniRewards.findOne({
             where: {
-                nameUR: uniRewardT
+                nameUR: uniRewardN
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result.WalletId
+            } else {
+                return null
             }
         })
+    },
+    async getUniRewardId(uniRewardN) {
+        return db.UniRewards.findOne({
+                where: {
+                    nameUR: uniRewardN
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -159,17 +172,17 @@ module.exports = {
     },
     async getUserWalletName(userToId) {
         return db.Wallets.findOne({
-            where: {
-                id: userToId
-            }
-        })
+                where: {
+                    id: userToId
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     return db.Users.findOne({
-                        where: {
-                            id: result.UserId
-                        }
-                    })
+                            where: {
+                                id: result.UserId
+                            }
+                        })
                         .then((result2) => {
                             if (result2 != null) {
                                 return result2.username
@@ -184,10 +197,10 @@ module.exports = {
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -200,10 +213,10 @@ module.exports = {
 
     async getSpecificUR(idUniReward) {
         return db.UniRewards.findOne({
-            where: {
-                id: idUniReward
-            }
-        })
+                where: {
+                    id: idUniReward
+                }
+            })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -536,7 +549,7 @@ module.exports = {
             return false
         }
     },
-    async getUserID(username){
+    async getUserID(username) {
         return db.Users.findOne({
             where: {
                 username: username
@@ -627,7 +640,7 @@ module.exports = {
                 where: {
                     UserId: idUser
                 }
-            }).then(async (result) => {
+            }).then(async(result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
                     vectorURTransac.push(result)
@@ -689,12 +702,12 @@ module.exports = {
                         return null
                     }
 
-                }).catch((val) => { })
+                }).catch((val) => {})
             } else {
                 return null
             }
 
-        }).catch((val) => { })
+        }).catch((val) => {})
     },
     async updateIdArrayWallet(idUser, idUniReward) {
         return db.Wallets.findOne({
@@ -850,7 +863,7 @@ module.exports = {
     async paymentPersonToPerson(userFromWalletId, userToWalletId, numbPoints, uniRewardId) {
         var pointsToChange = []
         var idsMoney = []
-        //Obtain first n elements           
+            //Obtain first n elements           
         return db.UniPoints.findAll({
             limit: numbPoints,
             where: {
@@ -971,7 +984,7 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => { })
+        }).catch((val) => {})
     },
     async getUserWalletTransaction(idWallet) {
         return db.Transactions.findAll({
