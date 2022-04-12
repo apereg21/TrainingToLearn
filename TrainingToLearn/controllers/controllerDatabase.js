@@ -839,7 +839,7 @@ module.exports = {
         })
     },
 
-    async getUserMoney(userWalletId) {
+    async getUserMoney(userWalletId,idUniReward) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
@@ -849,7 +849,8 @@ module.exports = {
                 return db.UniPoints.findAll({
                     where: {
                         id: result.money,
-                        alPurchase: 0
+                        alPurchase: 0,
+                        UniRewardId: idUniReward
                     }
                 }).then((result2) => {
                     if (result2 != null) {

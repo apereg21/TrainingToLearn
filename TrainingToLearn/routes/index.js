@@ -259,17 +259,22 @@ router.post('/createNewTransaction', async function(req, res) {
             }
 
             if (userToId != null && userFromId != null) {
-                let userTo = await controllerDB.getUserData(userToId)
-                let userFrom = await controllerDB.getUserData(userFromId)
-                let isUserToDeleted = userTo.deleted
-                let isUserFromDeleted = userFrom.deleted
-                let typeUserTo = userTo.typeUser
-                let typeUserFrom = userFrom.typeUser
-                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false)) {
+                let userToData = await controllerDB.getUserData(userToId)
+                let userFromData = await controllerDB.getUserData(userFromId)
+                let userInstructorData = await controllerDB.getUserData(userInstructor)
+                let isUserToDeleted = userToData.deleted
+                let isUserFromDeleted = userFromData.deleted
+                let typeUserTo = userToData.typeUser
+                let typeUserFrom = userInstructorData.typeUser
+                console.log("=========================================================")
+                console.log( typeUserTo +" "+ typeUserFrom)
+                console.log("=========================================================")
+                if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false) && 
+                !(typeUserTo == "N" && typeUserFrom == "N")) {
 
                     if (req.body.typeT == "M") {
                         var isUniRewardId = proveKey('uniRewardId', 'string', req.body)
-                        if ((userFromId != userToId) && isUniRewardId && (typeUserTo != typeUserFrom)) {
+                        if ((userFromId != userToId) && isUniRewardId) {
 
                             var idsWallets = [userFromId, userToId]
                             var idUniReward = await controllerDB.getUniRewardId(req.body.uniRewardId)
@@ -330,12 +335,7 @@ router.post('/createNewTransaction', async function(req, res) {
 
                         } else {
 
-                            if (typeUserTo == typeUserFrom) {
-
-                                console.log("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
-                                res.send("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
-
-                            } else if (userFromId == userToId) {
+                            if (userFromId == userToId) {
 
                                 console.log("Can't finish the Transaction - Reason: User From and User Destiny can't be the same")
                                 res.send("Can't finish the Transaction - User From and User Destiny can't be the same")
@@ -429,9 +429,18 @@ router.post('/createNewTransaction', async function(req, res) {
                         }
                     }
                 } else {
+                    if (typeUserTo == "N" && typeUserFrom == "N") {
 
-                    console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
-                    res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+                        console.log("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+                        res.send("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+
+                    } else {
+
+                        console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+                        res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't Exist")
+
+                    }
+                    
 
                 }
             } else {
