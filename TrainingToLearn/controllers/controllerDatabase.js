@@ -1,6 +1,7 @@
 const db = require('../models')
 const { Op } = require("sequelize");
 const unireward = require('../models/unireward');
+const SHA256 = require('crypto-js/sha256')
 
 module.exports = {
     async getBlock(indexNumber) {
@@ -864,7 +865,26 @@ module.exports = {
             }
         })
     },
+    async getPointsToChange(userFromId,numbPoints, uniRewardId) {
+        var pointsToChange = []
+            //Obtain first n elements of Reward           
+        return db.UniPoints.findAll({
+            limit: numbPoints,
+            where: {
+                WalletId: userFromId,
+                UniRewardId: uniRewardId,
+                alPurchase: 0
+            },
+            order: [
+                ['id', 'ASC'],
+            ]
+        }).then(() => {
+            return pointsToChange
 
+        }).catch((val) => {
+            console.log(val)
+        })
+    },
     async paymentPersonToPerson(userFromWalletId, userToWalletId, numbPoints, uniRewardId) {
         var pointsToChange = []
         var idsMoney = []
@@ -990,6 +1010,27 @@ module.exports = {
                 return false
             }
         }).catch((val) => {})
+    },
+    async updateTransactionHash(pendingTransactionId, hashBlock){
+        return db.Transactions.findOne({
+            where: {
+                id:pendingTransactionId
+            }
+        }).then((result) => { 
+            if(result!=null){
+                return db.Transactions.update({
+                    hash : SHA256(pendingTransactionId + hashBlock).toString()
+                }, {
+                    where: {
+                        id: pendingTransactionId
+                    }
+                }).then((result2) => {  
+
+                })
+            }else{
+                return null
+            }
+        })
     },
     async getUserWalletTransaction(idWallet) {
         return db.Transactions.findAll({
