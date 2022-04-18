@@ -3,37 +3,34 @@ const EC = require('elliptic').ec;
 const ec = new EC('secp256k1');
 
 class Transaction {
-    /*  El contructor necesita, la fecha de la transacción, destinatario, remitente
-     *   y la cantidad que se deseea traspasar de una cartera a otra
-     */
-    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
-            this.fromAddress = fromAddress;
-            this.toAddress = toAddress;
-            this.timestamp = Date.now();
-            this.concept = concept;
-            this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
-            if (typeTr == "M") {
-                this.UniRewardId = null;
 
-            } else {
-                this.UniRewardId = unireward;
-            }
-            this.amount = amount;
-            this.idWalletFrom = idsWallets[0]
-            this.idWalletTo = idsWallets[1]
-            this.typeT = typeTr;
+    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
+        this.fromAddress = fromAddress;
+        this.toAddress = toAddress;
+        this.timestamp = Date.now();
+        this.concept = concept;
+        this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
+
+        if (typeTr == "M") {
+            this.UniRewardId = null;
+
+        } else {
+            this.UniRewardId = unireward;
         }
-        /*
-         *   Firmar la transacción, que se realiza mediante la clave privada
-         */
+
+        this.amount = amount;
+        this.idWalletFrom = idsWallets[0]
+        this.idWalletTo = idsWallets[1]
+        this.typeT = typeTr;
+        this.uniPointIds = []
+    }
+
+    setUniPointIds(ids) {
+        this.uniPointIds = ids
+    }
+
     signTransaction(signingKey) {
-        //Probamos que la publicKey que se genero es la correcta. Esto se puede hacer de la siguiente manera:
-        /*
-          Con la clave privada, lo que podemos hacer es obtener la clave publica, con el comando
-          .getPublic(). Si no es la misma dirección, estamos ante un error
-        */
-        console.log()
-        console.log()
+
         console.log("With the private key: " + signingKey)
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
         console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
@@ -50,10 +47,6 @@ class Transaction {
 
     }
 
-
-    /*
-     *   Función para generar hash de la trasaccion
-     */
     calHashTransaction() {
         return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp + this.concept + this.idWalletFrom + this.idWalletTo + this.typeT).digest('hex');
     }

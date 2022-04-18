@@ -67,6 +67,25 @@ module.exports = {
     },
 
     //uniRewards functions
+    async updateHashUniReward(transactionId, hashBlock) {
+        return db.Transactions.findOne({
+            where: {
+                id: transactionId
+            }
+        }).then((result) => {
+            console.log("===========================================")
+            console.log("I'm UniRewardId:" + result.UniRewardId)
+            console.log("===========================================")
+            return db.UniRewards.update({
+                hash: SHA256(transactionId + hashBlock).toString()
+            }, {
+                where: {
+                    id: result.UniRewardId
+                }
+            }).then(() => {})
+        })
+    },
+
     async getAllRewards(idUser, pruch) {
         return db.UniRewards.findAll({
             where: {
@@ -840,7 +859,7 @@ module.exports = {
         })
     },
 
-    async getUserMoney(userWalletId,idUniReward) {
+    async getUserMoney(userWalletId, idUniReward) {
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
@@ -865,9 +884,8 @@ module.exports = {
             }
         })
     },
-    async getPointsToChange(userFromId,numbPoints, uniRewardId) {
+    async getPointsToChange(userFromId, numbPoints, uniRewardId) {
         var pointsToChange = []
-            //Obtain first n elements of Reward           
         return db.UniPoints.findAll({
             limit: numbPoints,
             where: {
@@ -878,7 +896,11 @@ module.exports = {
             order: [
                 ['id', 'ASC'],
             ]
-        }).then(() => {
+        }).then((uniPoints) => {
+            pointsToChange = uniPoints.map((uniPoint) => uniPoint.id)
+            console.log("==============================================")
+            console.log(pointsToChange)
+            console.log("==============================================")
             return pointsToChange
 
         }).catch((val) => {
@@ -968,7 +990,8 @@ module.exports = {
                 concept: transaction.concept,
                 signature: transaction.signatureC,
                 idWalletFrom: transaction.idWalletFrom,
-                idWalletTo: transaction.idWalletTo
+                idWalletTo: transaction.idWalletTo,
+                uniPointIds: transaction.uniPointIds
             }).then((result) => {
                 console.log("Transaction Created")
                 return result.id
@@ -983,7 +1006,8 @@ module.exports = {
                 signature: transaction.signatureC,
                 UniRewardId: transaction.UniRewardId,
                 idWalletFrom: transaction.idWalletFrom,
-                idWalletTo: transaction.idWalletTo
+                idWalletTo: transaction.idWalletTo,
+                uniPointIds: transaction.uniPointIds
             }).then((result) => {
                 console.log("Transaction Created")
                 return result.id
@@ -1011,23 +1035,23 @@ module.exports = {
             }
         }).catch((val) => {})
     },
-    async updateTransactionHash(pendingTransactionId, hashBlock){
+    async updateTransactionHash(pendingTransactionId, hashBlock) {
         return db.Transactions.findOne({
             where: {
-                id:pendingTransactionId
+                id: pendingTransactionId
             }
-        }).then((result) => { 
-            if(result!=null){
+        }).then((result) => {
+            if (result != null) {
                 return db.Transactions.update({
-                    hash : SHA256(pendingTransactionId + hashBlock).toString()
+                    hash: SHA256(pendingTransactionId + hashBlock).toString()
                 }, {
                     where: {
                         id: pendingTransactionId
                     }
-                }).then((result2) => {  
-
+                }).then(() => {
+                    return result
                 })
-            }else{
+            } else {
                 return null
             }
         })
@@ -1086,9 +1110,29 @@ module.exports = {
                     id: idUR
                 }
             }).then(() => {
+                console.log(idsToChange)
                 console.log("Points traspased to UniReward")
             }).catch((val) => { console.log(val) })
         }).catch((val) => { console.log(val) })
 
+    },
+
+    async updateHashUniPoint(transactionId, hashBlock) {
+        return db.Transactions.findOne({
+            where: {
+                id: transactionId
+            }
+        }).then((result) => {
+            console.log("===========================================")
+            console.log(result.uniPointIds)
+            console.log("===========================================")
+            return db.UniPoints.update({
+                hash: SHA256(transactionId + hashBlock).toString()
+            }, {
+                where: {
+                    id: result.uniPointIds
+                }
+            }).then(() => {})
+        })
     }
 }
