@@ -988,7 +988,8 @@ module.exports = {
                 money: transaction.amount,
                 typeTransaction: transaction.typeT,
                 concept: transaction.concept,
-                signature: transaction.signatureC,
+                signatureFrom: transaction.signatureFrom,
+                signatureTo: transaction.signatureTo,
                 idWalletFrom: transaction.idWalletFrom,
                 idWalletTo: transaction.idWalletTo,
                 uniPointIds: transaction.uniPointIds
@@ -1003,7 +1004,7 @@ module.exports = {
                 money: transaction.amount,
                 typeTransaction: transaction.typeT,
                 concept: transaction.concept,
-                signature: transaction.signatureC,
+                signatureFrom: transaction.signatureFrom,
                 UniRewardId: transaction.UniRewardId,
                 idWalletFrom: transaction.idWalletFrom,
                 idWalletTo: transaction.idWalletTo,

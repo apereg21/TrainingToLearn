@@ -22,8 +22,12 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             type: DataTypes.STRING
         },
-        signature: {
+        signatureFrom: {
             allowNull: false,
+            type: DataTypes.STRING
+        },
+        signatureTo: {
+            allowNull: true,
             type: DataTypes.STRING
         },
         money: {

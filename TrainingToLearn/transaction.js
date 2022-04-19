@@ -9,7 +9,8 @@ class Transaction {
         this.toAddress = toAddress;
         this.timestamp = Date.now();
         this.concept = concept;
-        this.signatureC = "a234bksdv9876sdPo456ÑKSDFGPIQWeRnsdBQWOUERHsbLAJSDF";
+        this.signatureFrom = "";
+        this.signatureTo = "";
 
         if (typeTr == "M") {
             this.UniRewardId = null;
@@ -29,36 +30,72 @@ class Transaction {
         this.uniPointIds = ids
     }
 
-    signTransaction(signingKey) {
-
-        console.log("With the private key: " + signingKey)
-        const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
-        console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
-        if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
-            console.log('Something gone wrong with the operations!');
-            this.signatureC = null
-        } else {
-            const hashTx = this.calHashTransaction();
-            const sig = signingKeyInterna.sign(hashTx, 'base64');
-            var signature = sig.toDER('hex');
-            console.log("Firmado: " + signature)
-            this.signatureC = signature
-        }
-
-    }
-
     calHashTransaction() {
         return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp + this.concept + this.idWalletFrom + this.idWalletTo + this.typeT).digest('hex');
     }
 
-    isValid() {
-        if (this.fromAddress === null) return true;
-        if (!this.signatureC || this.signatureC.length === 0) {
-            console.log('No signature in this transaction');
-        } else {
-            const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
-            return publicKey.verify(this.calHashTransaction(), this.signatureC);
+    signTransaction(signingKey,type) {
+        console.log("With the private key: " + signingKey)
+        const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
+        console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
+        //Prove if is the key of correct user 
+        if(type == 0){
+            if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
+                console.log('The key doesnt belong to the expected user');
+                this.signatureFrom = null
+            } else {
+                const hash = this.calHashTransaction();
+                const sig = signingKeyInterna.sign(hash, 'base64');
+                var signature = sig.toDER('hex');
+                console.log("Signed: " + signature)
+                this.signatureFrom = signature
+
+            }
+        }else{
+            if (signingKeyInterna.getPublic('hex') != this.toAddress) {
+                console.log('The key doesnt belong to the expected user');
+                this.signatureTo = null
+            } else {
+                const hash = this.calHashTransaction();
+                const sig = signingKeyInterna.sign(hash, 'base64');
+                var signature = sig.toDER('hex');
+                console.log("Signed: " + signature)
+                this.signatureTo = signature
+            }
         }
+
+    }
+
+    isValid(type) {
+        if(this.typeT=="U"){
+            if (this.signatureFrom==null || this.signatureFrom.length == 0) {
+                console.log('No signature/s in this transaction');
+                return false
+            } else{
+                const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
+                return publicKey.verify(this.calHashTransaction(), this.signatureFrom);
+            }
+        }else{
+            if (this.signatureFrom==null || this.signatureFrom.length == 0 || this.signatureTo==null || this.signatureTo.length == 0) {
+                console.log('No signature in this transaction');
+                return false
+            } else { 
+                const publicKeyFrom = ec.keyFromPublic(this.fromAddress, 'hex');
+                var isCorrectKF = publicKeyFrom.verify(this.calHashTransaction(), this.signatureFrom);
+                if(type==0){
+                    return publicKeyFrom.verify(this.calHashTransaction(), this.signatureFrom);
+                }else{
+                    const publicKeyTo = ec.keyFromPublic(this.toAddress, 'hex');
+                    var isCorrectKT = publicKeyTo.verify(this.calHashTransaction(), this.signatureTo); 
+                    if(isCorrectKF==false || isCorrectKT==false){
+                        return false
+                    } else {
+                        return true
+                    }
+                }
+            }
+        }
+        
 
     }
 }
