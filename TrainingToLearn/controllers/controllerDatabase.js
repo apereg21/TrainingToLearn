@@ -22,6 +22,15 @@ module.exports = {
             })
             .catch((error) => console.log("Error: " + error));
     },
+    async getLastUniRewardIndex() {
+        return db.UniRewards
+            .count()
+            .then((result) => {
+                console.log("LastUnireward in database is : " + result+1)
+                return result+1
+            })
+            .catch((error) => console.log("Error: " + error));
+    },
     async createBlock(req) {
         return db.Blockchain.create({
             index: req.index,
@@ -73,9 +82,6 @@ module.exports = {
                 id: transactionId
             }
         }).then((result) => {
-            console.log("===========================================")
-            console.log("I'm UniRewardId:" + result.UniRewardId)
-            console.log("===========================================")
             return db.UniRewards.update({
                 hash: SHA256(transactionId + hashBlock).toString()
             }, {
@@ -98,17 +104,15 @@ module.exports = {
     },
 
     async createUniReward(req, idFinalUser) {
-        var isUniRewardNameUsed = await this.isUniRewardNameUsed(req.body.nameUR)
-        if (!isUniRewardNameUsed) {
+        var isUniRewardNameUsed = await this.isUniRewardCreated(req.hash)
+        if (!isUniRewardNameUsed && isUniRewardNameUsed!=null) {
             return db.UniRewards
                 .create({
-                    nameUR: req.body.nameUR,
-                    descriptionUR: req.body.descriptionUR,
-                    imageUR: req.body.imageUR,
-                    cost: req.body.costReward,
-                    username: req.body.username,
-                    password: req.body.password,
-                    WalletId: idFinalUser
+                    nameUR: req.nameUR,
+                    descriptionUR: req.descriptionUR,
+                    imageUR: req.imageUR,
+                    cost: req.cost,
+                    WalletId: req.WalletId
                 }).then(data => {
                     if (data != null) {
                         console.log(data);
@@ -122,21 +126,26 @@ module.exports = {
             return null
         }
     },
-    isUniRewardNameUsed(nameUniR) {
-        return db.UniRewards.findOne({
-                where: {
-                    nameUR: nameUniR
-                }
-            })
-            .then((result) => {
-                if (result != null) {
-                    return true
-                } else {
-                    return false
-                }
-            })
+    async isUniRewardCreated(hashUR) {
+        return db.UniRewards.count({}).then(counter => {
+            if(counter == 0){
+                return true
+            }else{
+                return db.UniRewards.findOne({
+                    where:{
+                        hash: hashUR
+                    }
+                }).then((result)=> {
+                    if(result!=null){
+                        return true
+                    }else{
+                        return false
+                    }
+                })
+            }
+        })
     },
-    getUniRewardName(idUniReward) {
+    async getUniRewardName(idUniReward) {
         return db.UniRewards.findOne({
                 where: {
                     id: idUniReward
@@ -1068,6 +1077,22 @@ module.exports = {
                 return result
             } else {
                 console.log("No Transactions find asociated to concrete Wallet")
+                return null
+            }
+        }).catch((val) => { console.log(val) })
+    },
+
+    async getConcreteTransaction(id){
+        return db.Transactions.findOne({
+            where: {
+               id: id
+            }
+        }).then((result) => {
+            if (result != null) {
+                console.log("Transaction find")
+                return result
+            } else {
+                console.log("No Transactions find")
                 return null
             }
         }).catch((val) => { console.log(val) })
