@@ -4,6 +4,7 @@
 const Block = require('../block');
 const Wallet = require('../wallet');
 const Transaction = require('../transaction');
+const UniReward = require('../uniReward');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
 
@@ -12,6 +13,7 @@ const controllerDB = require('../controllers/controllerDatabase');
  */
 var router = express.Router();
 var pendingTransactions = [];
+var pendingUniRewards = [];
 var periodicFunct = setInterval(() => createBlock(), 10000);
 var valid = true
 
@@ -139,10 +141,12 @@ router.post('/createNewReward', async function(req, res) {
                         let userFromId = await controllerDB.findUserAddressID(systemId)
                         let userToId = await controllerDB.findUserAddressID(uniRewardReciverId)
                         if (idUserInstructor != userToId) {
-                            let uniReward = await controllerDB.createUniReward(req, userToId)
-
-                            if (uniReward != null) {
-                                var idsWallets = [userFromId, userFromId]
+                            //let uniReward = await controllerDB.createUniReward(req, userToId)
+                            let uniReward = new UniReward(req.body, userFromId)
+                            
+                            if (uniReward.proveNotNullObject()!=true) {
+                                addPendingUniReward(uniReward)
+                                var idsWallets = [userFromId, userToId]
 
                                 let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
                                 let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
@@ -150,13 +154,13 @@ router.post('/createNewReward', async function(req, res) {
 
                                 if (!isDeletedWallet1 && !isDeletedWallet2) {
 
-                                    let newTransac = new Transaction(systemId, systemId, uniReward.cost, null, "M", idsWallets, concept)
+                                    let newTransac = new Transaction(systemId, systemId, uniReward.cost, await uniReward.getLastIndex(), "U", idsWallets, concept)
                                     let userWalletId = await controllerDB.obtainWalletId(userFromId)
 
                                     for (var i = 0; i < req.body.costReward; i++) {
                                         var jsonObj = {
                                             timestamp: new Date(),
-                                            UniRewardId: uniReward.id
+                                            UniRewardId: await uniReward.getLastIndex()
                                         }
                                         arrayPoints.push(jsonObj)
                                     }
@@ -186,8 +190,8 @@ router.post('/createNewReward', async function(req, res) {
                                 }
                             } else {
 
-                                console.log("Reward not created - UniReward already exists")
-                                res.send("Reward not created - UniReward already exists")
+                                console.log("Reward not created - UniReward hash corrupted during the creation of object")
+                                res.send("Reward not created - UniReward hash corrupted during the creation of object")
 
                             }
                         } else {
@@ -669,6 +673,10 @@ function addPendingTransaction(transaction) {
     pendingTransactions.push(transaction)
 }
 
+function addPendingUniReward(unireward) {
+    pendingUniRewards.push(unireward)
+}
+
 function proveKey(nameKey, variableType, reqJson) {
 
     var objJson = Object(reqJson)
@@ -758,6 +766,12 @@ async function createBlock() {
                 await controllerDB.updateHashUniPoint(pendingTransactions[i], newBlock.hash)
             }
 
+        }
+        if(pendingUniRewards.length > 0){
+            for (var i = 0; i < pendingUniRewards.length; i++) {
+                await controllerDB.createUniReward(pendingUniRewards[i], pendingUniRewards[i].WalletId)
+            }
+            pendingUniRewards.splice(0, pendingTransactions.length)
         }
         pendingTransactions.splice(0, pendingTransactions.length)
         console.log(pendingTransactions)
