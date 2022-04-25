@@ -22,12 +22,30 @@ module.exports = {
             })
             .catch((error) => console.log("Error: " + error));
     },
+    async getLastTransactionId() {
+        return db.Transactions
+            .count()
+            .then((result) => {
+                console.log("LastBlock in blockchain found it: " + result)
+                return result + 1
+            })
+            .catch((error) => console.log("Error: " + error));
+    },
+    async getLastIdUP() {
+        return db.UniPoints
+            .count()
+            .then((result) => {
+                console.log("LastUnipointId in database found it: " + result)
+                return result + 1
+            })
+            .catch((error) => console.log("Error: " + error));
+    },
     async getLastUniRewardIndex() {
         return db.UniRewards
             .count()
             .then((result) => {
-                console.log("LastUnireward in database is : " + result+1)
-                return result+1
+                console.log("LastUnireward in database is : " + result + 1)
+                return result + 1
             })
             .catch((error) => console.log("Error: " + error));
     },
@@ -88,7 +106,7 @@ module.exports = {
                 where: {
                     id: result.UniRewardId
                 }
-            }).then(() => {})
+            })
         })
     },
 
@@ -103,9 +121,9 @@ module.exports = {
         })
     },
 
-    async createUniReward(req, idFinalUser) {
+    async createUniReward(req, walletId) {
         var isUniRewardNameUsed = await this.isUniRewardCreated(req.hash)
-        if (!isUniRewardNameUsed && isUniRewardNameUsed!=null) {
+        if (isUniRewardNameUsed != true && isUniRewardNameUsed != null) {
             return db.UniRewards
                 .create({
                     nameUR: req.nameUR,
@@ -128,17 +146,17 @@ module.exports = {
     },
     async isUniRewardCreated(hashUR) {
         return db.UniRewards.count({}).then(counter => {
-            if(counter == 0){
-                return true
-            }else{
+            if (counter == 0) {
+                return false
+            } else {
                 return db.UniRewards.findOne({
-                    where:{
+                    where: {
                         hash: hashUR
                     }
-                }).then((result)=> {
-                    if(result!=null){
+                }).then((result) => {
+                    if (result != null) {
                         return true
-                    }else{
+                    } else {
                         return false
                     }
                 })
@@ -1082,10 +1100,10 @@ module.exports = {
         }).catch((val) => { console.log(val) })
     },
 
-    async getConcreteTransaction(id){
+    async getConcreteTransaction(id) {
         return db.Transactions.findOne({
             where: {
-               id: id
+                id: id
             }
         }).then((result) => {
             if (result != null) {
