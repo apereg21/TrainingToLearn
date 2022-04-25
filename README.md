@@ -8,10 +8,10 @@ Rellenar el archivo config.json con la información necesaria para la conexión 
 
 ### Instalación 🔧
 Hay que installar los siguientes módulos:<br />
-npm install sequelize mysql2 express crypto-js elliptic --save<br />
+npm install sequelize mysql2 express crypto-js elliptic cors --save<br />
 Por terminal, en el directorio del proyecto ejecutar:<br />
 node server.js en la carpeta del proyecto<br /><br />
-Petición HTTP GET a "localhost:3000/mantenimiento".<br />
+En un navegador web nos dirigiremos a "localhost:3000/mantenimiento/restaurarDB".<br />
 Así se rellenará la base con las tablas.<br />
 
 ## Despliegue 📦
