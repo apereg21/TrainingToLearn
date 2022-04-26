@@ -282,11 +282,11 @@ module.exports = {
     },
     async createUser(req) {
         return db.Users.create({
-            name: req.body.name,
-            fullSurname: req.body.fullSurname,
-            username: req.body.username,
-            password: req.body.password,
-            typeUser: req.body.roleUser
+            name: req.name,
+            fullSurname: req.fullSurname,
+            username: req.username,
+            password: req.password,
+            typeUser: req.typeUser
         }).then(() => {
             console.log("Created")
         }).catch((val) => {
@@ -895,7 +895,6 @@ module.exports = {
             if (result != null) {
                 return db.UniPoints.findAll({
                     where: {
-                        id: result.money,
                         alPurchase: 0,
                         UniRewardId: idUniReward
                     }
@@ -1062,6 +1061,20 @@ module.exports = {
                 return false
             }
         }).catch((val) => {})
+    },
+    async isExistTransaction(idT){
+        return db.Transactions.findOne({
+            where:{
+                id:idT
+            }
+        }).then((result) => {
+            if(result!=null){
+                return true
+            }else{
+                return false
+            }
+        })
+        
     },
     async updateTransactionHash(pendingTransactionId, hashBlock) {
         return db.Transactions.findOne({
