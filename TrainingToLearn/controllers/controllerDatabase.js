@@ -760,7 +760,7 @@ module.exports = {
 
         }).catch((val) => {})
     },
-    async updateIdArrayWallet(idUser, idUniReward) {
+    async updateIdUniRewardWallet(idUser, idUniReward) {
         return db.Wallets.findOne({
             where: {
                 UserId: idUser
@@ -844,14 +844,16 @@ module.exports = {
             }
         }).then((result) => {
             var vectorTransIds = []
-            vectorTransIds = result.idsTransactions.concat(idTransaction)
-            return db.Wallets.update({
-                idsTransactions: vectorTransIds
-            }, {
-                where: {
-                    id: idWallet
-                }
-            })
+            if (!(result.idsTransactions.includes(idTransaction))) {
+                vectorTransIds = result.idsTransactions.concat(idTransaction)
+                return db.Wallets.update({
+                    idsTransactions: vectorTransIds
+                }, {
+                    where: {
+                        id: idWallet
+                    }
+                })
+            }
         })
     },
     async paymentToSystem(userWalletId, moneyIds, idTransaction) {
@@ -1062,19 +1064,19 @@ module.exports = {
             }
         }).catch((val) => {})
     },
-    async isExistTransaction(idT){
+    async isExistTransaction(idT) {
         return db.Transactions.findOne({
-            where:{
-                id:idT
+            where: {
+                id: idT
             }
         }).then((result) => {
-            if(result!=null){
+            if (result != null) {
                 return true
-            }else{
+            } else {
                 return false
             }
         })
-        
+
     },
     async updateTransactionHash(pendingTransactionId, hashBlock) {
         return db.Transactions.findOne({

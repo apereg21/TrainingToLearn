@@ -26,12 +26,21 @@ class Transaction {
         this.uniPointIds = []
     }
 
-    setUniPointIds(ids) {
-        for (var i = 0; i < ids.length; i++) {
-            console.log("==================================================")
-            console.log(ids[i].id)
-            console.log("==================================================")
-            this.uniPointIds.push(ids[i].id)
+    setUniPointIds(ids, opc) {
+        if (opc == 0) {
+            for (var i = 0; i < ids.length; i++) {
+                console.log("==================================================")
+                console.log(ids[i].id)
+                console.log("==================================================")
+                this.uniPointIds.push(ids[i].id)
+            }
+        } else {
+            for (var i = 0; i < ids.length; i++) {
+                console.log("==================================================")
+                console.log(ids[i])
+                console.log("==================================================")
+                this.uniPointIds.push(ids[i])
+            }
         }
     }
 

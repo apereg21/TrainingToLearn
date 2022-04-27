@@ -14,6 +14,7 @@ const controllerDB = require('../controllers/controllerDatabase');
 var router = express.Router();
 var pendingTransactions = [];
 var pendingUniRewards = [];
+var pendingIdsTransactions = [];
 var arrayPoints = [];
 var periodicFunct = setInterval(() => createBlock(), 10000);
 var valid = true
@@ -29,28 +30,28 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function (req, res) {
+router.get('/getAllUsersList', async function(req, res) {
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 
 });
 
-router.get('/getUsersName/:id', async function (req, res) {
+router.get('/getUsersName/:id', async function(req, res) {
     var userName = await controllerDB.getUsername(parseInt((req.params.id).replace(':', '')))
     res.send(userName)
 });
 
-router.get('/getUserRole/:id', async function (req, res) {
+router.get('/getUserRole/:id', async function(req, res) {
     var user = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
     res.send(user.typeUser)
 });
 
-router.get('/getUserID/:username', async function (req, res) {
+router.get('/getUserID/:username', async function(req, res) {
     var userId = await controllerDB.getUserID((req.params.username).replace(':', ''))
     res.send("" + userId)
 });
 
-router.post('/loginUser', async function (req, res) {
+router.post('/loginUser', async function(req, res) {
     var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
@@ -66,7 +67,7 @@ router.post('/loginUser', async function (req, res) {
     }
 });
 
-router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
+router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     console.log(parseInt((req.params.id).replace(':', '')))
 
     var rewardsList = await controllerDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
@@ -74,7 +75,7 @@ router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
 
 });
 
-router.get('/getSpecificUser/:id', async function (req, res) {
+router.get('/getSpecificUser/:id', async function(req, res) {
 
     console.log(parseInt((req.params.id).replace(':', '')))
 
@@ -84,7 +85,7 @@ router.get('/getSpecificUser/:id', async function (req, res) {
 
 });
 
-router.post('/getSpecificUserID', async function (req, res) {
+router.post('/getSpecificUserID', async function(req, res) {
 
     var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
 
@@ -96,7 +97,7 @@ router.post('/getSpecificUserID', async function (req, res) {
 
 });
 
-router.get('/getSpecificWallet/:id', async function (req, res) {
+router.get('/getSpecificWallet/:id', async function(req, res) {
 
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
@@ -111,7 +112,7 @@ router.get('/getSpecificWallet/:id', async function (req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function (req, res) {
+router.post('/createNewReward', async function(req, res) {
     if (valid && pendingTransactions.length == 0) {
         var isNameURExist = proveKey('nameUR', 'string', req.body)
         var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
@@ -125,7 +126,7 @@ router.post('/createNewReward', async function (req, res) {
 
             let idUserInstructor = await controllerDB.obtainUserId(req.body.username, req.body.password)
             let isUserDelete = await controllerDB.isUserDeleted(idUserInstructor)
-            //One place to do funtions with Smart Contracts
+                //One place to do funtions with Smart Contracts
             if (idUserInstructor != null && !isUserDelete && req.body.costReward > 0) {
 
                 let userType = await controllerDB.obtainUserType(idUserInstructor)
@@ -164,13 +165,14 @@ router.post('/createNewReward', async function (req, res) {
                                         }
                                         arrayPoints.push(jsonObj)
                                     }
-                                    newTransac.setUniPointIds(arrayPoints)
+                                    newTransac.setUniPointIds(arrayPoints, 0)
                                     var privateKey = await controllerDB.obtainPrivateKeyId(userFromId)
                                     newTransac.signTransaction(privateKey, 0)
 
                                     if (newTransac.isValid(0)) {
 
                                         addPendingTransaction(newTransac)
+                                        addPendingIds(await controllerDB.getLastTransactionId())
                                         console.log("OK - Reward will be create in a few moments")
                                         res.send("OK - Reward will be create in a few moments")
 
@@ -239,7 +241,7 @@ router.post('/createNewReward', async function (req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function (req, res) {
+router.post('/createNewTransaction', async function(req, res) {
     if (valid && pendingTransactions.length == 0) {
 
         var isFromAddressNameExist = proveKey('fromAddressUN', 'string', req.body)
@@ -305,7 +307,11 @@ router.post('/createNewTransaction', async function (req, res) {
                                 if (userRewardRecivierId == userToId) {
 
                                     var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
-                                    newTransac.setUniPointIds(idsToChange)
+                                    newTransac.setUniPointIds(idsToChange, 1)
+                                    console.log("==============Estoy aqui================")
+                                    console.log("=======================================================")
+                                    console.log(newTransac.uniPointIds + " " + idsToChange)
+                                    console.log("=======================================================")
                                     var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
                                     var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
                                     newTransac.signTransaction(privateKeyFrom, 0)
@@ -316,6 +322,7 @@ router.post('/createNewTransaction', async function (req, res) {
                                         await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
                                         await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
                                         addPendingTransaction(newTransac)
+                                        addPendingIds(transactionObjId)
                                         res.send("OK - Transaction created")
                                     } else {
                                         console.log("Can't do the payment - Reason: Something go wrong during the sign of transaction")
@@ -328,9 +335,7 @@ router.post('/createNewTransaction', async function (req, res) {
 
 
                             } else if (userMoneyWallet < req.body.moneyTo) {
-                                console.log("=========================================================================")
-                                console.log(userMoneyWallet + " " + req.body.moneyTo)
-                                console.log("=========================================================================")
+
                                 console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                                 res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
 
@@ -405,7 +410,7 @@ router.post('/createNewTransaction', async function (req, res) {
                                         userMoneyWallet >= req.body.moneyTo) {
 
                                         var idsToChange = await controllerDB.getPointsToChange(userFromId, req.body.moneyTo, uniRewardId)
-                                        newTransac.setUniPointIds(idsToChange)
+                                        newTransac.setUniPointIds(idsToChange, 1)
                                         var privateKey = await controllerDB.obtainPrivateKeyId(userFromId)
                                         newTransac.signTransaction(privateKey, 0)
 
@@ -415,9 +420,10 @@ router.post('/createNewTransaction', async function (req, res) {
                                             await controllerDB.updatePurchasePoints(idsToChange)
                                             await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
                                             await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
-                                            await controllerDB.updateIdArrayWallet(userFromId, uniRewardId)
+                                            await controllerDB.updateIdUniRewardWallet(userFromId, uniRewardId)
                                             await controllerDB.updatePurchaseField(uniRewardId)
                                             addPendingTransaction(newTransac)
+                                            addPendingIds(transactionObjId)
 
                                             console.log("OK - Transaction created")
                                             res.send("OK - Transaction created")
@@ -508,7 +514,7 @@ router.post('/createNewTransaction', async function (req, res) {
     }
 });
 
-router.post('/createNewUser', async function (req, res) {
+router.post('/createNewUser', async function(req, res) {
     if (valid) {
 
         let isNameExist = proveKey('name', 'string', req.body)
@@ -565,7 +571,7 @@ router.post('/createNewUser', async function (req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function (req, res) {
+router.post('/changeUserData', async function(req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
@@ -633,7 +639,7 @@ router.post('/changeUserData', async function (req, res) {
     }
 });
 
-router.post('/deleteUser', async function (req, res) {
+router.post('/deleteUser', async function(req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
@@ -672,6 +678,10 @@ function addPendingTransaction(transaction) {
 
 function addPendingUniReward(unireward) {
     pendingUniRewards.push(unireward)
+}
+
+function addPendingIds(id) {
+    pendingIdsTransactions.push(id)
 }
 
 function proveKey(nameKey, variableType, reqJson) {
@@ -739,7 +749,6 @@ async function createBlock() {
     if (pendingTransactions.length > 0 && validBlockchain) {
 
         console.log("YES, there are pending Transactions")
-        console.log(pendingTransactions)
         let lastIndex = await controllerDB.getLastBlockIndex()
 
         if (lastIndex == 0) {
@@ -752,15 +761,7 @@ async function createBlock() {
 
         let prevHash = await controllerDB.getHashLastBlock(lastIndex - 1)
 
-        let lastIdTransaction = await controllerDB.getLastTransactionId()
-        
-        let isExistTransaction = await controllerDB.isExistTransaction(lastIdTransaction)
-        let idsTransactions = []
-        for (var i = 0; i < pendingTransactions.length; i++) {
-            idsTransactions.push(lastIdTransaction + i)
-        }
-
-        let newBlock = new Block(lastIndex, new Date(), idsTransactions, prevHash)
+        let newBlock = new Block(lastIndex, new Date(), pendingIdsTransactions, prevHash)
         newBlock.hash = newBlock.calculateHash()
         await controllerDB.createBlock(newBlock)
 
@@ -768,32 +769,44 @@ async function createBlock() {
             for (var i = 0; i < pendingUniRewards.length; i++) {
                 await controllerDB.createUniReward(pendingUniRewards[i], newBlock.hash)
             }
+            await controllerDB.createPoint(arrayPoints)
             pendingUniRewards.splice(0, pendingUniRewards.length)
+
         }
+
 
         for (var i = 0; i < pendingTransactions.length; i++) {
-            
-            var transaction
-            
-            if(!isExistTransaction){
+
+            var isExistTransaction = await controllerDB.isExistTransaction(pendingIdsTransactions[i])
+            var userFrom, userTo, transaction
+            if (!isExistTransaction) {
+                //Transaction not already created
                 var transactionObjId = await controllerDB.createTransaction(pendingTransactions[i])
                 transaction = await controllerDB.updateTransactionHash(transactionObjId, newBlock.hash)
-            }
-            else{
-                transaction = await controllerDB.updateTransactionHash(idsTransactions[i],newBlock.hash)
-            }
-            if (transaction.typeTransaction == "U") {
-                await controllerDB.updateHashUniReward(transactionObjId, newBlock.hash)
-                await controllerDB.createPoint(arrayPoints)
-                await controllerDB.updateHashUniPoint(transactionObjId, newBlock.hash)
+                userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
+                userTo = await controllerDB.getUserData(transaction.idWalletTo)
+                if (transaction.typeTransaction == "U") {
+
+                    if (userFrom.typeUser == "I") {
+                        await controllerDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
+                    }
+                    await controllerDB.updateHashUniReward(pendingIdsTransactions[i], newBlock.hash)
+
+                }
             } else {
-                await controllerDB.createPoint(arrayPoints)
-                await controllerDB.updateHashUniPoint(transactionObjId, newBlock.hash)
+                //Transaction already created
+                transaction = await controllerDB.updateTransactionHash(pendingIdsTransactions[i], newBlock.hash)
+                userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
+                userTo = await controllerDB.getUserData(transaction.idWalletTo)
             }
+            await controllerDB.updateHashUniPoint(pendingIdsTransactions[i], newBlock.hash)
+            await controllerDB.updateTransactionIds(userFrom.id, transaction.id)
+            await controllerDB.updateTransactionIds(userTo.id, transaction.id)
 
         }
+        arrayPoints.splice(0, arrayPoints.length)
         pendingTransactions.splice(0, pendingTransactions.length)
-        console.log(pendingTransactions)
+        pendingIdsTransactions.splice(0, pendingIdsTransactions.length)
 
     } else {
 
