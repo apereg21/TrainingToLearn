@@ -1,10 +1,11 @@
 const crypto = require('crypto');
 const EC = require('elliptic').ec;
 const ec = new EC('secp256k1');
+const controllerDB = require('./controllers/controllerDatabase');
 
 class Transaction {
 
-    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
+    constructor (fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
         this.timestamp = Date.now();
@@ -24,6 +25,11 @@ class Transaction {
         this.idWalletTo = idsWallets[1]
         this.typeT = typeTr;
         this.uniPointIds = []
+        this.id =  this.getLastTransactionId()
+    }
+
+    async getLastTransactionId(){
+        return await controllerDB.getLastTransactionId()
     }
 
     setUniPointIds(ids, opc) {
@@ -109,8 +115,6 @@ class Transaction {
                 }
             }
         }
-
-
     }
 }
 module.exports = Transaction
