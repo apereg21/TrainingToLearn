@@ -135,19 +135,19 @@ router.post('/createNewReward', async function(req, res) {
 
                 if (userType == "I") {
 
-                    let systemId = await controllerDB.findUserAddress("System")
+                    let systemAddress = await controllerDB.findUserAddress("System")
                     let uniRewardReciverId = await controllerDB.findUserAddress(req.body.usernameCourse)
 
-                    if (systemId != null && uniRewardReciverId != null) {
+                    if (systemAddress != null && uniRewardReciverId != null) {
 
-                        let userFromId = await controllerDB.findUserAddressID(systemId)
+                        let userFromId = await controllerDB.findUserAddressID(systemAddress)
                         let userToId = await controllerDB.findUserAddressID(uniRewardReciverId)
                         if (idUserInstructor != userToId) {
                             let uniReward = new UniReward(req.body, userToId)
 
                             if (uniReward.proveNotNullObject() != true) {
                                 addPendingUniReward(uniReward)
-                                var idsWallets = [userFromId, userToId]
+                                var idsWallets = [userFromId, userFromId]
 
                                 let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
                                 let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
@@ -155,7 +155,7 @@ router.post('/createNewReward', async function(req, res) {
 
                                 if (!isDeletedWallet1 && !isDeletedWallet2) {
 
-                                    let newTransac = new Transaction(systemId, systemId, uniReward.cost, await uniReward.getLastIndex(), "U", idsWallets, concept)
+                                    let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, await uniReward.getLastIndex(), "U", idsWallets, concept)
                                     let userWalletId = await controllerDB.obtainWalletId(userFromId)
 
                                     for (var i = 0; i < req.body.costReward; i++) {

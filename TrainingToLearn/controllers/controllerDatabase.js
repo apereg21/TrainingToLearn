@@ -686,6 +686,7 @@ module.exports = {
 
     async getUserWalletData(idUser) {
         var vectorURTransac = []
+        var resultF
         if (typeof idUser == 'number') {
             return db.Wallets.findOne({
                 where: {
@@ -694,37 +695,45 @@ module.exports = {
             }).then(async(result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
-                    vectorURTransac.push(result)
-                    if (!(result.idsUniRewards.length <= 0)) {
-                        var uniRewardsList = []
-                        for (var i = 0; i < result.idsUniRewards.length; i++) {
-                            var uniReward = await this.getSpecificUR(result.idsUniRewards[i])
-                            if (unireward.purchase != 0) {
-                                uniRewardsList.push(uniReward)
+                    resultF = result
+                    return db.UniPoints.findAll({
+                        where:{
+                            id: result.money,
+                            alPurchase: 0
+                        }
+                    }).then(async(result2) =>{
+                        vectorURTransac.push(result2.length)
+                        if (!(resultF.idsUniRewards.length <= 0)) {
+                            var uniRewardsList = []
+                            for (var i = 0; i < resultF.idsUniRewards.length; i++) {
+                                var uniReward = await this.getSpecificUR(resultF.idsUniRewards[i])
+                                if (unireward.purchase != 0) {
+                                    uniRewardsList.push(uniReward)
+                                }
                             }
+                            vectorURTransac.push(uniRewardsList)
+                            var transactionList = await this.getUserWalletTransaction(resultF.UserId)
+                            for (var i = 0; i < transactionList.length; i++) {
+                                var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
+                                var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
+                                var nameUniReward = await this.getUniRewardName(transactionList[i].UniRewardId)
+                                transactionList[i].fromAddress = nameAddress
+                                transactionList[i].toAddress = nameAddress2
+                                transactionList[i].UniRewardId = nameUniReward
+                            }
+                            vectorURTransac.push(transactionList)
+                        } else {
+                            var transactionList = await this.getUserWalletTransaction(resultF.UserId)
+                            for (var i = 0; i < transactionList.length; i++) {
+                                var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
+                                var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
+                                transactionList[i].fromAddress = nameAddress
+                                transactionList[i].toAddress = nameAddress2
+                            }
+                            vectorURTransac.push(transactionList);
                         }
-                        vectorURTransac.push(uniRewardsList)
-                        var transactionList = await this.getUserWalletTransaction(result.UserId)
-                        for (var i = 0; i < transactionList.length; i++) {
-                            var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
-                            var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
-                            var nameUniReward = await this.getUniRewardName(transactionList[i].UniRewardId)
-                            transactionList[i].fromAddress = nameAddress
-                            transactionList[i].toAddress = nameAddress2
-                            transactionList[i].UniRewardId = nameUniReward
-                        }
-                        vectorURTransac.push(transactionList)
-                    } else {
-                        var transactionList = await this.getUserWalletTransaction(result.UserId)
-                        for (var i = 0; i < transactionList.length; i++) {
-                            var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
-                            var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
-                            transactionList[i].fromAddress = nameAddress
-                            transactionList[i].toAddress = nameAddress2
-                        }
-                        vectorURTransac.push(transactionList);
-                    }
-                    return vectorURTransac
+                        return vectorURTransac
+                    })
                 } else {
                     console.log("User wallet data not find it")
                     return null
@@ -898,6 +907,7 @@ module.exports = {
                 return db.UniPoints.findAll({
                     where: {
                         alPurchase: 0,
+                        id: result.money,
                         UniRewardId: idUniReward
                     }
                 }).then((result2) => {
