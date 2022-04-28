@@ -653,21 +653,20 @@ router.post('/changeUserData', async function(req, res) {
 
 router.post('/deleteUser', async function(req, res) {
 
-    let isUserNameExist = proveKey('username', 'string', req.body)
-    let isPasswordExist = proveKey('password', 'string', req.body)
+    let isUserIdExist = proveKey('id', 'number', req.body)
 
-    if (isUserNameExist && isPasswordExist) {
+    if (isUserIdExist) {
 
-        const idUser = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        const user = await controllerDB.getUserData(req.body.id)
 
-        if (idUser != null) {
+        if (user != null) {
 
-            const deletedUser = await controllerDB.obtainDeleteField(idUser, 0)
-            const idWallet = await controllerDB.obtainWalletId(idUser)
+            const deletedUser = user.deleted
+            const idWallet = user.id
             const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
 
             if ((!deletedUser) && ((!deletedWallet) || deletedWallet == null)) {
-                controllerDB.deleteUser(idUser)
+                controllerDB.deleteUser(user.id)
                 console.log("OK - " + req.body.username + "'s data eliminated")
                 res.send("OK - " + req.body.username + "'s data eliminated")
             } else {
