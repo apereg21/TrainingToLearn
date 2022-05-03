@@ -2,6 +2,7 @@ const controllerDB = require('./controllers/controllerDatabase');
 
 class UniReward {
     constructor(req, userFromId) {
+        this.id = this.getLastIndex()
         this.nameUR = req.nameUR,
             this.descriptionUR = req.descriptionUR,
             this.imageUR = "http://asdfasdfasdfasdfasdfasdfasdfasdf.com",

@@ -7,6 +7,7 @@ const Transaction = require('../transaction');
 const UniReward = require('../uniReward');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
+const unireward = require('../models/unireward');
 
 /*
  *Configuration zone
@@ -16,7 +17,7 @@ var pendingTransactions = [];
 var pendingUniRewards = [];
 var pendingIdsTransactions = [];
 var arrayPoints = [];
-var periodicFunct = setInterval(() => createBlock(), 7000);
+var periodicFunct = setInterval(() => createBlock(), 5000);
 var validBlockchain = true
 var areObjectsCreated = false
 
@@ -31,28 +32,28 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function(req, res) {
+router.get('/getAllUsersList', async function (req, res) {
     var usersList = await controllerDB.getAllUsers()
     res.send(usersList)
 
 });
 
-router.get('/getUsersName/:id', async function(req, res) {
+router.get('/getUsersName/:id', async function (req, res) {
     var userName = await controllerDB.getUsername(parseInt((req.params.id).replace(':', '')))
     res.send(userName)
 });
 
-router.get('/getUserRole/:id', async function(req, res) {
+router.get('/getUserRole/:id', async function (req, res) {
     var user = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
     res.send(user.typeUser)
 });
 
-router.get('/getUserID/:username', async function(req, res) {
+router.get('/getUserID/:username', async function (req, res) {
     var userId = await controllerDB.getUserID((req.params.username).replace(':', ''))
     res.send("" + userId)
 });
 
-router.post('/loginUser', async function(req, res) {
+router.post('/loginUser', async function (req, res) {
     var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
@@ -68,7 +69,7 @@ router.post('/loginUser', async function(req, res) {
     }
 });
 
-router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
+router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
     console.log(parseInt((req.params.id).replace(':', '')))
 
     var rewardsList = await controllerDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
@@ -76,7 +77,7 @@ router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
 
 });
 
-router.get('/getSpecificUser/:id', async function(req, res) {
+router.get('/getSpecificUser/:id', async function (req, res) {
 
     console.log(parseInt((req.params.id).replace(':', '')))
 
@@ -86,7 +87,7 @@ router.get('/getSpecificUser/:id', async function(req, res) {
 
 });
 
-router.post('/getSpecificUserID', async function(req, res) {
+router.post('/getSpecificUserID', async function (req, res) {
 
     var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
 
@@ -98,7 +99,7 @@ router.post('/getSpecificUserID', async function(req, res) {
 
 });
 
-router.get('/getSpecificWallet/:id', async function(req, res) {
+router.get('/getSpecificWallet/:id', async function (req, res) {
 
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
@@ -113,8 +114,8 @@ router.get('/getSpecificWallet/:id', async function(req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function(req, res) {
-    if (validBlockchain && pendingTransactions.length == 0) {
+router.post('/createNewReward', async function (req, res) {
+    if (validBlockchain) {
         var isNameURExist = proveKey('nameUR', 'string', req.body)
         var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
         var isImageURExist = proveKey('imageUR', 'string', req.body)
@@ -128,7 +129,7 @@ router.post('/createNewReward', async function(req, res) {
             let idUserInstructor = await controllerDB.obtainUserId(req.body.username, req.body.password)
             let userInstructoDeleted = await controllerDB.isUserDeleted(idUserInstructor)
             let isUserDelete = await controllerDB.isUserDeleted(idUserInstructor)
-                //One place to do funtions with Smart Contracts
+            //One place to do funtions with Smart Contracts
             if (idUserInstructor != null && !isUserDelete && req.body.costReward > 0 && !userInstructoDeleted) {
 
                 let userType = await controllerDB.obtainUserType(idUserInstructor)
@@ -146,7 +147,19 @@ router.post('/createNewReward', async function(req, res) {
                             let uniReward = new UniReward(req.body, userToId)
 
                             if (uniReward.proveNotNullObject() != true) {
+                                var alreadyExistURId = false
+                                var lastIdUniReward = await controllerDB.getLastUniRewardIndex()
+
+                                for(var i=0; i<pendingUniRewards.length;i++){
+                                    if(pendingUniRewards[i].id == lastIdUniReward){
+                                            alreadyExistURId = true
+                                    }
+                                }
+                                if(alreadyExistUPId){
+                                    unireward.id = pendingUniRewards[pendingUniRewards.length - 1].id + 1
+                                }
                                 addPendingUniReward(uniReward)
+                                
                                 var idsWallets = [userFromId, userFromId]
 
                                 let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
@@ -154,15 +167,31 @@ router.post('/createNewReward', async function(req, res) {
                                 let concept = "Giving UniPoints referrer to UniReward: " + uniReward.nameUR
 
                                 if (!isDeletedWallet1 && !isDeletedWallet2) {
+                                    
+                                    
 
-                                    let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, await uniReward.getLastIndex(), "U", idsWallets, concept)
+
+                                    let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
                                     let userWalletId = await controllerDB.obtainWalletId(userFromId)
 
                                     for (var i = 0; i < req.body.costReward; i++) {
+                                        var alreadyExistUPId = false
+                                        var lastIdUniPoint = await controllerDB.getLastIdUP()
+                                        var realIdUniPoint
+                                        for(var j=0; j<arrayPoints.length;j++){
+                                            if(arrayPoints[j].id == lastIdUniPoint){
+                                                alreadyExistUPId = true
+                                            }
+                                        }
+                                        if(alreadyExistUPId){
+                                            realIdUniPoint = arrayPoints[arrayPoints.length - 1].id + 1
+                                        }else{
+                                            realIdUniPoint = lastIdUniPoint
+                                        }
                                         var jsonObj = {
-                                            id: await controllerDB.getLastIdUP() + i,
+                                            id: realIdUniPoint,
                                             timestamp: new Date(),
-                                            UniRewardId: await uniReward.getLastIndex(),
+                                            UniRewardId: uniReward.id,
                                             WalletId: userWalletId
                                         }
                                         arrayPoints.push(jsonObj)
@@ -174,16 +203,16 @@ router.post('/createNewReward', async function(req, res) {
                                     if (newTransac.isValid(0)) {
 
                                         addPendingTransaction(newTransac)
-                                        addPendingIds(await controllerDB.getLastTransactionId())
-                                        await sleep(5000)
-                                        if(areObjectsCreated == false){
+                                        addPendingIds(newTransac.id)
+                                        await sleep(7000)
+                                        if (areObjectsCreated == false) {
                                             console.log("Error - Reward not created something gone wrong with the data")
                                             res.send("OK - Reward not created something gone wrong with the data")
-                                        }else{
+                                        } else {
                                             console.log("OK - Reward has been created")
                                             res.send("OK - Reward has been created")
                                         }
-                                        areObjectsCreated=false
+                                        areObjectsCreated = false
 
                                     } else {
                                         console.log("Can't do the payment - Reason: Something go wrong during the sign of transaction")
@@ -250,8 +279,8 @@ router.post('/createNewReward', async function(req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function(req, res) {
-    if (validBlockchain && pendingTransactions.length == 0) {
+router.post('/createNewTransaction', async function (req, res) {
+    if (validBlockchain) {
 
         var isFromAddressNameExist = proveKey('fromAddressUN', 'string', req.body)
         var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
@@ -526,7 +555,7 @@ router.post('/createNewTransaction', async function(req, res) {
     }
 });
 
-router.post('/createNewUser', async function(req, res) {
+router.post('/createNewUser', async function (req, res) {
     if (validBlockchain) {
 
         let isNameExist = proveKey('name', 'string', req.body)
@@ -583,7 +612,7 @@ router.post('/createNewUser', async function(req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function(req, res) {
+router.post('/changeUserData', async function (req, res) {
 
     let isUserNameExist = proveKey('username', 'string', req.body)
     let isPasswordExist = proveKey('password', 'string', req.body)
@@ -651,7 +680,7 @@ router.post('/changeUserData', async function(req, res) {
     }
 });
 
-router.post('/deleteUser', async function(req, res) {
+router.post('/deleteUser', async function (req, res) {
 
     let isUserIdExist = proveKey('id', 'number', req.body)
 
@@ -659,27 +688,32 @@ router.post('/deleteUser', async function(req, res) {
 
         const user = await controllerDB.getUserData(req.body.id)
 
-        if (user != null) {
+        if (user != null && !user.deleted) {
 
             const deletedUser = user.deleted
             const idWallet = user.id
             const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
 
-            if ((!deletedUser) && ((!deletedWallet) || deletedWallet == null)) {
+            if ((!deletedUser) && ((!deletedWallet) || deletedWallet != null)) {
                 controllerDB.deleteUser(user.id)
-                console.log("OK - " + req.body.username + "'s data eliminated")
-                res.send("OK - " + req.body.username + "'s data eliminated")
+                console.log("OK - " + user.username + "'s data eliminated")
+                res.send(user.username)
             } else {
-                console.log(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
-                res.send(req.body.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
+                console.log(user.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
+                res.send(user.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
             }
         } else {
-            console.log(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
-            res.send(req.body.username + "'s data can't be eliminated - Reason: User Not Exist")
+            if (user == null) {
+                console.log(user.username + "'s data can't be eliminated - Reason: User Not Exist")
+                res.send(user.username + "'s data can't be eliminated - Reason: User Not Exist")
+            } else {
+                console.log(user.username + "'s data can't be eliminated - Reason: Already deleted")
+                res.send(user.username + "'s data can't be eliminated - Reason: Already deleted")
+            }
         }
     } else {
-        console.log("Wallet don't deleted - Reason: Not correct parammeters")
-        res.send("Wallet don't deleted - Reason: Not correct parammeters")
+        console.log(user.username + " can't be deleted - Reason: Not correct parammeters")
+        res.send(user.username + " can't be deleted - Reason: Not correct parammeters")
     }
 });
 
@@ -777,21 +811,20 @@ async function createBlock() {
         await controllerDB.createBlock(newBlock)
 
         if (pendingUniRewards.length > 0) {
-                var arrayOfUniRewards = []
-                for (var i = 0; i < pendingUniRewards.length; i++) {
-                    var userWalletDeleted = await controllerDB.isUserDeleted(pendingUniRewards[i].WalletId)
-                    if(!userWalletDeleted){
-                        arrayOfUniRewards.push(await controllerDB.createUniReward(pendingUniRewards[i], newBlock.hash))
-                    }else{
-                        areObjectsCreated=false
-                    }
+            var arrayOfUniRewards = []
+            for (var i = 0; i < pendingUniRewards.length; i++) {
+                var userWalletDeleted = await controllerDB.isUserDeleted(pendingUniRewards[i].WalletId)
+                if (!userWalletDeleted) {
+                    arrayOfUniRewards.push(await controllerDB.createUniReward(pendingUniRewards[i], newBlock.hash))
+                } else {
+                    areObjectsCreated = false
                 }
-                if(arrayOfUniRewards.length> 0){
-                    await controllerDB.createPoint(arrayPoints)
-                }else{
-                    areObjectsCreated=false
-                }
-                pendingUniRewards.splice(0, pendingUniRewards.length)
+            }
+            if (arrayOfUniRewards.length > 0) {
+                await controllerDB.createPoint(arrayPoints)
+            } else {
+                areObjectsCreated = false
+            }
         }
 
 
@@ -803,9 +836,9 @@ async function createBlock() {
             userTo = await controllerDB.getUserData(pendingTransactions[i].idWalletTo)
             if (!isExistTransaction) {
                 //Transaction not already created
-                if(userFrom!=null && userTo!=null){
+                if (userFrom != null && userTo != null) {
                     var transactionObjId = await controllerDB.createTransaction(pendingTransactions[i])
-                    
+
                     transaction = await controllerDB.updateTransactionHash(transactionObjId, newBlock.hash)
                     userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
                     userTo = await controllerDB.getUserData(transaction.idWalletTo)
@@ -817,31 +850,36 @@ async function createBlock() {
                         await controllerDB.updateHashUniReward(pendingIdsTransactions[i], newBlock.hash)
 
                     }
-                    areObjectsCreated=true
-                }else{
-                    areObjectsCreated=false
+                    areObjectsCreated = true
+                } else {
+                    areObjectsCreated = false
                 }
-                
+
             } else {
                 //Transaction already created
-                if(userFrom!=null && userTo!=null){
+                if (userFrom != null && userTo != null) {
                     transaction = await controllerDB.updateTransactionHash(pendingIdsTransactions[i], newBlock.hash)
                     userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
                     userTo = await controllerDB.getUserData(transaction.idWalletTo)
-                    areObjectsCreated=true
-                }else{
-                    areObjectsCreated=false
+                    areObjectsCreated = true
+                } else {
+                    areObjectsCreated = false
                 }
             }
-            if(areObjectsCreated==true){
-                await controllerDB.updateHashUniPoint(pendingIdsTransactions[i], newBlock.hash)
+            if (areObjectsCreated == true) {
+                if (transaction.typeTransaction == "U") {
+                    await controllerDB.updateHashUniPoint(transaction.id, newBlock.hash)
+                }
+                await controllerDB.updateHashUniReward(pendingIdsTransactions[i], newBlock.hash)
                 await controllerDB.updateTransactionIds(userFrom.id, transaction.id)
                 await controllerDB.updateTransactionIds(userTo.id, transaction.id)
             }
         }
         arrayPoints.splice(0, arrayPoints.length)
+        pendingUniRewards.splice(0, pendingUniRewards.length)
         pendingTransactions.splice(0, pendingTransactions.length)
         pendingIdsTransactions.splice(0, pendingIdsTransactions.length)
+
 
     } else {
 
