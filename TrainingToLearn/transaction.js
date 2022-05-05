@@ -5,7 +5,7 @@ const controllerDB = require('./controllers/controllerDatabase');
 
 class Transaction {
 
-    constructor (fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
+    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
         this.timestamp = Date.now();
@@ -25,29 +25,17 @@ class Transaction {
         this.idWalletTo = idsWallets[1]
         this.typeT = typeTr;
         this.uniPointIds = []
-        this.id =  this.getLastTransactionId()
+        this.id
     }
 
-    async getLastTransactionId(){
-        return await controllerDB.getLastTransactionId()
+    async getAndSetLastTransactionId() {
+        var lastID = await controllerDB.getLastTransactionId()
+        this.id = lastID
     }
 
-    setUniPointIds(ids, opc) {
-        if (opc == 0) {
-            for (var i = 0; i < ids.length; i++) {
-                console.log("==================================================")
-                console.log(ids[i].id)
-                console.log("==================================================")
-                this.uniPointIds.push(ids[i].id)
-            }
-        } else {
-            for (var i = 0; i < ids.length; i++) {
-                console.log("==================================================")
-                console.log(ids[i])
-                console.log("==================================================")
-                this.uniPointIds.push(ids[i])
-            }
-        }
+    setUniPointIds(ids) {
+        this.uniPointIds = [...ids];
+
     }
 
     calHashTransaction() {

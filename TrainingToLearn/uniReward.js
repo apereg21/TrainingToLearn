@@ -2,8 +2,8 @@ const controllerDB = require('./controllers/controllerDatabase');
 
 class UniReward {
     constructor(req, userFromId) {
-        this.id = this.getLastIndex()
-        this.nameUR = req.nameUR,
+        this.id,
+            this.nameUR = req.nameUR,
             this.descriptionUR = req.descriptionUR,
             this.imageUR = "http://asdfasdfasdfasdfasdfasdfasdfasdf.com",
             this.cost = req.costReward,
@@ -26,8 +26,9 @@ class UniReward {
         this.hash = hash
     }
 
-    async getLastIndex() {
-        return controllerDB.getLastUniRewardIndex()
+    async getAndSetLastId() {
+        var lastID = await controllerDB.getLastUniRewardIndex()
+        this.id = lastID
     }
 }
 module.exports = UniReward

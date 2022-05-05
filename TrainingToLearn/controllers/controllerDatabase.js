@@ -44,8 +44,8 @@ module.exports = {
         return db.UniRewards
             .count()
             .then((result) => {
-                console.log("LastUnireward in database is : " + result + 1)
-                return result + 1
+                console.log("LastUnireward in database is : " + (result + 1))
+                return (result + 1)
             })
             .catch((error) => console.log("Error: " + error));
     },
@@ -134,9 +134,9 @@ module.exports = {
                 }).then(data => {
                     if (data != null) {
                         console.log(data);
-                        return data
+                        return true
                     } else {
-                        return null
+                        return false
                     }
                 })
         } else {
@@ -697,11 +697,11 @@ module.exports = {
                     console.log("User wallet data find it")
                     resultF = result
                     return db.UniPoints.findAll({
-                        where:{
+                        where: {
                             id: result.money,
                             alPurchase: 0
                         }
-                    }).then(async(result2) =>{
+                    }).then(async(result2) => {
                         vectorURTransac.push(result2.length)
                         if (!(resultF.idsUniRewards.length <= 0)) {
                             var uniRewardsList = []
@@ -1030,7 +1030,8 @@ module.exports = {
                 signatureTo: transaction.signatureTo,
                 idWalletFrom: transaction.idWalletFrom,
                 idWalletTo: transaction.idWalletTo,
-                uniPointIds: transaction.uniPointIds
+                uniPointIds: transaction.uniPointIds,
+                UniRewardId: transaction.UniRewardId
             }).then((result) => {
                 console.log("Transaction Created")
                 return result.id
@@ -1141,7 +1142,7 @@ module.exports = {
         }).catch((val) => { console.log(val) })
     },
 
-    async createPoint(pointsArray) {
+    async createPoints(pointsArray) {
         return db.UniPoints.bulkCreate(pointsArray).then((points) => {
             console.log("OK - All points craeted")
             return points.map((point) => point.id)
