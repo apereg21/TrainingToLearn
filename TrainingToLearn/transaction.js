@@ -76,7 +76,7 @@ class Transaction {
 
     isValid(type) {
         if (this.typeT == "U") {
-            if (this.signatureFrom == null || this.signatureFrom.length == 0) {
+            if (this.signatureFrom == null && this.signatureFrom.length == 0) {
                 console.log('No signature/s in this transaction');
                 return false
             } else {

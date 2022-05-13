@@ -40,6 +40,7 @@ module.exports = (sequelize, DataTypes) => {
     UniRewards.associate = function(models) {
         UniRewards.hasMany(models.Transactions, { onDelete: 'cascade' })
         UniRewards.hasMany(models.UniPoints, { onDelete: 'cascade' })
+        UniRewards.hasOne(models.SmartContract, { onDelete: 'cascade' })
     };
     return UniRewards;
 };

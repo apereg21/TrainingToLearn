@@ -1143,10 +1143,11 @@ module.exports = {
     },
 
     async createPoints(pointsArray) {
-        return db.UniPoints.bulkCreate(pointsArray).then((points) => {
-            console.log("OK - All points craeted")
-            return points.map((point) => point.id)
-        });
+        return db.UniPoints.bulkCreate(pointsArray)
+            .then((points) => {
+                console.log("OK - All points craeted")
+                return points.map((point) => point.id)
+            });
     },
 
     async updatePurchasePoints(idsToChange) {
@@ -1204,5 +1205,20 @@ module.exports = {
                 }
             }).then(() => {})
         })
+    },
+    async createSmartContract(sContract) {
+        return db.SmartContract.create({
+            walletIdObserver: sContract.walletIdObserver,
+            walletIdDemander: sContract.walletIdDemander,
+            signatureObserver: sContract.signatureObserver,
+            signatureDemander: sContract.signatureDemander,
+            state: 0,
+            condition: sContract.condition,
+            deliveredUniPoints: sContract.deliveredUniPoints,
+            UniRewardId: sContract.UniRewardId
+        }).then((result) => {
+            console.log("SmartContract Created")
+            return result.id
+        }).catch((val) => { console.log(val) });
     }
 }

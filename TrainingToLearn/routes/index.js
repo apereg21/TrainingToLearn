@@ -5,9 +5,10 @@ const Block = require('../block');
 const Wallet = require('../wallet');
 const Transaction = require('../transaction');
 const UniReward = require('../uniReward');
+const SmartContract = require('../smartContract');
 var express = require('express');
 const controllerDB = require('../controllers/controllerDatabase');
-const unireward = require('../models/unireward');
+
 
 /*
  *Configuration zone
@@ -17,9 +18,11 @@ var pendingTransactions = [];
 var pendingUniRewards = [];
 var pendingIdsTransactions = [];
 var arrayPoints = [];
-var periodicFunct = setInterval(() => createBlock(), 5000);
+const smartContractList = [];
 var validBlockchain = true
 var areObjectsCreated = false
+var periodicFunct = setInterval(() => createBlock(), 5000);
+
 
 /*
  * Default Route
@@ -227,8 +230,10 @@ router.post('/createNewReward', async function(req, res) {
                                     console.log("==================================================")
 
                                     arrayUniPointsIds.splice(0, arrayUniPointsIds.length)
-                                    var privateKey = await controllerDB.obtainPrivateKeyId(userFromId)
-                                    newTransac.signTransaction(privateKey, 0)
+                                    var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
+                                    newTransac.signTransaction(privateKeyFrom, 0)
+                                    var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
+                                    newTransac.signTransaction(privateKeyTo, 1)
 
                                     if (newTransac.isValid(0)) {
 
@@ -447,99 +452,8 @@ router.post('/createNewTransaction', async function(req, res) {
                             }
                         }
                     } else {
-
-                        if (req.body.typeT == "U") {
-
-                            var isUniRewardTransactionExist = proveKey('uniRewardT', 'string', req.body)
-
-                            if (isUniRewardTransactionExist) {
-
-                                var idsWallets = [userToId, userFromId]
-
-                                let uniRewardId = await controllerDB.getUniRewardId(req.body.uniRewardT)
-                                let uniRewardPurchase = await controllerDB.getPurchaseField(uniRewardId)
-
-                                if (!uniRewardPurchase && uniRewardId != null) {
-
-                                    let nameTo = await controllerDB.getUserWalletName(userFromId)
-                                    let concept = "Giving to " + nameTo + " the UniReward: " + req.body.uniRewardT
-                                    let newTransac = new Transaction(userFromAdd, userFromAdd, req.body.moneyTo, uniRewardId, req.body.typeT, idsWallets, concept)
-
-                                    let userMoneyWallet = await controllerDB.getUserMoney(userFromId, uniRewardId)
-                                    let specificUR = await controllerDB.getSpecificUR(uniRewardId)
-
-                                    if (userMoneyWallet >= specificUR.cost &&
-                                        req.body.moneyTo == specificUR.cost &&
-                                        userMoneyWallet >= req.body.moneyTo) {
-
-                                        var idsToChange = await controllerDB.getPointsToChange(userFromId, req.body.moneyTo, uniRewardId)
-                                        newTransac.setUniPointIds(idsToChange)
-
-                                        var privateKey = await controllerDB.obtainPrivateKeyId(userFromId)
-                                        newTransac.signTransaction(privateKey, 0)
-
-                                        if (newTransac.isValid(0)) {
-                                            let transactionObjId = await controllerDB.createTransaction(newTransac)
-
-                                            await controllerDB.moveToMoneyExp(idsToChange, userFromId, uniRewardId)
-
-                                            await controllerDB.updatePurchasePoints(idsToChange)
-                                            await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
-                                            await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
-                                            await controllerDB.updateIdUniRewardWallet(userFromId, uniRewardId)
-                                            await controllerDB.updatePurchaseField(uniRewardId)
-
-                                            addPendingTransaction(newTransac)
-                                            addPendingIds(transactionObjId)
-
-                                            console.log("OK - Transaction created")
-                                            res.send("OK - Transaction created")
-                                        } else {
-                                            console.log("Can't do the payment - Reason: Something go wrong during the sign of transaction")
-                                            res.send("Can't do the payment - Reason: Something go wrong during the sign of transaction")
-                                        }
-
-                                    } else {
-
-                                        if (userMoneyWallet < specificUR.cost) {
-
-                                            console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
-                                            res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
-
-                                        } else {
-
-                                            console.log("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
-                                            res.send("Can't do the payment - Reason: Not delivery correct amount to UniReward (Correct amount: " + specificUR.cost + " UniPoints)")
-
-                                        }
-
-                                    }
-                                } else {
-                                    if (uniRewardPurchase) {
-
-                                        console.log("Can't finish the Transaction - Reason: Reward already purchase")
-                                        res.send("Can't finish the Transaction - Reason: Reward already purchase")
-
-                                    } else {
-
-                                        console.log("Can't finish the Transaction - Reason: Not existing uniReward")
-                                        res.send("Can't finish the Transaction - Reason: Not existing uniReward")
-
-                                    }
-
-                                }
-                            } else {
-
-                                console.log("Can't finish the Transaction - Reason: Not correct parameters")
-                                res.send("Can't finish the Transaction - Reason: Not correct paramaters")
-
-                            }
-                        } else {
-
-                            console.log("Can't finish the Transaction - Reason: Not correct type of transaction")
-                            res.send("Can't finish the Transaction - Reason: Not correct type of transaction")
-
-                        }
+                        console.log("Can't finish the Transaction - Reason: Not correct type of transaction")
+                        res.send("Can't finish the Transaction - Reason: Not correct type of transaction")
                     }
                 } else {
                     if (typeUserTo == "N" && typeUserFrom == "N") {
@@ -871,6 +785,15 @@ async function createBlock() {
                     await controllerDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
                     await controllerDB.updateHashUniReward(pendingIdsTransactions[i], newBlock.hash)
 
+                    var uniPointForSC = []
+                    for (var i = 0; i < arrayPoints.length; i++) {
+                        if (arrayPoints[i].UniRewardId = transaction.UniRewardId) {
+                            uniPointForSC.push(arrayPoints[i].id)
+                        }
+                    }
+                    var sContract = new SmartContract(transaction.fromAddress, transaction.toAddress, transaction.signatureFrom, transaction.signatureTo, transaction.amount)
+                    await controllerDB.createSmartContract(sContract)
+                    smartContractList.push(sContract)
                 }
             } else {
                 //Transaction already created
@@ -885,22 +808,13 @@ async function createBlock() {
                 }
             }
 
+            for (var i = 0; i < smartContractList.length; i++) {
+                console.log(smartContractList[i])
+            }
+
             await controllerDB.updateHashUniPoint(transaction.id, newBlock.hash)
             await controllerDB.updateTransactionIds(userFrom.id, transaction.id)
             await controllerDB.updateTransactionIds(userTo.id, transaction.id)
-        }
-        for (var i = 0; i < pendingUniRewards.length; i++) {
-            console.log(pendingUniRewards[i])
-        }
-        for (var i = 0; i < pendingTransactions.length; i++) {
-            console.log(pendingTransactions[i])
-        }
-
-        for (var i = 0; i < pendingIdsTransactions.length; i++) {
-            console.log(pendingIdsTransactions[i])
-        }
-        for (var i = 0; i < arrayPoints.length; i++) {
-            console.log(arrayPoints[i])
         }
         arrayPoints.splice(0, arrayPoints.length)
         pendingUniRewards.splice(0, pendingUniRewards.length)
