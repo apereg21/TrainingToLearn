@@ -12,20 +12,13 @@ class Transaction {
         this.concept = concept;
         this.signatureFrom = "";
         this.signatureTo = "";
-
-        if (typeTr == "M") {
-            this.UniRewardId = null;
-
-        } else {
-            this.UniRewardId = unireward;
-        }
-
+        this.UniRewardId = unireward;
         this.amount = amount;
         this.idWalletFrom = idsWallets[0]
         this.idWalletTo = idsWallets[1]
         this.typeT = typeTr;
-        this.uniPointIds = []
-        this.id
+        this.uniPointIds = [];
+        this.id;
     }
 
     async getAndSetLastTransactionId() {

@@ -1044,6 +1044,7 @@ module.exports = {
                 typeTransaction: transaction.typeT,
                 concept: transaction.concept,
                 signatureFrom: transaction.signatureFrom,
+                signatureTo: transaction.signatureTo,
                 UniRewardId: transaction.UniRewardId,
                 idWalletFrom: transaction.idWalletFrom,
                 idWalletTo: transaction.idWalletTo,
@@ -1219,6 +1220,18 @@ module.exports = {
         }).then((result) => {
             console.log("SmartContract Created")
             return result.id
+        }).catch((val) => { console.log(val) });
+    },
+    async updateDeliveredUP(uniPoints,uniRewardId){
+        return db.SmartContract.update({
+            deliveredUniPoints: uniPoints    
+        },{ 
+            where:{
+                UniRewardId: uniRewardId
+            }
+        }).then((result) => {
+            console.log("SmartContract found it")
+            return result.deliveredUniPoints
         }).catch((val) => { console.log(val) });
     }
 }

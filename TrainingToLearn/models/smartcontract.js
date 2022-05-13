@@ -15,11 +15,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING
         },
         signatureObserver: {
-            allowNull: false,
+            allowNull: true,
             type: DataTypes.STRING
         },
         signatureDemander: {
-            allowNull: false,
+            allowNull: true,
             type: DataTypes.STRING
         },
         state: {
@@ -29,7 +29,8 @@ module.exports = (sequelize, DataTypes) => {
         },
         condition: {
             allowNull: false,
-            type: DataTypes.STRING
+            type: DataTypes.JSON,
+            defaultValue: []
         },
         deliveredUniPoints: {
             allowNull: true,

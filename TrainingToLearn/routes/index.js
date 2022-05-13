@@ -140,12 +140,12 @@ router.post('/createNewReward', async function(req, res) {
                 if (userType == "I") {
 
                     let systemAddress = await controllerDB.findUserAddress("System")
-                    let uniRewardReciverId = await controllerDB.findUserAddress(req.body.usernameCourse)
+                    let uniRewardReciverAddress = await controllerDB.findUserAddress(req.body.usernameCourse)
 
-                    if (systemAddress != null && uniRewardReciverId != null) {
+                    if (systemAddress != null && uniRewardReciverAddress != null) {
 
                         let userFromId = await controllerDB.findUserAddressID(systemAddress)
-                        let userToId = await controllerDB.findUserAddressID(uniRewardReciverId)
+                        let userToId = await controllerDB.findUserAddressID(uniRewardReciverAddress)
                         if (idUserInstructor != userToId) {
                             let uniReward = new UniReward(req.body, userToId)
                             uniReward.getAndSetLastId()
@@ -174,7 +174,7 @@ router.post('/createNewReward', async function(req, res) {
 
                                 if (!isDeletedWallet1 && !isDeletedWallet2) {
 
-                                    let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
+                                    let newTransac = new Transaction(systemAddress, uniRewardReciverAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
                                     newTransac.getAndSetLastTransactionId()
                                     var lastIdTrans = await controllerDB.getLastTransactionId()
                                     var alreadyExistTransId = false
@@ -235,6 +235,10 @@ router.post('/createNewReward', async function(req, res) {
                                     var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
                                     newTransac.signTransaction(privateKeyTo, 1)
 
+                                    console.log("=================signatureTo======================")
+                                    console.log(privateKeyTo+"  "+newTransac.signatureTo)
+                                    console.log("==================================================")
+
                                     if (newTransac.isValid(0)) {
 
                                         addPendingTransaction(newTransac)
@@ -267,7 +271,7 @@ router.post('/createNewReward', async function(req, res) {
                         }
 
                     } else {
-                        if (uniRewardReciverId == null) {
+                        if (uniRewardReciverAddress == null) {
                             console.log("Reward not created - Reason: User for course dosen't exist")
                             res.send("Reward not created - Reason: User for course dosen't exist")
                         } else {
@@ -378,6 +382,14 @@ router.post('/createNewTransaction', async function(req, res) {
                                     var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
                                     newTransac.setUniPointIds(idsToChange)
 
+                                    for(var i = 0; i < smartContractList.length; i++){
+                                        if(smartContractList[i].UniRewardId == newTransac.UniRewardId){
+                                            (smartContractList[i].deliveredUniPoints).push(...idsToChange)
+                                            console.log("\n================================"+smartContractList[i].deliveredUniPoints+"\n================================")
+                                            await controllerDB.updateDeliveredUP(smartContractList[i].deliveredUniPoints, newTransac.UniRewardId)
+                                        }
+                                    }
+                                    
                                     var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
                                     var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
                                     newTransac.signTransaction(privateKeyFrom, 0)
@@ -385,7 +397,7 @@ router.post('/createNewTransaction', async function(req, res) {
 
                                     if (newTransac.isValid(1)) {
                                         let transactionObjId = await controllerDB.createTransaction(newTransac)
-
+                                        
                                         await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
                                         await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
@@ -791,7 +803,7 @@ async function createBlock() {
                             uniPointForSC.push(arrayPoints[i].id)
                         }
                     }
-                    var sContract = new SmartContract(transaction.fromAddress, transaction.toAddress, transaction.signatureFrom, transaction.signatureTo, transaction.amount)
+                    var sContract = new SmartContract(transaction.fromAddress, transaction.toAddress, transaction.uniPointIds, transaction.UniRewardId)
                     await controllerDB.createSmartContract(sContract)
                     smartContractList.push(sContract)
                 }
@@ -808,9 +820,21 @@ async function createBlock() {
                 }
             }
 
-            for (var i = 0; i < smartContractList.length; i++) {
-                console.log(smartContractList[i])
+            var idsToRemove =[]
+            for (var i = 0; i < smartContractList.length; i++) { 
+                if(smartContractList[i].state != 1){
+                    console.log(smartContractList[i])
+                    if(smartContractList[i].proveCompleteContract()){
+                        smartContractList[i].state = true
+                        idsToRemove.push(smartContractList[i].id)
+                    }
+                }
             }
+
+            for(var i = 0; i < idsToRemove.length; i){
+                smartContractList.splice(idsToRemove[i], 1)
+            }
+            idsToRemove.splice(0, idsToRemove.length - 1)
 
             await controllerDB.updateHashUniPoint(transaction.id, newBlock.hash)
             await controllerDB.updateTransactionIds(userFrom.id, transaction.id)
