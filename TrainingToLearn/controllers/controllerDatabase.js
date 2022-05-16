@@ -94,20 +94,15 @@ module.exports = {
     },
 
     //uniRewards functions
-    async updateHashUniReward(transactionId, hashBlock) {
-        return db.Transactions.findOne({
+    async updateHashUniReward(transactionObjId, uniRewardId, hashBlock) {
+        return db.UniRewards.update({
+            hash: SHA256(transactionObjId + hashBlock).toString()
+        }, {
             where: {
-                id: transactionId
+                id: uniRewardId
             }
-        }).then((result) => {
-            return db.UniRewards.update({
-                hash: SHA256(transactionId + hashBlock).toString()
-            }, {
-                where: {
-                    id: result.UniRewardId
-                }
-            })
         })
+
     },
 
     async getAllRewards(idUser, pruch) {
@@ -1104,6 +1099,7 @@ module.exports = {
                         id: pendingTransactionId
                     }
                 }).then(() => {
+                    console.log(SHA256(pendingTransactionId + hashBlock).toString())
                     return result
                 })
             } else {
@@ -1189,22 +1185,24 @@ module.exports = {
 
     },
 
-    async updateHashUniPoint(transactionId, hashBlock) {
+    async updateHashUniPoint(transactionObjId, uniRewardId, hashBlock) {
         return db.Transactions.findOne({
             where: {
-                id: transactionId
+                UniRewardId: uniRewardId
             }
         }).then((result) => {
             console.log("===========================================")
             console.log(result.uniPointIds)
             console.log("===========================================")
             return db.UniPoints.update({
-                hash: SHA256(transactionId + hashBlock).toString()
+                hash: SHA256(transactionObjId + hashBlock).toString()
             }, {
                 where: {
                     id: result.uniPointIds
                 }
-            }).then(() => {})
+            }).then(() => {
+                console.log(SHA256(transactionObjId + hashBlock).toString())
+            })
         })
     },
     async createSmartContract(sContract) {
@@ -1222,11 +1220,25 @@ module.exports = {
             return result.id
         }).catch((val) => { console.log(val) });
     },
-    async updateDeliveredUP(uniPoints,uniRewardId){
+
+    async updateDeliveredUP(uniPoints, uniRewardId) {
         return db.SmartContract.update({
-            deliveredUniPoints: uniPoints    
-        },{ 
-            where:{
+            deliveredUniPoints: uniPoints
+        }, {
+            where: {
+                UniRewardId: uniRewardId
+            }
+        }).then((result) => {
+            console.log("SmartContract found it")
+            return result.deliveredUniPoints
+        }).catch((val) => { console.log(val) });
+    },
+
+    async updateStateSC(uniRewardId) {
+        return db.SmartContract.update({
+            state: true
+        }, {
+            where: {
                 UniRewardId: uniRewardId
             }
         }).then((result) => {

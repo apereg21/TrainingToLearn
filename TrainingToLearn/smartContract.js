@@ -3,19 +3,19 @@ const controllerDB = require('./controllers/controllerDatabase');
 class SmartContract {
     constructor(walletIdO, walletIdD, dUnipoint, uniRewardId) {
         this.walletIdObserver = walletIdO,
-        this.walletIdDemander = walletIdD,
-        this.signatureObserver,
-        this.signatureDemander,
-        this.state = 0,
-        this.condition = [...dUnipoint],
-        this.deliveredUniPoints = []
+            this.walletIdDemander = walletIdD,
+            this.signatureObserver,
+            this.signatureDemander,
+            this.state = 0,
+            this.condition = [...dUnipoint],
+            this.deliveredUniPoints = []
         this.UniRewardId = uniRewardId;
     }
 
     calHashTransaction() {
         return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp + this.concept + this.idWalletFrom + this.idWalletTo + this.typeT).digest('hex');
     }
-    
+
     signContract(signingKey, type) {
         console.log("With the private key: " + signingKey)
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
@@ -48,14 +48,35 @@ class SmartContract {
 
     }
 
-    proveCompleteContract(){
-        if (this.condition.length !== this.deliveredUniPoints.length) return false
-        for (var i = 0; this.condition.length < i; i++) {
-            for (var j = 0; this.condition.length < j; j++) {
-                if (this.condition[i] != this.deliveredUniPoints[j]) return false;
-            }
+    proveCompleteContract() {
+        console.log('==============================================================')
+        console.log(this.deliveredUniPoints + "is equals to" + this.condition)
+        if (this.deliveredUniPoints.length != this.condition.length) {
+            return false
+        } else {
+            return (Array.isArray(this.deliveredUniPoints) &&
+                Array.isArray(this.condition) &&
+                this.deliveredUniPoints.length === this.condition.length &&
+                this.deliveredUniPoints.every((val, index) => val === this.condition[index]))
+
         }
-        return true
+    }
+
+    async endSmartContract(idsWallets, transactionObjId, idsToChange) {
+
+        await controllerDB.moveToMoneyExp(idsToChange, idsWallets[0], this.UniRewardId)
+
+        await controllerDB.updatePurchasePoints(idsToChange)
+
+        await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
+        await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId) //<-- Funciona
+
+        await controllerDB.updateIdUniRewardWallet(idsWallets[0], this.UniRewardId)
+
+        await controllerDB.updatePurchaseField(this.UniRewardId)
+
+        await controllerDB.updateStateSC(this.UniRewardId)
+        this.state = true
     }
 
 }

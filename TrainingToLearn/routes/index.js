@@ -236,7 +236,7 @@ router.post('/createNewReward', async function(req, res) {
                                     newTransac.signTransaction(privateKeyTo, 1)
 
                                     console.log("=================signatureTo======================")
-                                    console.log(privateKeyTo+"  "+newTransac.signatureTo)
+                                    console.log(privateKeyTo + "  " + newTransac.signatureTo)
                                     console.log("==================================================")
 
                                     if (newTransac.isValid(0)) {
@@ -382,14 +382,14 @@ router.post('/createNewTransaction', async function(req, res) {
                                     var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
                                     newTransac.setUniPointIds(idsToChange)
 
-                                    for(var i = 0; i < smartContractList.length; i++){
-                                        if(smartContractList[i].UniRewardId == newTransac.UniRewardId){
+                                    for (var i = 0; i < smartContractList.length; i++) {
+                                        if (smartContractList[i].UniRewardId == newTransac.UniRewardId) {
                                             (smartContractList[i].deliveredUniPoints).push(...idsToChange)
-                                            console.log("\n================================"+smartContractList[i].deliveredUniPoints+"\n================================")
+                                            console.log("\n================================" + smartContractList[i].deliveredUniPoints + "\n================================")
                                             await controllerDB.updateDeliveredUP(smartContractList[i].deliveredUniPoints, newTransac.UniRewardId)
                                         }
                                     }
-                                    
+
                                     var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
                                     var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
                                     newTransac.signTransaction(privateKeyFrom, 0)
@@ -397,7 +397,7 @@ router.post('/createNewTransaction', async function(req, res) {
 
                                     if (newTransac.isValid(1)) {
                                         let transactionObjId = await controllerDB.createTransaction(newTransac)
-                                        
+
                                         await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
                                         await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
@@ -745,7 +745,6 @@ async function createBlock() {
 
     if (pendingTransactions.length > 0 && validBlockchain) {
 
-
         console.log("YES, there are pending Transactions")
         let lastIndex = await controllerDB.getLastBlockIndex()
 
@@ -795,16 +794,11 @@ async function createBlock() {
                     userTo = await controllerDB.getUserData(transaction.idWalletTo)
 
                     await controllerDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
-                    await controllerDB.updateHashUniReward(pendingIdsTransactions[i], newBlock.hash)
+                    await controllerDB.updateHashUniReward(pendingIdsTransactions[i], transaction.UniRewardId, newBlock.hash)
 
-                    var uniPointForSC = []
-                    for (var i = 0; i < arrayPoints.length; i++) {
-                        if (arrayPoints[i].UniRewardId = transaction.UniRewardId) {
-                            uniPointForSC.push(arrayPoints[i].id)
-                        }
-                    }
                     var sContract = new SmartContract(transaction.fromAddress, transaction.toAddress, transaction.uniPointIds, transaction.UniRewardId)
                     await controllerDB.createSmartContract(sContract)
+                    console.log(sContract)
                     smartContractList.push(sContract)
                 }
             } else {
@@ -814,36 +808,86 @@ async function createBlock() {
                     userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
                     userTo = await controllerDB.getUserData(transaction.idWalletTo)
                     if (transaction.typeTransaction == "U") {
-                        await controllerDB.updateHashUniReward(pendingIdsTransactions[i], newBlock.hash)
+                        await controllerDB.updateHashUniReward(transaction.id, transaction.UniRewardId, newBlock.hash)
                     }
 
                 }
             }
-
-            var idsToRemove =[]
-            for (var i = 0; i < smartContractList.length; i++) { 
-                if(smartContractList[i].state != 1){
-                    console.log(smartContractList[i])
-                    if(smartContractList[i].proveCompleteContract()){
-                        smartContractList[i].state = true
-                        idsToRemove.push(smartContractList[i].id)
-                    }
-                }
-            }
-
-            for(var i = 0; i < idsToRemove.length; i){
-                smartContractList.splice(idsToRemove[i], 1)
-            }
-            idsToRemove.splice(0, idsToRemove.length - 1)
-
-            await controllerDB.updateHashUniPoint(transaction.id, newBlock.hash)
+            await controllerDB.updateHashUniPoint(transaction.id, transaction.UniRewardId, newBlock.hash)
             await controllerDB.updateTransactionIds(userFrom.id, transaction.id)
             await controllerDB.updateTransactionIds(userTo.id, transaction.id)
         }
+
+        for (var i = 0; i < smartContractList.length; i++) {
+            if (smartContractList[i].state != 1) {
+                console.log(smartContractList[i])
+                smartContractList[i].proveCompleteContract()
+                if (smartContractList[i].proveCompleteContract()) {
+
+                    var userFromId = await controllerDB.findUserAddressID(smartContractList[i].walletIdObserver)
+                    var userToId = await controllerDB.findUserAddressID(smartContractList[i].walletIdDemander)
+                    var idsWallets = [userFromId, userToId]
+
+                    if (userFromId != null && userToId != null) {
+
+                        let uniRewardPurchase = await controllerDB.getPurchaseField(smartContractList[i].UniRewardId)
+
+                        if (!uniRewardPurchase && uniRewardPurchase != null) {
+
+                            let lastNewIndex = await controllerDB.getLastBlockIndex()
+                            let prevNewHash = await controllerDB.getHashLastBlock(lastNewIndex - 1)
+
+                            let nameTo = await controllerDB.getUserWalletName(userToId)
+                            let concept = "Giving to " + nameTo + " the UniReward: " + smartContractList[i].UniRewardId
+                            let newTransac = new Transaction(smartContractList[i].walletIdObserver, smartContractList[i].walletIdDemander, smartContractList[i].condition.length, smartContractList[i].UniRewardId, "U", idsWallets, concept)
+
+                            var idsToChange = await controllerDB.getPointsToChange(userToId, smartContractList[i].condition.length, smartContractList[i].UniRewardId)
+                            newTransac.setUniPointIds(idsToChange)
+
+                            var privateKey = await controllerDB.obtainPrivateKeyId(userFromId)
+                            newTransac.signTransaction(privateKey, 0)
+                            var privateKey2 = await controllerDB.obtainPrivateKeyId(userToId)
+                            newTransac.signTransaction(privateKey2, 1)
+
+                            let transactionObjId = await controllerDB.createTransaction(newTransac)
+
+                            console.log("=================================================================")
+                            let newBlockSC = new Block(lastNewIndex, new Date(), [transactionObjId], prevNewHash)
+                            newBlockSC.hash = newBlockSC.calculateHash()
+                            await controllerDB.createBlock(newBlockSC)
+                            console.log("=================================================================")
+
+                            await controllerDB.updateTransactionHash(transactionObjId, newBlockSC.hash)
+                            await controllerDB.updateHashUniPoint(transactionObjId, smartContractList[i].UniRewardId, newBlockSC.hash)
+                            await controllerDB.updateHashUniReward(transactionObjId, smartContractList[i].UniRewardId, newBlockSC.hash)
+
+                            smartContractList[i].endSmartContract(idsWallets, transactionObjId, idsToChange)
+                            smartContractList.splice(i, 1)
+                            console.log("OK - Transaction created")
+
+                        } else {
+                            console.log("UniReward already purchase or uniRewardId dosent exists. The contract is terminated")
+                            smartContractList[i].state = true
+                            smartContractList.splice(i, 1)
+                        }
+                    } else {
+                        console.log("One of the users dosent exists. The contract is terminated")
+                        smartContractList[i].state = true
+                        smartContractList.splice(i, 1)
+                    }
+                }
+            }
+
+        }
+
         arrayPoints.splice(0, arrayPoints.length)
         pendingUniRewards.splice(0, pendingUniRewards.length)
         pendingTransactions.splice(0, pendingTransactions.length)
         pendingIdsTransactions.splice(0, pendingIdsTransactions.length)
+            /*console.log(arrayPoints)
+            console.log(pendingUniRewards)
+            console.log(pendingTransactions)
+            console.log(pendingIdsTransactions)*/
 
 
     } else {
