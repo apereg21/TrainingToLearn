@@ -18,7 +18,7 @@ var pendingTransactions = [];
 var pendingUniRewards = [];
 var pendingIdsTransactions = [];
 var arrayPoints = [];
-const smartContractList = [];
+var smartContractList = [];
 var validBlockchain = true
 var areObjectsCreated = false
 var periodicFunct = setInterval(() => createBlock(), 5000);
@@ -77,6 +77,15 @@ router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
 
     var rewardsList = await controllerDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
     res.send(rewardsList)
+
+});
+
+router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
+    console.log(parseInt((req.params.id).replace(':', '')))
+
+    var smartContractsList = await controllerDB.getAllSmartContractsUser(parseInt((req.params.id).replace(':', '')))
+    console.log("This is smartContracts: " + smartContractsList)
+    res.send(smartContractsList)
 
 });
 
@@ -174,7 +183,7 @@ router.post('/createNewReward', async function(req, res) {
 
                                 if (!isDeletedWallet1 && !isDeletedWallet2) {
 
-                                    let newTransac = new Transaction(systemAddress, uniRewardReciverAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
+                                    let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
                                     newTransac.getAndSetLastTransactionId()
                                     var lastIdTrans = await controllerDB.getLastTransactionId()
                                     var alreadyExistTransId = false
@@ -232,7 +241,7 @@ router.post('/createNewReward', async function(req, res) {
                                     arrayUniPointsIds.splice(0, arrayUniPointsIds.length)
                                     var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
                                     newTransac.signTransaction(privateKeyFrom, 0)
-                                    var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
+                                    var privateKeyTo = await controllerDB.obtainPrivateKeyId(userFromId)
                                     newTransac.signTransaction(privateKeyTo, 1)
 
                                     console.log("=================signatureTo======================")
@@ -796,8 +805,12 @@ async function createBlock() {
                     await controllerDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
                     await controllerDB.updateHashUniReward(pendingIdsTransactions[i], transaction.UniRewardId, newBlock.hash)
 
-                    var sContract = new SmartContract(transaction.fromAddress, transaction.toAddress, transaction.uniPointIds, transaction.UniRewardId)
+                    var uniReward = await controllerDB.getUniReward(transaction.UniRewardId)
+                    var addressTo = await controllerDB.getUserWalletAddress(uniReward.WalletId)
+
+                    var sContract = new SmartContract(transaction.fromAddress, addressTo, transaction.uniPointIds, transaction.UniRewardId)
                     await controllerDB.createSmartContract(sContract)
+
                     console.log(sContract)
                     smartContractList.push(sContract)
                 }

@@ -621,7 +621,7 @@ module.exports = {
             console.log("Error: " + val);
         });
     },
-    async getUniRewardInWallet(idUser) {
+    async getUniRewardsIdsInWallet(idUser) {
         return db.Wallets.findOne({
             where: {
                 UserId: idUser
@@ -631,6 +631,19 @@ module.exports = {
                 return result.idsUniRewards
             } else {
                 return []
+            }
+        })
+    },
+    async getUniReward(idUniReward) {
+        return db.UniRewards.findOne({
+            where: {
+                id: idUniReward
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result
+            } else {
+                return null
             }
         })
     },
@@ -677,6 +690,16 @@ module.exports = {
             console.log("Something with the data isn't correct")
         }
 
+    },
+
+    async getUserWalletAddress(idUser) {
+        return db.Wallets.findOne({
+            where: {
+                UserId: idUser
+            }
+        }).then((result) => {
+            return result.publicKey
+        })
     },
 
     async getUserWalletData(idUser) {
@@ -1245,5 +1268,30 @@ module.exports = {
             console.log("SmartContract found it")
             return result.deliveredUniPoints
         }).catch((val) => { console.log(val) });
+    },
+    async getAllSmartContractsUser(userId) {
+        var userDemanderPublicKey = await this.getUserWalletAddress(userId)
+        console.log("I'm publicKey " + userDemanderPublicKey)
+        return db.SmartContract.findAll({
+            where: {
+                walletIdDemander: userDemanderPublicKey
+            }
+        }).then(async(result) => {
+            var finalSmartContractsArray = []
+            for (var i = 0; i < result.length; i++) {
+                var uniReward = await this.getUniReward(result[i].UniRewardId)
+                console.log(uniReward)
+                var sContract = {
+                    nameUR: uniReward.nameUR,
+                    descriptionUR: uniReward.descriptionUR,
+                    uniPointLess: "Owned " + result[i].deliveredUniPoints.length + " of " + result[i].condition.length,
+                    condition: result[i].condition,
+                    complete: result[i].state == true ? "Yes" : "No"
+
+                }
+                finalSmartContractsArray.push(sContract)
+            }
+            return finalSmartContractsArray
+        })
     }
 }

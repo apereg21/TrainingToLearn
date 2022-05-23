@@ -69,7 +69,7 @@ class SmartContract {
         await controllerDB.updatePurchasePoints(idsToChange)
 
         await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
-        await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId) //<-- Funciona
+        await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
         await controllerDB.updateIdUniRewardWallet(idsWallets[0], this.UniRewardId)
 
