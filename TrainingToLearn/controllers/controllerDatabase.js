@@ -160,10 +160,10 @@ module.exports = {
     },
     async getUniRewardName(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return result.nameUR
@@ -187,10 +187,10 @@ module.exports = {
     },
     async getUniRewardId(uniRewardN) {
         return db.UniRewards.findOne({
-                where: {
-                    nameUR: uniRewardN
-                }
-            })
+            where: {
+                nameUR: uniRewardN
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return result.id
@@ -214,17 +214,17 @@ module.exports = {
     },
     async getUserWalletName(userToId) {
         return db.Wallets.findOne({
-                where: {
-                    id: userToId
-                }
-            })
+            where: {
+                id: userToId
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     return db.Users.findOne({
-                            where: {
-                                id: result.UserId
-                            }
-                        })
+                        where: {
+                            id: result.UserId
+                        }
+                    })
                         .then((result2) => {
                             if (result2 != null) {
                                 return result2.username
@@ -239,10 +239,10 @@ module.exports = {
     },
     async obtainUserIdUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -255,10 +255,10 @@ module.exports = {
 
     async getSpecificUR(idUniReward) {
         return db.UniRewards.findOne({
-                where: {
-                    id: idUniReward
-                }
-            })
+            where: {
+                id: idUniReward
+            }
+        })
             .then((result) => {
                 if (result != null) {
                     console.log("UniReward with id:" + idUniReward + " Find it")
@@ -710,7 +710,7 @@ module.exports = {
                 where: {
                     UserId: idUser
                 }
-            }).then(async(result) => {
+            }).then(async (result) => {
                 if (result != null) {
                     console.log("User wallet data find it")
                     resultF = result
@@ -719,7 +719,7 @@ module.exports = {
                             id: result.money,
                             alPurchase: 0
                         }
-                    }).then(async(result2) => {
+                    }).then(async (result2) => {
                         vectorURTransac.push(result2.length)
                         if (!(resultF.idsUniRewards.length <= 0)) {
                             var uniRewardsList = []
@@ -780,12 +780,12 @@ module.exports = {
                         return null
                     }
 
-                }).catch((val) => {})
+                }).catch((val) => { })
             } else {
                 return null
             }
 
-        }).catch((val) => {})
+        }).catch((val) => { })
     },
     async updateIdUniRewardWallet(idUser, idUniReward) {
         return db.Wallets.findOne({
@@ -966,7 +966,7 @@ module.exports = {
     async paymentPersonToPerson(userFromWalletId, userToWalletId, numbPoints, uniRewardId) {
         var pointsToChange = []
         var idsMoney = []
-            //Obtain first n elements           
+        //Obtain first n elements           
         return db.UniPoints.findAll({
             limit: numbPoints,
             where: {
@@ -1092,7 +1092,7 @@ module.exports = {
                 console.log("WalletAdress isn't correct")
                 return false
             }
-        }).catch((val) => {})
+        }).catch((val) => { })
     },
     async isExistTransaction(idT) {
         return db.Transactions.findOne({
@@ -1269,6 +1269,19 @@ module.exports = {
             return result.deliveredUniPoints
         }).catch((val) => { console.log(val) });
     },
+    async getAllNotTerminatedSC() {
+        return db.SmartContract.findAll({
+            where: {
+                state: false
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result
+            } else {
+                return []
+            }
+        })
+    },
     async getAllSmartContractsUser(userId) {
         var userDemanderPublicKey = await this.getUserWalletAddress(userId)
         console.log("I'm publicKey " + userDemanderPublicKey)
@@ -1276,22 +1289,27 @@ module.exports = {
             where: {
                 walletIdDemander: userDemanderPublicKey
             }
-        }).then(async(result) => {
-            var finalSmartContractsArray = []
-            for (var i = 0; i < result.length; i++) {
-                var uniReward = await this.getUniReward(result[i].UniRewardId)
-                console.log(uniReward)
-                var sContract = {
-                    nameUR: uniReward.nameUR,
-                    descriptionUR: uniReward.descriptionUR,
-                    uniPointLess: "Owned " + result[i].deliveredUniPoints.length + " of " + result[i].condition.length,
-                    condition: result[i].condition,
-                    complete: result[i].state == true ? "Yes" : "No"
+        }).then(async (result) => {
+            if (result != null) {
+                var finalSmartContractsArray = []
+                for (var i = 0; i < result.length; i++) {
+                    var uniReward = await this.getUniReward(result[i].UniRewardId)
+                    console.log(uniReward)
+                    var sContract = {
+                        nameUR: uniReward.nameUR,
+                        descriptionUR: uniReward.descriptionUR,
+                        uniPointLess: "Owned " + result[i].deliveredUniPoints.length + " of " + result[i].condition.length,
+                        condition: result[i].condition,
+                        complete: result[i].state == true ? "Yes" : "No"
 
+                    }
+                    finalSmartContractsArray.push(sContract)
                 }
-                finalSmartContractsArray.push(sContract)
+                return finalSmartContractsArray
+            } else {
+                return null
             }
-            return finalSmartContractsArray
+
         })
     }
 }

@@ -11,6 +11,9 @@ class SmartContract {
             this.deliveredUniPoints = []
         this.UniRewardId = uniRewardId;
     }
+    setDeliveredUniPoints(deliveredUniPoints) {
+        this.deliveredUniPoints = [...deliveredUniPoints];
+    }
 
     calHashTransaction() {
         return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp + this.concept + this.idWalletFrom + this.idWalletTo + this.typeT).digest('hex');
@@ -20,7 +23,7 @@ class SmartContract {
         console.log("With the private key: " + signingKey)
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
         console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
-            //Prove if is the key of correct user 
+        //Prove if is the key of correct user 
         if (type == 0) {
             if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
                 console.log('The key doesnt belong to the expected user');
@@ -50,7 +53,7 @@ class SmartContract {
 
     proveCompleteContract() {
         console.log('==============================================================')
-        console.log(this.deliveredUniPoints + "is equals to" + this.condition)
+        console.log(this.deliveredUniPoints + "is equals to " + this.condition)
         if (this.deliveredUniPoints.length != this.condition.length) {
             return false
         } else {
@@ -64,14 +67,14 @@ class SmartContract {
 
     async endSmartContract(idsWallets, transactionObjId, idsToChange) {
 
-        await controllerDB.moveToMoneyExp(idsToChange, idsWallets[0], this.UniRewardId)
+        await controllerDB.moveToMoneyExp(idsToChange, idsWallets[1], this.UniRewardId)
 
         await controllerDB.updatePurchasePoints(idsToChange)
 
         await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
         await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
-        await controllerDB.updateIdUniRewardWallet(idsWallets[0], this.UniRewardId)
+        await controllerDB.updateIdUniRewardWallet(idsWallets[1], this.UniRewardId)
 
         await controllerDB.updatePurchaseField(this.UniRewardId)
 
