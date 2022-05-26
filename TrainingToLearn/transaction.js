@@ -5,14 +5,14 @@ const controllerDB = require('./controllers/controllerDatabase');
 
 class Transaction {
 
-    constructor(fromAddress, toAddress, amount, unireward, typeTr, idsWallets, concept) {
+    constructor(fromAddress, toAddress, amount, unirewardId, typeTr, idsWallets, concept) {
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
         this.timestamp = Date.now();
         this.concept = concept;
         this.signatureFrom = "";
         this.signatureTo = "";
-        this.UniRewardId = unireward;
+        this.UniRewardId = unirewardId;
         this.amount = amount;
         this.idWalletFrom = idsWallets[0]
         this.idWalletTo = idsWallets[1]

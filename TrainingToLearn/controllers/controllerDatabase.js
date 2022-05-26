@@ -1,6 +1,5 @@
 const db = require('../models')
 const { Op } = require("sequelize");
-const unireward = require('../models/unireward');
 const SHA256 = require('crypto-js/sha256')
 
 module.exports = {
@@ -725,7 +724,7 @@ module.exports = {
                             var uniRewardsList = []
                             for (var i = 0; i < resultF.idsUniRewards.length; i++) {
                                 var uniReward = await this.getSpecificUR(resultF.idsUniRewards[i])
-                                if (unireward.purchase != 0) {
+                                if (uniReward.purchase != 0) {
                                     uniRewardsList.push(uniReward)
                                 }
                             }

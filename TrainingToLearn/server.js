@@ -4,7 +4,7 @@ const port = 3000
 const cors = require("cors")
 
 var routes = require('./routes/index');
-var mantenimiento = require('./routes/mantenimiento');
+var mantenimiento = require('./routes/maintenance');
 var allowedOrigins = ['http://localhost:8080','http://localhost:8081'];
 app.use(cors({
     origin: function(origin, callback) {
@@ -21,6 +21,7 @@ app.use(cors({
 
     credentials: true,
 }))
+global.flag = false
 app.use(express.json())
 app.use('/', routes)
 app.use('/mantenimiento', mantenimiento)
