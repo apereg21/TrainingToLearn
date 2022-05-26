@@ -820,10 +820,28 @@ async function createBlock() {
             await controllerDB.updateTransactionIds(userTo.id, transaction.id)
         }
 
+        arrayPoints.splice(0, arrayPoints.length)
+        pendingUniRewards.splice(0, pendingUniRewards.length)
+        pendingTransactions.splice(0, pendingTransactions.length)
+        pendingIdsTransactions.splice(0, pendingIdsTransactions.length)
+
+
+    } else {
+
+        if (validBlockchain == false) {
+            validBlockchain = false
+            console.log("Error - Blockchain ins't correct")
+        } else {
+            console.log("NO, there aren't pending Transactions")
+        }
+    }
+
+
+    if (validBlockchain) {
         smartContractList = await controllerDB.getAllNotTerminatedSC()
         for (var i = 0; i < smartContractList.length; i++) {
-            //new SmartContract(transaction.fromAddress, addressTo, transaction.uniPointIds, transaction.UniRewardId)
             var sContract = new SmartContract(smartContractList[i].walletIdObserver, smartContractList[i].walletIdDemander, smartContractList[i].condition, smartContractList[i].UniRewardId)
+            console.log("Im the Smart Contract: \n" + sContract)
             sContract.setDeliveredUniPoints(smartContractList[i].deliveredUniPoints)
             if (sContract.state != 1) {
                 console.log(sContract)
@@ -832,9 +850,11 @@ async function createBlock() {
 
                     var userFromId = await controllerDB.findUserAddressID(sContract.walletIdObserver)
                     var userToId = await controllerDB.findUserAddressID(sContract.walletIdDemander)
+                    var userFromDeleted = await controllerDB.isUserDeleted(userFromId)
+                    var userToDeleted = await controllerDB.isUserDeleted(userToId)
                     var idsWallets = [userFromId, userToId]
 
-                    if (userFromId != null && userToId != null) {
+                    if (userFromId != null && userToId != null && userFromDeleted != true && userToDeleted != true) {
 
                         let uniRewardPurchase = await controllerDB.getPurchaseField(sContract.UniRewardId)
 
@@ -874,32 +894,31 @@ async function createBlock() {
 
                         } else {
                             console.log("UniReward already purchase or uniRewardId dosent exists. The contract is terminated")
-                            smartContractList[i].state = true
+                            sContract.terminateContract()
                             smartContractList.splice(i, 1)
                         }
                     } else {
                         console.log("One of the users dosent exists. The contract is terminated")
-                        smartContractList[i].state = true
+                        sContract.terminateContract()
+                        smartContractList.splice(i, 1)
+                    }
+                } else {
+                    var userFromId = await controllerDB.findUserAddressID(sContract.walletIdObserver)
+                    var userToId = await controllerDB.findUserAddressID(sContract.walletIdDemander)
+                    var userFromDeleted = await controllerDB.isUserDeleted(userFromId)
+                    var userToDeleted = await controllerDB.isUserDeleted(userToId)
+                    var idsWallets = [userFromId, userToId]
+
+                    console.log("User " + userFromId + " is " + userFromDeleted)
+                    console.log("User " + userToId + " is " + userToDeleted)
+
+                    if (userFromId == null || userToId == null || userFromDeleted == true || userToDeleted == true) {
+                        console.log("One of the users dosent exists. The contract is terminated")
+                        sContract.terminateContract()
                         smartContractList.splice(i, 1)
                     }
                 }
             }
-
-        }
-
-        arrayPoints.splice(0, arrayPoints.length)
-        pendingUniRewards.splice(0, pendingUniRewards.length)
-        pendingTransactions.splice(0, pendingTransactions.length)
-        pendingIdsTransactions.splice(0, pendingIdsTransactions.length)
-
-
-    } else {
-
-        if (validBlockchain == false) {
-            validBlockchain = false
-            console.log("Error - Blockchain ins't correct")
-        } else {
-            console.log("NO, there aren't pending Transactions")
         }
     }
 }

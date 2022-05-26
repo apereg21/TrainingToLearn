@@ -495,7 +495,7 @@ module.exports = {
                     id: idUser
                 }
             }).then((result) => {
-                if (result.delete == true) {
+                if (result.deleted == true) {
                     console.log("User is Deleted")
                     return true
                 } else {

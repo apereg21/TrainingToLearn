@@ -51,6 +51,11 @@ class SmartContract {
 
     }
 
+    async terminateContract(){
+        await controllerDB.updateStateSC(this.UniRewardId)
+        this.state = true
+    }
+
     proveCompleteContract() {
         console.log('==============================================================')
         console.log(this.deliveredUniPoints + "is equals to " + this.condition)
