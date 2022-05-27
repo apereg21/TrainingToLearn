@@ -3,9 +3,15 @@ const app = express()
 const port = 3000
 const cors = require("cors")
 
+
 var routes = require('./routes/index');
 var mantenimiento = require('./routes/maintenance');
-var allowedOrigins = ['http://localhost:8080','http://localhost:8081'];
+var allowedOrigins = ['http://localhost:8080', 'http://localhost:8081'];
+
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
 app.use(cors({
     origin: function(origin, callback) {
         if (!origin) return callback(null, true);
