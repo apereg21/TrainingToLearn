@@ -1,9 +1,10 @@
-const controllerDB = require('../controllerDatabase');
 const Wallet = require('../../wallet');
+const controllerUserDB = require("../database/controllerUserDB");
+const controllerWalletDB = require("../database/controllerWalletDB");
 
 module.exports = {
     async modifyUserData(req, res) {
-        const userID = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        const userID = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
 
         if (userID != null) {
 
@@ -39,7 +40,7 @@ module.exports = {
 
             if (counterErrors == 0) {
 
-                return await controllerDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
+                return await controllerUserDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
 
             }
         } else {
@@ -50,16 +51,16 @@ module.exports = {
         }
     },
     async deleteUser(req, res) {
-        const user = await controllerDB.getUserData(req.body.id)
+        const user = await controllerUserDB.getUserData(req.body.id)
 
         if (user != null && !user.deleted) {
 
             const deletedUser = user.deleted
             const idWallet = user.id
-            const deletedWallet = await controllerDB.obtainDeleteField(idWallet, 1)
+            const deletedWallet = await controllerUserDB.obtainDeleteField(idWallet, 1)
 
             if ((!deletedUser) && ((!deletedWallet) || deletedWallet != null)) {
-                controllerDB.deleteUser(user.id)
+                controllerUserDB.deleteUser(user.id)
                 console.log("OK - " + user.username + "'s data eliminated")
                 res.send(user.username)
             } else {
@@ -77,21 +78,21 @@ module.exports = {
         }
     },
     async createNewUser(req, res) {
-        let userAlreadyCreated = await controllerDB.isUserCreated(req.body.username)
+        let userAlreadyCreated = await controllerUserDB.isUserCreated(req.body.username)
 
         if (userAlreadyCreated == false) {
 
             if (req.body.typeUser == "N" || req.body.typeUser == "I") {
 
-                await controllerDB.createUser(req.body)
+                await controllerUserDB.createUser(req.body)
                 console.log("OK - User created")
-                const ownerId = await controllerDB.obtainUserId(req.body.username, req.body.password)
-                const hasWallet = await controllerDB.userHasWallet(ownerId)
+                const ownerId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
+                const hasWallet = await controllerWalletDB.userHasWallet(ownerId)
 
                 if (!hasWallet) {
 
                     const newWallet = new Wallet(ownerId)
-                    controllerDB.createWallet(newWallet)
+                    controllerUserDB.createWallet(newWallet)
                     console.log("OK - Wallet Created")
                     res.send("OK - Acount created")
 

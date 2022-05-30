@@ -1,37 +1,42 @@
-const controllerDB = require("../controllerDatabase");
 const UniReward = require("../../uniReward")
 const Transaction = require("../../transaction")
+const controllerUniRewardDB = require("../database/controllerUniRewardDB");
+const controllerWalletDB = require("../database/controllerWalletDB");
+const controllerUserDB = require("../database/controllerUserDB");
+const controllerTransactionDB = require("../database/controllerTransactionsDB");
+const controllerUniPointDB = require("../database/controllerUniPointDB");
+
 module.exports = {
     async createUniReward(pendingUniRewards, arrayPoints, newBlockHash) {
         var arrayOfUniRewards = []
         for (var i = 0; i < pendingUniRewards.length; i++) {
-            var userWalletDeleted = await controllerDB.isUserDeleted(pendingUniRewards[i].WalletId)
+            var userWalletDeleted = await controllerUserDB.isUserDeleted(pendingUniRewards[i].WalletId)
             if (!userWalletDeleted) {
-                arrayOfUniRewards.push(await controllerDB.createUniReward(pendingUniRewards[i], newBlockHash))
+                arrayOfUniRewards.push(await controllerUniRewardDB.createUniReward(pendingUniRewards[i], newBlockHash))
             }
         }
         if (!arrayOfUniRewards.includes(false)) {
-            await controllerDB.createPoints(arrayPoints)
+            await controllerUniPointDB.createPoints(arrayPoints)
         }
     },
     async createUniRewardObject(res, req, pendingUniRewards, arrayPoints, pendingTransactions) {
-        let idUserInstructor = await controllerDB.obtainUserId(req.body.username, req.body.password)
-        let userInstructoDeleted = await controllerDB.isUserDeleted(idUserInstructor)
-        let isUserDelete = await controllerDB.isUserDeleted(idUserInstructor)
+        let idUserInstructor = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
+        let userInstructoDeleted = await controllerUserDB.isUserDeleted(idUserInstructor)
+        let isUserDelete = await controllerUserDB.isUserDeleted(idUserInstructor)
 
         if (idUserInstructor != null && !isUserDelete && req.body.costReward > 0 && !userInstructoDeleted) {
 
-            let userType = await controllerDB.obtainUserType(idUserInstructor)
+            let userType = await controllerUserDB.obtainUserType(idUserInstructor)
 
             if (userType == "I") {
 
-                let systemAddress = await controllerDB.findUserAddress("System")
-                let uniRewardReciverAddress = await controllerDB.findUserAddress(req.body.usernameCourse)
+                let systemAddress = await controllerWalletDB.findUserAddress("System")
+                let uniRewardReciverAddress = await controllerWalletDB.findUserAddress(req.body.usernameCourse)
 
                 if (systemAddress != null && uniRewardReciverAddress != null) {
 
-                    let userFromId = await controllerDB.findUserAddressID(systemAddress)
-                    let userToId = await controllerDB.findUserAddressID(uniRewardReciverAddress)
+                    let userFromId = await controllerWalletDB.findUserAddressID(systemAddress)
+                    let userToId = await controllerWalletDB.findUserAddressID(uniRewardReciverAddress)
                     if (idUserInstructor != userToId) {
 
                         var uniReward = new UniReward(req.body, userToId)
@@ -40,7 +45,7 @@ module.exports = {
                         console.log(uniReward.id)
                         console.log("==================================================")
                         var alreadyExistURId = false
-                        var lastIdUniReward = await controllerDB.getLastUniRewardIndex()
+                        var lastIdUniReward = await controllerUniRewardDB.getLastUniRewardIndex()
                         if (uniReward.proveNotNullObject() != true) {
 
                             for (var i = 0; i < pendingUniRewards.length; i++) {
@@ -58,15 +63,15 @@ module.exports = {
                             pendingUniRewards.push(uniReward)
                             var idsWallets = [userFromId, userFromId]
 
-                            let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
-                            let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
+                            let isDeletedWallet1 = await controllerWalletDB.obtainDeleteField(userFromId, 1)
+                            let isDeletedWallet2 = await controllerWalletDB.obtainDeleteField(userToId, 1)
                             let concept = "Giving UniPoints referrer to UniReward: " + uniReward.nameUR
 
                             if (!isDeletedWallet1 && !isDeletedWallet2) {
 
                                 let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
                                 newTransac.getAndSetLastTransactionId()
-                                var lastIdTrans = await controllerDB.getLastTransactionId()
+                                var lastIdTrans = await controllerTransactionDB.getLastTransactionId()
                                 var alreadyExistTransId = false
 
                                 for (var j = 0; j < pendingTransactions.length; j++) {
@@ -78,9 +83,9 @@ module.exports = {
                                     newTransac.id = pendingTransactions[pendingTransactions.length - 1].id + 1
                                 }
 
-                                let userWalletId = await controllerDB.obtainWalletId(userFromId)
+                                let userWalletId = await controllerWalletDB.obtainWalletId(userFromId)
 
-                                var lastIdUniPoint = await controllerDB.getLastIdUP()
+                                var lastIdUniPoint = await controllerUniPointDB.getLastIdUP()
                                 var arrayUniPointsIds = []
                                 for (var i = 0; i < req.body.costReward; i++) {
 
@@ -120,9 +125,9 @@ module.exports = {
                                 console.log("==================================================")
 
                                 arrayUniPointsIds.splice(0, arrayUniPointsIds.length)
-                                var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
+                                var privateKeyFrom = await controllerWalletDB.obtainPrivateKeyId(userFromId)
                                 newTransac.signTransaction(privateKeyFrom, 0)
-                                var privateKeyTo = await controllerDB.obtainPrivateKeyId(userFromId)
+                                var privateKeyTo = await controllerWalletDB.obtainPrivateKeyId(userFromId)
                                 newTransac.signTransaction(privateKeyTo, 1)
 
                                 console.log("=================signatureTo======================")
@@ -135,6 +140,7 @@ module.exports = {
                                     console.log("================response========================")
                                     console.log(response[0].id)
                                     console.log("================================================")
+                                    response.push()
                                     return response
 
                                 } else {

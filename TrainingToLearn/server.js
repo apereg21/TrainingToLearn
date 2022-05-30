@@ -27,7 +27,7 @@ app.use(cors({
 
     credentials: true,
 }))
-global.flag = false
+
 app.use(express.json())
 app.use('/', routes)
 app.use('/mantenimiento', mantenimiento)

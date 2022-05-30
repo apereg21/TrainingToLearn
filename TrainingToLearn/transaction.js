@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const EC = require('elliptic').ec;
 const ec = new EC('secp256k1');
-const controllerDB = require('./controllers/controllerDatabase');
+const controllerDB = require('./controllers/database/controllerTransactionsDB');
 
 class Transaction {
 

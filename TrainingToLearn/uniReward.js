@@ -1,4 +1,4 @@
-const controllerDB = require('./controllers/controllerDatabase');
+const controllerDB = require('./controllers/database/controllerUniRewardDB');
 
 class UniReward {
     constructor(req, userFromId) {

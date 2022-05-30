@@ -1,23 +1,28 @@
 const Transaction = require('../../transaction');
 const SmartContract = require('../../smartContract')
-const controllerDB = require('../controllerDatabase');
+const controllerTransactionsDB = require('../database/controllerTransactionsDB');
+const controllerWalletDB = require('../database/controllerWalletDB');
+const controllerUserDB = require('../database/controllerUserDB');
+const controllerUniRewardDB = require('../database/controllerUniRewardDB');
+const controllerSContractDB = require('../database/controllerSContractDB');
+const controllerUniPointDB = require('../database/controllerUniPointDB');
 
 module.exports = {
     async createTransactionObject(req, res) {
         let userToId, userDestAdd, userFromId, userInstructor, userFromAdd
 
-        userDestAdd = await controllerDB.findUserAddress(req.body.toAddressUN)
-        userToId = await controllerDB.findUserAddressID(userDestAdd)
-        userFromAdd = await controllerDB.findUserAddress("System")
-        userFromId = await controllerDB.findUserAddressID(userFromAdd)
-        userInstructor = await controllerDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
+        userDestAdd = await controllerWalletDB.findUserAddress(req.body.toAddressUN)
+        userToId = await controllerWalletDB.findUserAddressID(userDestAdd)
+        userFromAdd = await controllerWalletDB.findUserAddress("System")
+        userFromId = await controllerWalletDB.findUserAddressID(userFromAdd)
+        userInstructor = await controllerUserDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
 
 
         if (userToId != null && userFromId != null) {
 
-            let userToData = await controllerDB.getUserData(userToId)
-            let userFromData = await controllerDB.getUserData(userFromId)
-            let userInstructorData = await controllerDB.getUserData(userInstructor)
+            let userToData = await controllerUserDB.getUserData(userToId)
+            let userFromData = await controllerUserDB.getUserData(userFromId)
+            let userInstructorData = await controllerUserDB.getUserData(userInstructor)
             let isUserToDeleted = userToData.deleted
             let isUserFromDeleted = userFromData.deleted
             let typeUserTo = userToData.typeUser
@@ -31,43 +36,43 @@ module.exports = {
                     if (userFromId != userToId) {
 
                         var idsWallets = [userFromId, userToId]
-                        var idUniReward = await controllerDB.getUniRewardId(req.body.uniRewardId)
+                        var idUniReward = await controllerUniRewardDB.getUniRewardId(req.body.uniRewardId)
                         let newTransac = new Transaction(userFromAdd, userDestAdd, req.body.moneyTo, idUniReward, req.body.typeT, idsWallets, req.body.concept)
 
-                        let userMoneyWallet = await controllerDB.getUserMoney(userFromId, idUniReward)
+                        let userMoneyWallet = await controllerWalletDB.getUserMoney(userFromId, idUniReward)
 
-                        let isDeletedWallet1 = await controllerDB.obtainDeleteField(userFromId, 1)
-                        let isDeletedWallet2 = await controllerDB.obtainDeleteField(userToId, 1)
+                        let isDeletedWallet1 = await controllerWalletDB.obtainDeleteField(userFromId, 1)
+                        let isDeletedWallet2 = await controllerWalletDB.obtainDeleteField(userToId, 1)
 
                         if ((userToId != null && userFromId != null) && userMoneyWallet >= req.body.moneyTo &&
                             (!isDeletedWallet1 && !isDeletedWallet2) && newTransac.amount > 0 && idUniReward != null) {
 
-                            let userRewardRecivierId = await controllerDB.getUserIDFromReward(req.body.uniRewardId)
+                            let userRewardRecivierId = await controllerUniRewardDB.getUserIDFromReward(req.body.uniRewardId)
                             if (userRewardRecivierId == userToId) {
 
-                                var idsToChange = await controllerDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
+                                var idsToChange = await controllerWalletDB.paymentPersonToPerson(userFromId, userToId, req.body.moneyTo, idUniReward)
                                 newTransac.setUniPointIds(idsToChange)
 
-                                var sCList = await controllerDB.getAllNotTerminatedSC()
+                                var sCList = await controllerSContractDB.getAllNotTerminatedSC()
                                 for (var i = 0; i < sCList.length; i++) {
                                     if (sCList[i].UniRewardId == newTransac.UniRewardId) {
                                         (sCList[i].deliveredUniPoints).push(...idsToChange)
                                         console.log("\n================================" + sCList[i].deliveredUniPoints + "\n================================")
-                                        await controllerDB.updateDeliveredUP(sCList[i].deliveredUniPoints, newTransac.UniRewardId)
+                                        await controllerSContractDB.updateDeliveredUP(sCList[i].deliveredUniPoints, newTransac.UniRewardId)
                                     }
                                 }
                                 sCList.splice(0, sCList.length)
 
-                                var privateKeyFrom = await controllerDB.obtainPrivateKeyId(userFromId)
-                                var privateKeyTo = await controllerDB.obtainPrivateKeyId(userToId)
+                                var privateKeyFrom = await controllerWalletDB.obtainPrivateKeyId(userFromId)
+                                var privateKeyTo = await controllerWalletDB.obtainPrivateKeyId(userToId)
                                 newTransac.signTransaction(privateKeyFrom, 0)
                                 newTransac.signTransaction(privateKeyTo, 1)
 
                                 if (newTransac.isValid(1)) {
-                                    let transactionObjId = await controllerDB.createTransaction(newTransac)
+                                    let transactionObjId = await controllerTransactionsDB.createTransaction(newTransac)
 
-                                    await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
-                                    await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
+                                    await controllerWalletDB.updateTransactionIds(idsWallets[0], transactionObjId)
+                                    await controllerWalletDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
                                     var response = []
                                     response.push(newTransac)
@@ -169,44 +174,44 @@ module.exports = {
             console.log("=====================================================")
             console.log(pendingTransactions[i])
             console.log("=====================================================")
-            var isExistTransaction = await controllerDB.isExistTransaction(pendingIdsTransactions[i])
+            var isExistTransaction = await controllerTransactionsDB.isExistTransaction(pendingIdsTransactions[i])
             var userFrom, userTo, transaction
-            userFrom = await controllerDB.getUserData(pendingTransactions[i].idWalletFrom)
-            userTo = await controllerDB.getUserData(pendingTransactions[i].idWalletTo)
+            userFrom = await controllerUserDB.getUserData(pendingTransactions[i].idWalletFrom)
+            userTo = await controllerUserDB.getUserData(pendingTransactions[i].idWalletTo)
             if (!isExistTransaction) {
                 //Transaction not already created --> Transaction for create
                 if (userFrom != null && userTo != null) {
-                    var transactionObjId = await controllerDB.createTransaction(pendingTransactions[i])
+                    var transactionObjId = await controllerTransactionsDB.createTransaction(pendingTransactions[i])
 
-                    transaction = await controllerDB.updateTransactionHash(transactionObjId, newBlockHash)
-                    userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
-                    userTo = await controllerDB.getUserData(transaction.idWalletTo)
+                    transaction = await controllerTransactionsDB.updateTransactionHash(transactionObjId, newBlockHash)
+                    userFrom = await controllerUserDB.getUserData(transaction.idWalletFrom)
+                    userTo = await controllerUserDB.getUserData(transaction.idWalletTo)
 
-                    await controllerDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
-                    await controllerDB.updateHashUniReward(pendingIdsTransactions[i], transaction.UniRewardId, newBlockHash)
+                    await controllerWalletDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
+                    await controllerUniRewardDB.updateHashUniReward(pendingIdsTransactions[i], transaction.UniRewardId, newBlockHash)
 
-                    var uniReward = await controllerDB.getUniReward(transaction.UniRewardId)
-                    var addressTo = await controllerDB.getUserWalletAddress(uniReward.WalletId)
+                    var uniReward = await controllerUniRewardDB.getUniReward(transaction.UniRewardId)
+                    var addressTo = await controllerWalletDB.getUserWalletAddress(uniReward.WalletId)
 
                     var sContract = new SmartContract(transaction.fromAddress, addressTo, transaction.uniPointIds, transaction.UniRewardId)
-                    await controllerDB.createSmartContract(sContract)
+                    await controllerSContractDB.createSmartContract(sContract)
 
                 }
             } else {
                 //Transaction already created --> Transaction only for update fields
                 if (userFrom != null && userTo != null) {
-                    transaction = await controllerDB.updateTransactionHash(pendingIdsTransactions[i], newBlockHash)
-                    userFrom = await controllerDB.getUserData(transaction.idWalletFrom)
-                    userTo = await controllerDB.getUserData(transaction.idWalletTo)
+                    transaction = await controllerTransactionsDB.updateTransactionHash(pendingIdsTransactions[i], newBlockHash)
+                    userFrom = await controllerUserDB.getUserData(transaction.idWalletFrom)
+                    userTo = await controllerUserDB.getUserData(transaction.idWalletTo)
                     if (transaction.typeTransaction == "U") {
-                        await controllerDB.updateHashUniReward(transaction.id, transaction.UniRewardId, newBlockHash)
+                        await controllerUniRewardDB.updateHashUniReward(transaction.id, transaction.UniRewardId, newBlockHash)
                     }
 
                 }
             }
-            await controllerDB.updateHashUniPoint(transaction.id, transaction.UniRewardId, newBlockHash)
-            await controllerDB.updateTransactionIds(userFrom.id, transaction.id)
-            await controllerDB.updateTransactionIds(userTo.id, transaction.id)
+            await controllerUniPointDB.updateHashUniPoint(transaction.id, transaction.UniRewardId, newBlockHash)
+            await controllerWalletDB.updateTransactionIds(userFrom.id, transaction.id)
+            await controllerWalletDB.updateTransactionIds(userTo.id, transaction.id)
         }
     }
 }

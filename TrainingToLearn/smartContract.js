@@ -1,4 +1,8 @@
-const controllerDB = require('./controllers/controllerDatabase');
+const controllerSContractDB = require('./controllers/database/controllerSContractDB');
+const controllerWalletDB = require('./controllers/database/controllerWalletDB');
+const controllerTransactionDB = require('./controllers/database/controllerTransactionsDB');
+const controllerUniRewardDB = require('./controllers/database/controllerUniRewardDB');
+const controllerUniPointDB = require('./controllers/database/controllerUniPointDB');
 
 class SmartContract {
     constructor(walletIdO, walletIdD, dUnipoint, uniRewardId) {
@@ -23,7 +27,7 @@ class SmartContract {
         console.log("With the private key: " + signingKey)
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
         console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
-        //Prove if is the key of correct user 
+            //Prove if is the key of correct user 
         if (type == 0) {
             if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
                 console.log('The key doesnt belong to the expected user');
@@ -51,8 +55,8 @@ class SmartContract {
 
     }
 
-    async terminateContract(){
-        await controllerDB.updateStateSC(this.UniRewardId)
+    async terminateContract() {
+        await controllerSContractDB.updateStateSC(this.UniRewardId)
         this.state = true
     }
 
@@ -72,18 +76,18 @@ class SmartContract {
 
     async endSmartContract(idsWallets, transactionObjId, idsToChange) {
 
-        await controllerDB.moveToMoneyExp(idsToChange, idsWallets[1], this.UniRewardId)
+        await controllerWalletDB.moveToMoneyExp(idsToChange, idsWallets[1], this.UniRewardId)
 
-        await controllerDB.updatePurchasePoints(idsToChange)
+        await controllerUniPointDB.updatePurchasePoints(idsToChange)
 
-        await controllerDB.updateTransactionIds(idsWallets[0], transactionObjId)
-        await controllerDB.updateTransactionIds(idsWallets[1], transactionObjId)
+        await controllerWalletDB.updateTransactionIds(idsWallets[0], transactionObjId)
+        await controllerWalletDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
-        await controllerDB.updateIdUniRewardWallet(idsWallets[1], this.UniRewardId)
+        await controllerWalletDB.updateIdUniRewardWallet(idsWallets[1], this.UniRewardId)
 
-        await controllerDB.updatePurchaseField(this.UniRewardId)
+        await controllerUniRewardDB.updatePurchaseField(this.UniRewardId)
 
-        await controllerDB.updateStateSC(this.UniRewardId)
+        await controllerSContractDB.updateStateSC(this.UniRewardId)
         this.state = true
     }
 

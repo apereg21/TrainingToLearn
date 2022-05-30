@@ -7,23 +7,17 @@ const SmartContract = require('../smartContract');
 
 var express = require('express');
 
-const controllerDB = require('../controllers/controllerDatabase');
-
+const controllerSContract = require('../controllers/endpoints/controllerSContract');
 const controllerBlockchain = require('../controllers/endpoints/controllerBlockchain')
 const controllerTransaction = require('../controllers/endpoints/controllerTransactions')
 const controllerUniReward = require('../controllers/endpoints/controllerUniReward')
 const controllerUser = require('../controllers/endpoints/controllerUser')
 
-//const controllerBlockCDB = require('../controllers/database/controllerBlockchainDB')
-//const controllerSContractDB = require('../controllers/database/controllerSContract')
-//const controllerTransactionDB = require('../controllers/database/controllerTransactions')
-//const controllerUniRewardDB = require('../controllers/database/controllerUniReward')
-//const controllerUserDB = require('../controllers/database/controllerUser')
+const controllerSContractDB = require('../controllers/database/controllerSContractDB');
+const controllerWalletDB = require('../controllers/database/controllerWalletDB')
+const controllerUniRewardDB = require('../controllers/database/controllerUniRewardDB')
+const controllerUserDB = require('../controllers/database/controllerUserDB')
 
-
-/*
- *Configuration zone
- */
 var router = express.Router();
 var pendingTransactions = [];
 var pendingUniRewards = [];
@@ -47,23 +41,23 @@ router.get('/', (req) => {
 
 
 router.get('/getAllUsersList', async function(req, res) {
-    var usersList = await controllerDB.getAllUsers()
+    var usersList = await controllerUserDB.getAllUsers()
     res.send(usersList)
 
 });
 
 router.get('/getUsersName/:id', async function(req, res) {
-    var userName = await controllerDB.getUsername(parseInt((req.params.id).replace(':', '')))
+    var userName = await controllerUserDB.getUsername(parseInt((req.params.id).replace(':', '')))
     res.send(userName)
 });
 
 router.get('/getUserRole/:id', async function(req, res) {
-    var user = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
+    var user = await controllerUserDB.getUserData(parseInt((req.params.id).replace(':', '')))
     res.send(user.typeUser)
 });
 
 router.get('/getUserID/:username', async function(req, res) {
-    var userId = await controllerDB.getUserID((req.params.username).replace(':', ''))
+    var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
     res.send("" + userId)
 });
 
@@ -71,7 +65,7 @@ router.post('/loginUser', async function(req, res) {
     var isUsernameExist = proveKey('username', 'string', req.body)
     var isPasswordExist = proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
-        var userId = await controllerDB.obtainUserId(req.body.username, req.body.password)
+        var userId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
         if (userId != null) {
             res.send("" + userId)
         } else {
@@ -86,7 +80,7 @@ router.post('/loginUser', async function(req, res) {
 router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     console.log(parseInt((req.params.id).replace(':', '')))
 
-    var rewardsList = await controllerDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
+    var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
     res.send(rewardsList)
 
 });
@@ -94,7 +88,7 @@ router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
 router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
     console.log(parseInt((req.params.id).replace(':', '')))
 
-    var smartContractsList = await controllerDB.getAllSmartContractsUser(parseInt((req.params.id).replace(':', '')))
+    var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(parseInt((req.params.id).replace(':', '')))
     console.log("This is smartContracts: " + smartContractsList)
     console.log(smartContractsList.length)
     smartContractsList.length != 0 ? res.send(smartContractsList) : res.send(null)
@@ -104,7 +98,7 @@ router.get('/getSpecificUser/:id', async function(req, res) {
 
     console.log(parseInt((req.params.id).replace(':', '')))
 
-    var userData = await controllerDB.getUserData(parseInt((req.params.id).replace(':', '')))
+    var userData = await controllerUserDB.getUserData(parseInt((req.params.id).replace(':', '')))
 
     res.send(userData)
 
@@ -112,7 +106,7 @@ router.get('/getSpecificUser/:id', async function(req, res) {
 
 router.post('/getSpecificUserID', async function(req, res) {
 
-    var userID = await controllerDB.getSpecificUserID(req.body.username, req.body.password)
+    var userID = await controllerUserDB.getSpecificUserID(req.body.username, req.body.password)
 
     if (userID != null) {
         res.send("" + userID)
@@ -127,7 +121,7 @@ router.get('/getSpecificWallet/:id', async function(req, res) {
     console.log(req.params.id + " is an " + typeof req.params.id)
     console.log(parseInt((req.params.id).replace(':', '')))
 
-    var walletData = await controllerDB.getUserWalletData(parseInt((req.params.id).replace(':', '')))
+    var walletData = await controllerWalletDB.getUserWalletData(parseInt((req.params.id).replace(':', '')))
 
     res.send(walletData)
 
@@ -192,7 +186,7 @@ router.post('/createNewTransaction', async function(req, res) {
         if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist && isMoneyExist && isUniRewardId) {
 
             var responseServer = await controllerTransaction.createTransactionObject(req, res)
-            if (responseServer.length > 2) {
+            if (responseServer != undefined && responseServer.length > 2) {
                 addPendingTransaction(responseServer[0])
                 addPendingIds(responseServer[1])
                 res.send("OK - Delivery complete")
@@ -382,88 +376,7 @@ async function createBlock() {
     //console.log("Maintenance ====================================== " + process.env.FLAG_CREATION_DATABASE)
 
     if (validBlockchain) {
-        smartContractList = await controllerDB.getAllNotTerminatedSC()
-        for (var i = 0; i < smartContractList.length; i++) {
-            var sContract = new SmartContract(smartContractList[i].walletIdObserver, smartContractList[i].walletIdDemander, smartContractList[i].condition, smartContractList[i].UniRewardId)
-            console.log("Im the Smart Contract: \n" + sContract)
-            sContract.setDeliveredUniPoints(smartContractList[i].deliveredUniPoints)
-            if (sContract.state != 1) {
-                console.log(sContract)
-                sContract.proveCompleteContract()
-                if (sContract.proveCompleteContract()) {
-
-                    var userFromId = await controllerDB.findUserAddressID(sContract.walletIdObserver)
-                    var userToId = await controllerDB.findUserAddressID(sContract.walletIdDemander)
-                    var userFromDeleted = await controllerDB.isUserDeleted(userFromId)
-                    var userToDeleted = await controllerDB.isUserDeleted(userToId)
-                    var idsWallets = [userFromId, userToId]
-
-                    if (userFromId != null && userToId != null && userFromDeleted != true && userToDeleted != true) {
-
-                        let uniRewardPurchase = await controllerDB.getPurchaseField(sContract.UniRewardId)
-
-                        if (!uniRewardPurchase && uniRewardPurchase != null) {
-
-                            let lastNewIndex = await controllerDB.getLastBlockIndex()
-                            let prevNewHash = await controllerDB.getHashLastBlock(lastNewIndex - 1)
-
-                            let nameTo = await controllerDB.getUserWalletName(userToId)
-                            let nameUniReward = await controllerDB.getUniRewardName(sContract.UniRewardId)
-                            let concept = "Giving to " + nameTo + " the UniReward: " + nameUniReward
-                            let newTransac = new Transaction(sContract.walletIdObserver, sContract.walletIdDemander, sContract.condition.length, sContract.UniRewardId, "U", idsWallets, concept)
-
-                            var idsToChange = await controllerDB.getPointsToChange(userToId, sContract.condition.length, sContract.UniRewardId)
-                            newTransac.setUniPointIds(idsToChange)
-
-                            var privateKey = await controllerDB.obtainPrivateKeyId(userFromId)
-                            newTransac.signTransaction(privateKey, 0)
-                            var privateKey2 = await controllerDB.obtainPrivateKeyId(userToId)
-                            newTransac.signTransaction(privateKey2, 1)
-
-                            let transactionObjId = await controllerDB.createTransaction(newTransac)
-
-                            console.log("=================================================================")
-                            let newBlockSC = new Block(lastNewIndex, new Date(), [transactionObjId], prevNewHash)
-                            newBlockSC.hash = newBlockSC.calculateHash()
-                            await controllerDB.createBlock(newBlockSC)
-                            console.log("=================================================================")
-
-                            await controllerDB.updateTransactionHash(transactionObjId, newBlockSC.hash)
-                            await controllerDB.updateHashUniPoint(transactionObjId, sContract.UniRewardId, newBlockSC.hash)
-                            await controllerDB.updateHashUniReward(transactionObjId, sContract.UniRewardId, newBlockSC.hash)
-
-                            sContract.endSmartContract(idsWallets, transactionObjId, idsToChange)
-                            smartContractList.splice(i, 1)
-                            console.log("OK - Transaction created")
-
-                        } else {
-                            console.log("UniReward already purchase or uniRewardId dosent exists. The contract is terminated")
-                            sContract.terminateContract()
-                            smartContractList.splice(i, 1)
-                        }
-                    } else {
-                        console.log("One of the users dosent exists. The contract is terminated")
-                        sContract.terminateContract()
-                        smartContractList.splice(i, 1)
-                    }
-                } else {
-                    var userFromId = await controllerDB.findUserAddressID(sContract.walletIdObserver)
-                    var userToId = await controllerDB.findUserAddressID(sContract.walletIdDemander)
-                    var userFromDeleted = await controllerDB.isUserDeleted(userFromId)
-                    var userToDeleted = await controllerDB.isUserDeleted(userToId)
-                    var idsWallets = [userFromId, userToId]
-
-                    console.log("User " + userFromId + " is " + userFromDeleted)
-                    console.log("User " + userToId + " is " + userToDeleted)
-
-                    if (userFromId == null || userToId == null || userFromDeleted == true || userToDeleted == true) {
-                        console.log("One of the users dosent exists. The contract is terminated")
-                        sContract.terminateContract()
-                        smartContractList.splice(i, 1)
-                    }
-                }
-            }
-        }
+        controllerSContract.proveStateSC()
     }
 }
 
