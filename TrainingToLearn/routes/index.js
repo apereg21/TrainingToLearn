@@ -51,7 +51,7 @@ router.get('/getAllUsersList', async function (req, res) {
 router.get('/getUsersName/:id', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (isNaN(id)) {
         var userName = await controllerUserDB.getUsername(id)
         res.send(userName)
     } else {
@@ -62,7 +62,7 @@ router.get('/getUsersName/:id', async function (req, res) {
 router.get('/getUserRole/:id', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (isNaN(id)) {
         var user = await controllerUserDB.getUserData(id)
         res.send(user.typeUser)
     } else {
@@ -94,7 +94,7 @@ router.post('/loginUser', async function (req, res) {
 router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (isNaN(id)) {
         var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
         res.send(rewardsList)
     } else {
@@ -105,7 +105,7 @@ router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
 router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (isNaN(id)) {
         var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
         console.log("This is smartContracts: " + smartContractsList)
         console.log(smartContractsList.length)
@@ -120,7 +120,7 @@ router.get('/getSpecificUser/:id', async function (req, res) {
 
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (isNaN(id)) {
         var userData = await controllerUserDB.getUserData(id)
         res.send(userData)
     } else {
@@ -143,7 +143,7 @@ router.post('/getSpecificUserID', async function (req, res) {
 router.get('/getSpecificWallet/:id', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (isNaN(id)) {
         console.log(req.params.id + " is an " + typeof req.params.id)
         console.log(id)
 
