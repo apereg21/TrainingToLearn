@@ -1,6 +1,8 @@
 /*
  *Imports
  */
+
+
 const Block = require('../block');
 const Transaction = require('../transaction');
 const SmartContract = require('../smartContract');
@@ -18,14 +20,16 @@ const controllerWalletDB = require('../controllers/database/controllerWalletDB')
 const controllerUniRewardDB = require('../controllers/database/controllerUniRewardDB')
 const controllerUserDB = require('../controllers/database/controllerUserDB')
 
+const exportsC = require('../exportsClass');
+var finalFlag = exportsC.setFlag(false);
+
 var router = express.Router();
 var pendingTransactions = [];
 var pendingUniRewards = [];
 var pendingIdsTransactions = [];
 var arrayPoints = [];
-var smartContractList = [];
 var validBlockchain = true
-var finalFlag = process.env.FLAG_CREATION_DATABASE
+var finalFlag = false
 var periodicFunct = setInterval(() => createBlock(), 5000);
 
 
@@ -34,36 +38,46 @@ var periodicFunct = setInterval(() => createBlock(), 5000);
  */
 
 router.get('/', (req) => {
-
     res.send('Hey!')
-
 });
 
 
-router.get('/getAllUsersList', async function(req, res) {
+router.get('/getAllUsersList', async function (req, res) {
     var usersList = await controllerUserDB.getAllUsers()
     res.send(usersList)
 
 });
 
-router.get('/getUsersName/:id', async function(req, res) {
-    var userName = await controllerUserDB.getUsername(parseInt((req.params.id).replace(':', '')))
-    res.send(userName)
+router.get('/getUsersName/:id', async function (req, res) {
+    var id = parseInt((req.params.id).replace(':', ''))
+    console.log(id)
+    if (!isNaN(id)) {
+        var userName = await controllerUserDB.getUsername(id)
+        res.send(userName)
+    } else {
+        res.send("User data don't loaded - Reason: No user to load data")
+    }
 });
 
-router.get('/getUserRole/:id', async function(req, res) {
-    var user = await controllerUserDB.getUserData(parseInt((req.params.id).replace(':', '')))
-    res.send(user.typeUser)
+router.get('/getUserRole/:id', async function (req, res) {
+    var id = parseInt((req.params.id).replace(':', ''))
+    console.log(id)
+    if (!isNaN(id)) {
+        var user = await controllerUserDB.getUserData(id)
+        res.send(user.typeUser)
+    } else {
+        res.send("User data don't loaded - Reason: No user to load data")
+    }
 });
 
-router.get('/getUserID/:username', async function(req, res) {
+router.get('/getUserID/:username', async function (req, res) {
     var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
     res.send("" + userId)
 });
 
-router.post('/loginUser', async function(req, res) {
-    var isUsernameExist = proveKey('username', 'string', req.body)
-    var isPasswordExist = proveKey('password', 'string', req.body)
+router.post('/loginUser', async function (req, res) {
+    var isUsernameExist = exportsC.proveKey('username', 'string', req.body)
+    var isPasswordExist = exportsC.proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
         var userId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
         if (userId != null) {
@@ -77,34 +91,44 @@ router.post('/loginUser', async function(req, res) {
     }
 });
 
-router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
-    console.log(parseInt((req.params.id).replace(':', '')))
+router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
+    var id = parseInt((req.params.id).replace(':', ''))
+    console.log(id)
+    if (!isNaN(id)) {
+        var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
+        res.send(rewardsList)
+    } else {
+        res.send("User data don't loaded - Reason: No user to load data")
+    }
+});
 
-    var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
-    res.send(rewardsList)
+router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
+    var id = parseInt((req.params.id).replace(':', ''))
+    console.log(id)
+    if (!isNaN(id)) {
+        var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
+        console.log("This is smartContracts: " + smartContractsList)
+        console.log(smartContractsList.length)
+        smartContractsList.length != 0 ? res.send(smartContractsList) : res.send(null)
+    } else {
+        res.send("User data don't loaded - Reason: No user to load data")
+    }
 
 });
 
-router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
-    console.log(parseInt((req.params.id).replace(':', '')))
+router.get('/getSpecificUser/:id', async function (req, res) {
 
-    var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(parseInt((req.params.id).replace(':', '')))
-    console.log("This is smartContracts: " + smartContractsList)
-    console.log(smartContractsList.length)
-    smartContractsList.length != 0 ? res.send(smartContractsList) : res.send(null)
+    var id = parseInt((req.params.id).replace(':', ''))
+    console.log(id)
+    if (!isNaN(id)) {
+        var userData = await controllerUserDB.getUserData(id)
+        res.send(userData)
+    } else {
+        res.send("User data don't loaded - Reason: No user to load data")
+    }
 });
 
-router.get('/getSpecificUser/:id', async function(req, res) {
-
-    console.log(parseInt((req.params.id).replace(':', '')))
-
-    var userData = await controllerUserDB.getUserData(parseInt((req.params.id).replace(':', '')))
-
-    res.send(userData)
-
-});
-
-router.post('/getSpecificUserID', async function(req, res) {
+router.post('/getSpecificUserID', async function (req, res) {
 
     var userID = await controllerUserDB.getSpecificUserID(req.body.username, req.body.password)
 
@@ -116,32 +140,36 @@ router.post('/getSpecificUserID', async function(req, res) {
 
 });
 
-router.get('/getSpecificWallet/:id', async function(req, res) {
+router.get('/getSpecificWallet/:id', async function (req, res) {
+    var id = parseInt((req.params.id).replace(':', ''))
+    console.log(id)
+    if (!isNaN(id)) {
+        console.log(req.params.id + " is an " + typeof req.params.id)
+        console.log(id)
 
-    console.log(req.params.id + " is an " + typeof req.params.id)
-    console.log(parseInt((req.params.id).replace(':', '')))
+        var walletData = await controllerWalletDB.getUserWalletData(id)
 
-    var walletData = await controllerWalletDB.getUserWalletData(parseInt((req.params.id).replace(':', '')))
-
-    res.send(walletData)
-
+        res.send(walletData)
+    } else {
+        res.send("User data don't loaded - Reason: No user to load data")
+    }
 });
 
 /*
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function(req, res) {
+router.post('/createNewReward', async function (req, res) {
 
-    if (validBlockchain && JSON.stringify(process.env.FLAG_CREATION_DATABASE) === JSON.stringify("0")) {
+    if (validBlockchain && finalFlag) {
 
-        var isNameURExist = proveKey('nameUR', 'string', req.body)
-        var isDescriptionURExist = proveKey('descriptionUR', 'string', req.body)
-        var isImageURExist = proveKey('imageUR', 'string', req.body)
-        var isCostRewardExist = proveKey('costReward', 'number', req.body)
-        var isUsernameExist = proveKey('username', 'string', req.body)
-        var isPasswordExist = proveKey('password', 'string', req.body)
-        var isUserCourseExist = proveKey('usernameCourse', 'string', req.body)
+        var isNameURExist = exportsC.proveKey('nameUR', 'string', req.body)
+        var isDescriptionURExist = exportsC.proveKey('descriptionUR', 'string', req.body)
+        var isImageURExist = exportsC.proveKey('imageUR', 'string', req.body)
+        var isCostRewardExist = exportsC.proveKey('costReward', 'number', req.body)
+        var isUsernameExist = exportsC.proveKey('username', 'string', req.body)
+        var isPasswordExist = exportsC.proveKey('password', 'string', req.body)
+        var isUserCourseExist = exportsC.proveKey('usernameCourse', 'string', req.body)
 
         if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist && isCostRewardExist && isUserCourseExist) {
 
@@ -162,7 +190,7 @@ router.post('/createNewReward', async function(req, res) {
 
         }
     } else {
-        if (!(JSON.stringify(process.env.FLAG_CREATION_DATABASE) === "0")) {
+        if (finalFlag) {
             console.log("Reward not created - Reason: Server is doing a restart")
             res.send("Reward not created - Reason: Server is doing a restart")
         } else {
@@ -172,26 +200,30 @@ router.post('/createNewReward', async function(req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function(req, res) {
-    if (validBlockchain && process.env.FLAG_CREATION_DATABASE == false) {
+router.post('/createNewTransaction', async function (req, res) {
+    if (validBlockchain && finalFlag == false) {
 
-        var isFromAddressNameExist = proveKey('fromAddressUN', 'string', req.body)
-        var isToAddresNameExist = proveKey('toAddressUN', 'string', req.body)
-        var isTypeTransactionExist = proveKey('typeT', 'string', req.body)
-        var isPasswordFromExist = proveKey('passwordFrom', 'string', req.body)
-        var isConceptExist = proveKey('concept', 'string', req.body)
-        var isMoneyExist = proveKey('moneyTo', 'number', req.body)
-        var isUniRewardId = proveKey('uniRewardId', 'string', req.body)
+        var isFromAddressNameExist = exportsC.proveKey('fromAddressUN', 'string', req.body)
+        var isToAddresNameExist = exportsC.proveKey('toAddressUN', 'string', req.body)
+        var isTypeTransactionExist = exportsC.proveKey('typeT', 'string', req.body)
+        var isPasswordFromExist = exportsC.proveKey('password', 'string', req.body)
+        var isConceptExist = exportsC.proveKey('concept', 'string', req.body)
+        var isMoneyExist = exportsC.proveKey('moneyTo', 'number', req.body)
+        var isUniRewardId = exportsC.proveKey('uniRewardId', 'string', req.body)
 
         if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist && isMoneyExist && isUniRewardId) {
 
-            var responseServer = await controllerTransaction.createTransactionObject(req, res)
-            if (responseServer != undefined && responseServer.length > 2) {
-                addPendingTransaction(responseServer[0])
-                addPendingIds(responseServer[1])
-                res.send("OK - Delivery complete")
-            }
+            var responseServer = []
+            responseServer = await controllerTransaction.createTransactionObject(req, res)
 
+            if (!(typeof responseServer === 'string')) {
+                if (responseServer != undefined && responseServer.length == 2) {
+                    console.log("Hello im the responseServer vector" + responseServer[0] + "and " + responseServer[1])
+                    addPendingTransaction(responseServer[0])
+                    addPendingIds(responseServer[1])
+                    res.send("OK - Delivery complete")
+                }
+            }
 
         } else {
 
@@ -207,14 +239,14 @@ router.post('/createNewTransaction', async function(req, res) {
     }
 });
 
-router.post('/createNewUser', async function(req, res) {
-    if (validBlockchain && process.env.FLAG_CREATION_DATABASE == false) {
+router.post('/createNewUser', async function (req, res) {
+    if (validBlockchain && finalFlag == false) {
 
-        let isNameExist = proveKey('name', 'string', req.body)
-        let isUserNameExist = proveKey('username', 'string', req.body)
-        let isFullSurnameExist = proveKey('fullSurname', 'string', req.body)
-        let isPasswordExist = proveKey('password', 'string', req.body)
-        let isRoleExist = proveKey('typeUser', 'string', req.body)
+        let isNameExist = exportsC.proveKey('name', 'string', req.body)
+        let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
+        let isFullSurnameExist = exportsC.proveKey('fullSurname', 'string', req.body)
+        let isPasswordExist = exportsC.proveKey('password', 'string', req.body)
+        let isRoleExist = exportsC.proveKey('typeUser', 'string', req.body)
 
         if (isNameExist && isUserNameExist && isFullSurnameExist && isPasswordExist && isRoleExist) {
 
@@ -234,11 +266,11 @@ router.post('/createNewUser', async function(req, res) {
  * Modify Routes
  */
 
-router.post('/changeUserData', async function(req, res) {
+router.post('/changeUserData', async function (req, res) {
 
-    let isUserNameExist = proveKey('username', 'string', req.body)
-    let isPasswordExist = proveKey('password', 'string', req.body)
-    let isChangesExist = proveKey('changes', 'object', req.body)
+    let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
+    let isPasswordExist = exportsC.proveKey('password', 'string', req.body)
+    let isChangesExist = exportsC.proveKey('changes', 'object', req.body)
 
     if (isUserNameExist && isPasswordExist && isChangesExist) {
 
@@ -248,8 +280,8 @@ router.post('/changeUserData', async function(req, res) {
             console.log("User data changed")
             res.send("User data changed")
         } else {
-            console.log("User data not chaged - Reason: Username Already Exists")
-            res.send("User data not chaged - Reason: Username Already Exists")
+            console.log("User data dont changed")
+            res.send("User data dont changed")
         }
 
     } else {
@@ -258,9 +290,9 @@ router.post('/changeUserData', async function(req, res) {
     }
 });
 
-router.post('/deleteUser', async function(req, res) {
+router.post('/deleteUser', async function (req, res) {
 
-    let isUserIdExist = proveKey('id', 'number', req.body)
+    let isUserIdExist = exportsC.proveKey('id', 'number', req.body)
 
     if (isUserIdExist) {
 
@@ -284,69 +316,12 @@ function addPendingIds(id) {
     pendingIdsTransactions.push(id)
 }
 
-function proveKey(nameKey, variableType, reqJson) {
-
-    var objJson = Object(reqJson)
-    let isKeyExist = objJson.hasOwnProperty(nameKey)
-    console.log("Prove the key: " + nameKey)
-    console.log("Is this key in json request body? " + isKeyExist)
-
-    if (isKeyExist) {
-
-        console.log("Is this key with the correct type? " + isKeyExist)
-        console.log(typeof reqJson[nameKey] + " = " + variableType)
-
-        if (typeof reqJson[nameKey] == variableType) {
-
-            if (typeof reqJson[nameKey] == 'string') {
-
-                var isCorrect = proveNormalString(reqJson[nameKey], nameKey)
-
-                if (reqJson[nameKey].length > 0 && isCorrect == true) {
-                    console.log("Correct Type - Can continue\n")
-                    return true
-                } else {
-
-                    if (reqJson[nameKey].length <= 0) {
-                        console.log("Incorrect Type - Reason: Length of " + nameKey + "\n")
-                        return false
-                    } else {
-                        console.log("Incorrect Type - Reason: The structure of string, ins't correct\n")
-                        return false
-                    }
-                }
-            } else {
-
-                if (typeof reqJson[nameKey] == 'number') {
-
-                    if (reqJson[nameKey] >= 0) {
-                        console.log("Correct Type - Can continue\n")
-                        return true
-                    } else {
-                        console.log("Incorrect Type - Reason: The structure of number, ins't correct. Positive values\n")
-                        return false
-                    }
-                } else {
-                    console.log("Correct Type - Can continue\n")
-                    return true
-                }
-            }
-        } else {
-            console.log("Incorrect Type - Reason: Not correct type for key: " + nameKey + " \n")
-            return false
-        }
-    } else {
-        console.log("Incorrect Type - Reason: Not exist key\n")
-        return false
-    }
-}
-
 async function createBlock() {
 
     console.log("Time has passed, time for block creation. ¿There are pending transactions?")
     validBlockchain = await isValidBlockchain()
     console.log(validBlockchain)
-    if (pendingTransactions.length > 0 && validBlockchain && JSON.stringify(process.env.FLAG_CREATION_DATABASE) === JSON.stringify("0")) {
+    if (pendingTransactions.length > 0 && validBlockchain && finalFlag) {
 
         console.log("YES, there are pending Transactions")
         var newBlock = await controllerBlockchain.createBlockObject(pendingIdsTransactions)
@@ -373,9 +348,11 @@ async function createBlock() {
         }
     }
 
-    //console.log("Maintenance ====================================== " + process.env.FLAG_CREATION_DATABASE)
+    console.log("Maintenance ====================================== " + exportsC.getFlag())
 
-    if (validBlockchain) {
+    finalFlag = exportsC.getFlag()
+    console.log("Can visualice Smart Contracts?" + validBlockchain + finalFlag)
+    if (validBlockchain && !finalFlag) {
         controllerSContract.proveStateSC()
     }
 }
@@ -384,17 +361,6 @@ async function isValidBlockchain() {
 
     console.log("¿Is Blockchain valid?")
     return controllerBlockchain.isBlockchainValid()
-}
-
-function proveNormalString(string, nameKey) {
-    console.log("Prove " + nameKey + " : " + string + " with regular expresion")
-    if (nameKey == "password" || nameKey == "passwordFrom") {
-        return true
-    } else {
-        var cadena = string;
-        var result = !/^\s|^\d/.test(cadena);
-        return result
-    }
 }
 
 function sleep(ms) {

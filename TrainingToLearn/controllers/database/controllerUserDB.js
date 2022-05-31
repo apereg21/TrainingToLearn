@@ -278,7 +278,7 @@ module.exports = {
             usNameN == user.name
         }
         if (usUserNameN != user.username) {
-            console.log("Usernames are diferent, can create user")
+            console.log("Usernames are diferent, can change user data")
             console.log(usUserNameN + "" + user.username)
             return db.Users.update({
                 name: usNameN,

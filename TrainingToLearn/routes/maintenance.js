@@ -4,11 +4,11 @@ var router = express.Router();
 const controllerUserDB = require('../controllers/database/controllerUserDB');
 const controllerWalletDB = require('../controllers/database/controllerWalletDB');
 const Wallet = require('../wallet')
+const exportsC = require('../exportsClass');
 
 router.get('/restaurarDB', async function(req, res) {
-    sleep(10000)
+    exportsC.setFlag(true)
     models.sequelize.sync({ force: true }).then(async() => {
-        process.env.FLAG_CREATION_DATABASE = "1"
         var jsonReq = {
             name: "System",
             fullSurname: "System",
@@ -20,7 +20,7 @@ router.get('/restaurarDB', async function(req, res) {
         const ownerId = await controllerUserDB.obtainUserId(jsonReq.username, jsonReq.password)
         var newWallet = new Wallet(ownerId)
         controllerWalletDB.createWallet(newWallet)
-        process.env.FLAG_CREATION_DATABASE = "0"
+        exportsC.setFlag(false)
         res.send({ ok: true });
     }).catch((val) => {
         res.send({ ok: false, error: val });
@@ -28,7 +28,7 @@ router.get('/restaurarDB', async function(req, res) {
 });
 
 router.get('/createUI', async function(req, res) {
-    process.env.FLAG_CREATION_DATABASE = "1"
+    exportsC.setFlag(true)
     var jsonReq = {
         name: "alumno",
         fullSurname: "alumno",
@@ -52,12 +52,8 @@ router.get('/createUI', async function(req, res) {
     const ownerId2 = await controllerUserDB.obtainUserId(jsonReq2.username, jsonReq2.password)
     var newWallet2 = new Wallet(ownerId2)
     await controllerWalletDB.createWallet(newWallet2)
-    process.env.FLAG_CREATION_DATABASE = "0"
+    exportsC.setFlag(false)    
     res.send({ ok: true })
 });
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 module.exports = router

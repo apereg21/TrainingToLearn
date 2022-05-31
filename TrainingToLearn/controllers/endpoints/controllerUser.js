@@ -1,7 +1,7 @@
 const Wallet = require('../../wallet');
 const controllerUserDB = require("../database/controllerUserDB");
 const controllerWalletDB = require("../database/controllerWalletDB");
-
+var exportsC = require('../../exportsClass')
 module.exports = {
     async modifyUserData(req, res) {
         const userID = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
@@ -14,22 +14,22 @@ module.exports = {
 
                 switch (req.body.changes[i]) {
                     case "p":
-                        if (proveKey('passwordN', 'string', req.body) == false) {
+                        if (exportsC.proveKey('passwordN', 'string', req.body) == false) {
                             counterErrors++
                         }
                         break;
                     case "u":
-                        if (proveKey('usernameN', 'string', req.body) == false) {
+                        if (exportsC.proveKey('usernameN', 'string', req.body) == false) {
                             counterErrors++
                         }
                         break;
                     case "f":
-                        if (proveKey('fullSurnameN', 'string', req.body) == false) {
+                        if (exportsC.proveKey('fullSurnameN', 'string', req.body) == false) {
                             counterErrors++
                         }
                         break;
                     case "n":
-                        if (proveKey('nameN', 'string', req.body) == false) {
+                        if (exportsC.proveKey('nameN', 'string', req.body) == false) {
                             counterErrors++
                         }
                         break;
@@ -42,6 +42,9 @@ module.exports = {
 
                 return await controllerUserDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
 
+            }else{
+                console.log("User data dont change - Reason: Data to change are not correct")
+                return false
             }
         } else {
 
@@ -92,7 +95,7 @@ module.exports = {
                 if (!hasWallet) {
 
                     const newWallet = new Wallet(ownerId)
-                    controllerUserDB.createWallet(newWallet)
+                    controllerWalletDB.createWallet(newWallet)
                     console.log("OK - Wallet Created")
                     res.send("OK - Acount created")
 

@@ -15,10 +15,10 @@ module.exports = {
         userToId = await controllerWalletDB.findUserAddressID(userDestAdd)
         userFromAdd = await controllerWalletDB.findUserAddress("System")
         userFromId = await controllerWalletDB.findUserAddressID(userFromAdd)
-        userInstructor = await controllerUserDB.obtainUserId(req.body.fromAddressUN, req.body.passwordFrom)
+        userInstructor = await controllerUserDB.obtainUserId(req.body.fromAddressUN, req.body.password)
 
 
-        if (userToId != null && userFromId != null) {
+        if (userToId != null && userFromId != null && userInstructor != null) {
 
             let userToData = await controllerUserDB.getUserData(userToId)
             let userFromData = await controllerUserDB.getUserData(userFromId)
@@ -75,6 +75,8 @@ module.exports = {
                                     await controllerWalletDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
                                     var response = []
+                                    console.log("I'm the transac in controllerTransactions"+newTransac)
+                                    console.log("I'm the id of transac in controllerTransactions"+transactionObjId)
                                     response.push(newTransac)
                                     response.push(transactionObjId)
                                     return response
@@ -213,5 +215,5 @@ module.exports = {
             await controllerWalletDB.updateTransactionIds(userFrom.id, transaction.id)
             await controllerWalletDB.updateTransactionIds(userTo.id, transaction.id)
         }
-    }
+    },
 }
