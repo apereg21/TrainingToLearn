@@ -42,16 +42,16 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function (req, res) {
+router.get('/getAllUsersList', async function(req, res) {
     var usersList = await controllerUserDB.getAllUsers()
     res.send(usersList)
 
 });
 
-router.get('/getUsersName/:id', async function (req, res) {
+router.get('/getUsersName/:id', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (isNaN(id)) {
+    if (!isNaN(id)) {
         var userName = await controllerUserDB.getUsername(id)
         res.send(userName)
     } else {
@@ -59,10 +59,10 @@ router.get('/getUsersName/:id', async function (req, res) {
     }
 });
 
-router.get('/getUserRole/:id', async function (req, res) {
+router.get('/getUserRole/:id', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (isNaN(id)) {
+    if (!isNaN(id)) {
         var user = await controllerUserDB.getUserData(id)
         res.send(user.typeUser)
     } else {
@@ -70,12 +70,12 @@ router.get('/getUserRole/:id', async function (req, res) {
     }
 });
 
-router.get('/getUserID/:username', async function (req, res) {
+router.get('/getUserID/:username', async function(req, res) {
     var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
     res.send("" + userId)
 });
 
-router.post('/loginUser', async function (req, res) {
+router.post('/loginUser', async function(req, res) {
     var isUsernameExist = exportsC.proveKey('username', 'string', req.body)
     var isPasswordExist = exportsC.proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
@@ -91,10 +91,10 @@ router.post('/loginUser', async function (req, res) {
     }
 });
 
-router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
+router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (isNaN(id)) {
+    if (!isNaN(id)) {
         var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
         res.send(rewardsList)
     } else {
@@ -102,10 +102,10 @@ router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
     }
 });
 
-router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
+router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (isNaN(id)) {
+    if (!isNaN(id)) {
         var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
         console.log("This is smartContracts: " + smartContractsList)
         console.log(smartContractsList.length)
@@ -116,11 +116,11 @@ router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
 
 });
 
-router.get('/getSpecificUser/:id', async function (req, res) {
+router.get('/getSpecificUser/:id', async function(req, res) {
 
     var id = parseInt((req.params.id).replace(':', ''))
-    console.log(id)
-    if (isNaN(id)) {
+    console.log(id + " " + isNaN(id))
+    if (!isNaN(id)) {
         var userData = await controllerUserDB.getUserData(id)
         res.send(userData)
     } else {
@@ -128,7 +128,7 @@ router.get('/getSpecificUser/:id', async function (req, res) {
     }
 });
 
-router.post('/getSpecificUserID', async function (req, res) {
+router.post('/getSpecificUserID', async function(req, res) {
 
     var userID = await controllerUserDB.getSpecificUserID(req.body.username, req.body.password)
 
@@ -140,10 +140,10 @@ router.post('/getSpecificUserID', async function (req, res) {
 
 });
 
-router.get('/getSpecificWallet/:id', async function (req, res) {
+router.get('/getSpecificWallet/:id', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (isNaN(id)) {
+    if (!isNaN(id)) {
         console.log(req.params.id + " is an " + typeof req.params.id)
         console.log(id)
 
@@ -159,9 +159,9 @@ router.get('/getSpecificWallet/:id', async function (req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function (req, res) {
+router.post('/createNewReward', async function(req, res) {
 
-    if (validBlockchain && finalFlag) {
+    if (validBlockchain && !finalFlag) {
 
         var isNameURExist = exportsC.proveKey('nameUR', 'string', req.body)
         var isDescriptionURExist = exportsC.proveKey('descriptionUR', 'string', req.body)
@@ -173,9 +173,10 @@ router.post('/createNewReward', async function (req, res) {
 
         if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist && isCostRewardExist && isUserCourseExist) {
 
-            var responseServer = await controllerUniReward.createUniRewardObject(res, req, pendingUniRewards, arrayPoints, pendingTransactions)
-            console.log("I'm response server: " + responseServer + "\n" + responseServer[0].id)
-            if (responseServer != undefined) {
+            var responseServer = []
+            responseServer = await controllerUniReward.createUniRewardObject(res, req, pendingUniRewards, arrayPoints, pendingTransactions)
+            console.log("I'm response server: " + responseServer[0] + "\n" + responseServer[0].id)
+            if (responseServer != undefined && responseServer.length == 1) {
                 addPendingTransaction(responseServer[0])
                 addPendingIds(responseServer[0].id)
                 sleep(2000)
@@ -200,8 +201,8 @@ router.post('/createNewReward', async function (req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function (req, res) {
-    if (validBlockchain && finalFlag == false) {
+router.post('/createNewTransaction', async function(req, res) {
+    if (validBlockchain && !finalFlag) {
 
         var isFromAddressNameExist = exportsC.proveKey('fromAddressUN', 'string', req.body)
         var isToAddresNameExist = exportsC.proveKey('toAddressUN', 'string', req.body)
@@ -239,8 +240,8 @@ router.post('/createNewTransaction', async function (req, res) {
     }
 });
 
-router.post('/createNewUser', async function (req, res) {
-    if (validBlockchain && finalFlag == false) {
+router.post('/createNewUser', async function(req, res) {
+    if (validBlockchain && !finalFlag) {
 
         let isNameExist = exportsC.proveKey('name', 'string', req.body)
         let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
@@ -262,11 +263,7 @@ router.post('/createNewUser', async function (req, res) {
     }
 });
 
-/*
- * Modify Routes
- */
-
-router.post('/changeUserData', async function (req, res) {
+router.post('/changeUserData', async function(req, res) {
 
     let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
     let isPasswordExist = exportsC.proveKey('password', 'string', req.body)
@@ -290,7 +287,7 @@ router.post('/changeUserData', async function (req, res) {
     }
 });
 
-router.post('/deleteUser', async function (req, res) {
+router.post('/deleteUser', async function(req, res) {
 
     let isUserIdExist = exportsC.proveKey('id', 'number', req.body)
 
@@ -308,10 +305,6 @@ function addPendingTransaction(transaction) {
     pendingTransactions.push(transaction)
 }
 
-function addPendingUniReward(unireward) {
-    pendingUniRewards.push(unireward)
-}
-
 function addPendingIds(id) {
     pendingIdsTransactions.push(id)
 }
@@ -321,7 +314,7 @@ async function createBlock() {
     console.log("Time has passed, time for block creation. ¿There are pending transactions?")
     validBlockchain = await isValidBlockchain()
     console.log(validBlockchain)
-    if (pendingTransactions.length > 0 && validBlockchain && finalFlag) {
+    if (pendingTransactions.length > 0 && validBlockchain && !finalFlag) {
 
         console.log("YES, there are pending Transactions")
         var newBlock = await controllerBlockchain.createBlockObject(pendingIdsTransactions)
@@ -344,7 +337,11 @@ async function createBlock() {
         if (validBlockchain == false) {
             console.log("Error - Blockchain ins't correct")
         } else {
-            console.log("NO, there aren't pending Transactions")
+            if (finalFlag) {
+                console.log("Can't operate on platform because there is a reset of database")
+            } else {
+                console.log("NO, there aren't pending Transactions")
+            }
         }
     }
 
