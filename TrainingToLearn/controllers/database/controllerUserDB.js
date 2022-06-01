@@ -238,7 +238,26 @@ module.exports = {
             return null
         }
     },
-
+    async getUserDataUN(username) {
+        if (typeof username == 'string') {
+            return db.Users.findOne({
+                where: {
+                    username: username
+                }
+            }).then((result) => {
+                if (result != null) {
+                    console.log("User data find it")
+                    return result
+                } else {
+                    console.log("User data not find it")
+                    return null
+                }
+            })
+        } else {
+            console.log("idUser isn't a string")
+            return null
+        }
+    },
     async getSpecificUserID(usName, usPass) {
         return db.Users.findOne({
             where: {
@@ -260,6 +279,7 @@ module.exports = {
 
     async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
         let user = await this.getUserData(userId)
+        let userUNameN = await this.getUserDataUN(usUserNameN)
         if (usPasswordN == "" || usPasswordN == user.password) {
             console.log("User's password don't change")
             usPasswordN = user.password
@@ -277,28 +297,43 @@ module.exports = {
             console.log("User's name don't change")
             usNameN == user.name
         }
+        console.log("User's name New is: " + usUserNameN + "user's name is: " + user.username)
         if (usUserNameN != user.username) {
-            console.log("Usernames are diferent, can change user data")
+            console.log("Usernames are diferent and no used, can change user data")
             console.log(usUserNameN + "" + user.username)
-            return db.Users.update({
-                name: usNameN,
-                fullSurname: usFullSurnameN,
-                username: usUserNameN,
-                password: usPasswordN,
-            }, {
-                where: {
-                    id: userId
+            if (userUNameN != null) {
+                if (userUNameN.delete) {
+                    await this.modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId)
+                    return true
+                } else {
+                    return false
                 }
-            }).then(() => {
-                console.log("User changed")
+            } else {
+                await this.modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId)
                 return true
-            }).catch((val) => {
-                console.log("Error: " + val);
-            });
+            }
+
         } else {
-            console.log("Usernames aren't diferent, can't create user")
+            console.log("Already exists a user with this username")
             return false
         }
+    },
+    async modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
+        return db.Users.update({
+            name: usNameN,
+            fullSurname: usFullSurnameN,
+            username: usUserNameN,
+            password: usPasswordN,
+        }, {
+            where: {
+                id: userId
+            }
+        }).then(() => {
+            console.log("User changed")
+            return true
+        }).catch((val) => {
+            console.log("Error: " + val);
+        });
     },
     async getUserID(username) {
         return db.Users.findOne({

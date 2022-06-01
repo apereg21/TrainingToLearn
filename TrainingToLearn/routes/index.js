@@ -272,8 +272,8 @@ router.post('/changeUserData', async function(req, res) {
             console.log("User data changed")
             res.send("User data changed")
         } else {
-            console.log("User data dont changed")
-            res.send("User data dont changed")
+            console.log("User data dont changed - Reason: Data isn't correct")
+            res.send("User data dont changed - Reason: Data isn't correct")
         }
 
     } else {
