@@ -2,11 +2,6 @@
  *Imports
  */
 
-
-const Block = require('../block');
-const Transaction = require('../transaction');
-const SmartContract = require('../smartContract');
-
 var express = require('express');
 
 const controllerSContract = require('../controllers/endpoints/controllerSContract');
@@ -30,7 +25,7 @@ var pendingIdsTransactions = [];
 var arrayPoints = [];
 var validBlockchain = true
 var finalFlag = false
-var periodicFunct = setInterval(() => createBlock(), 5000);
+var periodicFunct = setInterval(() => periodicFunction(), 5000);
 
 
 /*
@@ -309,7 +304,7 @@ function addPendingIds(id) {
     pendingIdsTransactions.push(id)
 }
 
-async function createBlock() {
+async function periodicFunction() {
 
     console.log("Time has passed, time for block creation. ¿There are pending transactions?")
     validBlockchain = await isValidBlockchain()
