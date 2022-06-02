@@ -27,7 +27,7 @@ module.exports = {
             hashPrev: req.hashPrev
         }).then((result) => {
             console.log("The index of last creation is: " + result.index)
-            return result.index
+            return result
         }).catch((error) => console.log("Error: " + error));
     },
     async getHashLastBlock(lastIndex) {

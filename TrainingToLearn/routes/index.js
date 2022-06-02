@@ -76,7 +76,14 @@ router.post('/loginUser', async function(req, res) {
     if (isUsernameExist && isPasswordExist) {
         var userId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
         if (userId != null) {
-            res.send("" + userId)
+            var userData = await controllerUserDB.getUserData(userId)
+            console.log("Userdata: "+userData.deleted)
+            if(!userData.deleted){
+                res.send("" + userId)
+            }else{
+                res.send("Can't login - Reason: Don't exist an user with this password or username")
+            }
+            
         } else {
             res.send("Can't login - Reason: Don't exist an user with this password or username")
         }
@@ -265,15 +272,11 @@ router.post('/changeUserData', async function(req, res) {
     let isChangesExist = exportsC.proveKey('changes', 'object', req.body)
 
     if (isUserNameExist && isPasswordExist && isChangesExist) {
-
         var userModify = await controllerUser.modifyUserData(req, res)
 
         if (userModify == true) {
             console.log("User data changed")
             res.send("User data changed")
-        } else {
-            console.log("User data dont changed - Reason: Data isn't correct")
-            res.send("User data dont changed - Reason: Data isn't correct")
         }
 
     } else {

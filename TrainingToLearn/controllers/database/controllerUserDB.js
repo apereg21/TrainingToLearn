@@ -277,23 +277,23 @@ module.exports = {
         });
     },
 
-    async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {
+    async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId, changes) {
         let user = await this.getUserData(userId)
         let userUNameN = await this.getUserDataUN(usUserNameN)
-        if (usPasswordN == "" || usPasswordN == user.password) {
+        if (usPasswordN == "" || usPasswordN == user.password || !changes.includes("p")) {
             console.log("User's password don't change")
             usPasswordN = user.password
         }
-        if (usUserNameN == "" || usUserNameN == user.username) {
+        if (usUserNameN == "" || usUserNameN == user.username || !changes.includes("u")) {
             console.log("User's username don't change")
             usUserNameN = user.username
         }
 
-        if (usFullSurnameN == "" || usFullSurnameN == user.fullSurname) {
+        if (usFullSurnameN == "" || usFullSurnameN == user.fullSurname || !changes.includes("f")) {
             console.log("User's full surname don't change")
             usFullSurnameN = user.fullSurname
         }
-        if (usNameN == "" || usNameN == user.name) {
+        if (usNameN == "" || usNameN == user.name || !changes.includes("n")) {
             console.log("User's name don't change")
             usNameN == user.name
         }

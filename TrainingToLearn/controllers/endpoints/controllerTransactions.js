@@ -8,29 +8,43 @@ const controllerSContractDB = require('../database/controllerSContractDB');
 const controllerUniPointDB = require('../database/controllerUniPointDB');
 
 module.exports = {
+    proveParametersForTransaction(isUserToDeleted,isUserFromDeleted,typeUserTo,typeUserFrom,userInstructorDeleted,userInstructorId,userToId){
+        if(isUserToDeleted == null || isUserToDeleted != false){
+            return false
+        } if (isUserFromDeleted == null || isUserFromDeleted != false) {
+            return false
+        } if (typeUserTo == "N" && typeUserFrom == "N") {
+            return false
+        } if (userInstructorId == userToId){
+            return false
+        } if(userInstructorDeleted==true){
+            return false
+        }
+        return true
+    },
     async createTransactionObject(req, res) {
-        let userToId, userDestAdd, userFromId, userInstructor, userFromAdd
+        let userToId, userDestAdd, userFromId, userInstructorId, userFromAdd
 
         userDestAdd = await controllerWalletDB.findUserAddress(req.body.toAddressUN)
         userToId = await controllerWalletDB.findUserAddressID(userDestAdd)
         userFromAdd = await controllerWalletDB.findUserAddress("System")
         userFromId = await controllerWalletDB.findUserAddressID(userFromAdd)
-        userInstructor = await controllerUserDB.obtainUserId(req.body.fromAddressUN, req.body.password)
+        userInstructorId = await controllerUserDB.obtainUserId(req.body.fromAddressUN, req.body.password)
 
 
-        if (userToId != null && userFromId != null && userInstructor != null) {
+        if (userToId != null && userFromId != null && userInstructorId != null) {
 
             let userToData = await controllerUserDB.getUserData(userToId)
             let userFromData = await controllerUserDB.getUserData(userFromId)
-            let userInstructorData = await controllerUserDB.getUserData(userInstructor)
+            let userInstructorData = await controllerUserDB.getUserData(userInstructorId)
+
             let isUserToDeleted = userToData.deleted
             let isUserFromDeleted = userFromData.deleted
             let typeUserTo = userToData.typeUser
             let typeUserFrom = userInstructorData.typeUser
+            let userInstructorDeleted = userInstructorData.deleted
 
-
-            if ((isUserToDeleted != null && isUserToDeleted == false) && (isUserFromDeleted != null && isUserFromDeleted == false) &&
-                !(typeUserTo == "N" && typeUserFrom == "N") && (userInstructor != userToId)) {
+            if (this.proveParametersForTransaction(isUserToDeleted,isUserFromDeleted,typeUserTo,typeUserFrom,userInstructorDeleted,userInstructorId,userToId)) {
 
                 if (req.body.typeT == "M") {
                     if (userFromId != userToId) {
@@ -75,8 +89,6 @@ module.exports = {
                                     await controllerWalletDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
                                     var response = []
-                                    console.log("I'm the transac in controllerTransactions"+newTransac)
-                                    console.log("I'm the id of transac in controllerTransactions"+transactionObjId)
                                     response.push(newTransac)
                                     response.push(transactionObjId)
                                     return response
@@ -124,11 +136,11 @@ module.exports = {
                     } else {
 
                         if ((userFromId == userToId)) {
-
+                            //
                             console.log("Can't finish the Transaction - Reason: User From and User Destiny can't be the same")
                             res.send("Can't finish the Transaction - User From and User Destiny can't be the same")
 
-                        } else if (userInstructor == userDestAdd) {
+                        } else if (userInstructorId == userToId) {
 
                             console.log("Can't finish the Transaction - Reason: Can't give Unipoints for itself")
                             res.send("Can't finish the Transaction - Reason: Can't give Unipoints for itself")
@@ -145,12 +157,13 @@ module.exports = {
                     res.send("Can't finish the Transaction - Reason: Not correct type of transaction")
                 }
             } else {
+
                 if (typeUserTo == "N" && typeUserFrom == "N") {
 
-                    console.log("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
-                    res.send("Can't finish the Transaction - Reason: Destiny user or Emisor can't be are normal users")
+                    console.log("Can't finish the Transaction - Reason: Emisor user can't be normal user")
+                    res.send("Can't finish the Transaction - Reason: Emisor user or Emisor can't be normal user")
 
-                } else if (userInstructor == userToId) {
+                } else if (userInstructorId == userToId) {
 
                     console.log("Can't finish the Transaction - Reason: Can't give Unipoints for itself")
                     res.send("Can't finish the Transaction - Reason: Can't give Unipoints for itself")
@@ -162,12 +175,11 @@ module.exports = {
 
                 }
 
-
             }
         } else {
 
-            console.log("Some isn't correct in params of username or password in Transaction")
-            res.send("Some isn't correct in params of username or password in Transaction")
+            console.log("Some isn't with username or password of Instructor")
+            res.send("Some isn't with username or password of Instructor")
 
         }
     },

@@ -7,45 +7,54 @@ module.exports = {
         const userID = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
 
         if (userID != null) {
+            
+            const userData = await controllerUserDB.getUserData(userID)
+            if(!userData.deleted){
+                let counterErrors = 0
 
-            let counterErrors = 0
-
-            for (let i = 0; i < req.body.changes.length; i++) {
-
-                switch (req.body.changes[i]) {
-                    case "p":
-                        if (exportsC.proveKey('passwordN', 'string', req.body) == false) {
+                for (let i = 0; i < req.body.changes.length; i++) {
+    
+                    switch (req.body.changes[i]) {
+                        case "p":
+                            if (exportsC.proveKey('passwordN', 'string', req.body) == false) {
+                                counterErrors++
+                            }
+                            break;
+                        case "u":
+                            if (exportsC.proveKey('usernameN', 'string', req.body) == false) {
+                                counterErrors++
+                            }
+                            break;
+                        case "f":
+                            if (exportsC.proveKey('fullSurnameN', 'string', req.body) == false) {
+                                counterErrors++
+                            }
+                            break;
+                        case "n":
+                            if (exportsC.proveKey('nameN', 'string', req.body) == false) {
+                                counterErrors++
+                            }
+                            break;
+                        default:
                             counterErrors++
-                        }
-                        break;
-                    case "u":
-                        if (exportsC.proveKey('usernameN', 'string', req.body) == false) {
-                            counterErrors++
-                        }
-                        break;
-                    case "f":
-                        if (exportsC.proveKey('fullSurnameN', 'string', req.body) == false) {
-                            counterErrors++
-                        }
-                        break;
-                    case "n":
-                        if (exportsC.proveKey('nameN', 'string', req.body) == false) {
-                            counterErrors++
-                        }
-                        break;
-                    default:
-                        counterErrors++
+                    }
                 }
+    
+                if (counterErrors == 0) {
+    
+                    return await controllerUserDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID, req.body.changes)
+    
+                }else{
+                    console.log("User data dont change - Reason: Data to change are not correct")
+                    return false
+                }
+            } else {
+
+                console.log("User data dont change - Reason: Username or password ins't correct")
+                res.send("User data dont change - Reason: Username or password ins't correct")
+    
             }
 
-            if (counterErrors == 0) {
-
-                return await controllerUserDB.modifyUserData(req.body.nameN, req.body.fullSurnameN, req.body.usernameN, req.body.passwordN, userID)
-
-            }else{
-                console.log("User data dont change - Reason: Data to change are not correct")
-                return false
-            }
         } else {
 
             console.log("User data dont change - Reason: Username or password ins't correct")
