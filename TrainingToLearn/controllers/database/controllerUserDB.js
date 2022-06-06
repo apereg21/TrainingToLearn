@@ -277,7 +277,7 @@ module.exports = {
         });
     },
 
-    async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId, changes) {
+    async modifyUserData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId, changes, res) {
         let user = await this.getUserData(userId)
         let userUNameN = await this.getUserDataUN(usUserNameN)
         if (usPasswordN == "" || usPasswordN == user.password || !changes.includes("p")) {
@@ -306,7 +306,7 @@ module.exports = {
                     await this.modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId)
                     return true
                 } else {
-                    return false
+                    res.send("Already exists a user with this username")
                 }
             } else {
                 await this.modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId)
@@ -315,7 +315,7 @@ module.exports = {
 
         } else {
             console.log("Already exists a user with this username")
-            return false
+            res.send("Already exists a user with this username")
         }
     },
     async modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {

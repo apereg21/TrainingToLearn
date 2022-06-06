@@ -77,13 +77,13 @@ router.post('/loginUser', async function(req, res) {
         var userId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
         if (userId != null) {
             var userData = await controllerUserDB.getUserData(userId)
-            console.log("Userdata: "+userData.deleted)
-            if(!userData.deleted){
+            console.log("Userdata: " + userData.deleted)
+            if (!userData.deleted) {
                 res.send("" + userId)
-            }else{
+            } else {
                 res.send("Can't login - Reason: Don't exist an user with this password or username")
             }
-            
+
         } else {
             res.send("Can't login - Reason: Don't exist an user with this password or username")
         }
@@ -111,7 +111,7 @@ router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
         var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
         console.log("This is smartContracts: " + smartContractsList)
         console.log(smartContractsList.length)
-        smartContractsList.length != 0 ? res.send(smartContractsList) : res.send(null)
+        smartContractsList.length != 0 ? res.send(smartContractsList) : res.send("No courses are activated for the user")
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
