@@ -1,6 +1,9 @@
+const EC = require('elliptic').ec;
+const ec = new EC('secp256k1');
+const crypto = require('crypto');
+
 const controllerSContractDB = require('./controllers/database/controllerSContractDB');
 const controllerWalletDB = require('./controllers/database/controllerWalletDB');
-const controllerTransactionDB = require('./controllers/database/controllerTransactionsDB');
 const controllerUniRewardDB = require('./controllers/database/controllerUniRewardDB');
 const controllerUniPointDB = require('./controllers/database/controllerUniPointDB');
 
@@ -12,7 +15,9 @@ class SmartContract {
             this.signatureDemander,
             this.state = 0,
             this.condition = [...dUnipoint],
-            this.deliveredUniPoints = []
+            this.deliveredUniPoints = [],
+            this.signatureFrom="",
+            this.signatureTo="",
         this.UniRewardId = uniRewardId;
     }
     setDeliveredUniPoints(deliveredUniPoints) {
@@ -20,16 +25,17 @@ class SmartContract {
     }
 
     calHashTransaction() {
-        return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp + this.concept + this.idWalletFrom + this.idWalletTo + this.typeT).digest('hex');
+        return crypto.createHash('sha256').update(this.walletIdDemander + this.walletIdObserver + this.state + this.condition + this.deliveredUniPoints +this.UniRewardId).digest('hex');
     }
 
     signContract(signingKey, type) {
         console.log("With the private key: " + signingKey)
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
-        console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.fromAddress)
+        
             //Prove if is the key of correct user 
         if (type == 0) {
-            if (signingKeyInterna.getPublic('hex') != this.fromAddress) {
+            console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.walletIdObserver)
+            if (signingKeyInterna.getPublic('hex') != this.walletIdDemander) {
                 console.log('The key doesnt belong to the expected user');
                 this.signatureFrom = null
             } else {
@@ -41,7 +47,8 @@ class SmartContract {
 
             }
         } else {
-            if (signingKeyInterna.getPublic('hex') != this.toAddress) {
+            console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.walletIdDemander)
+            if (signingKeyInterna.getPublic('hex') != this.walletIdObserver) {
                 console.log('The key doesnt belong to the expected user');
                 this.signatureTo = null
             } else {
@@ -75,7 +82,7 @@ class SmartContract {
     }
 
     async endSmartContract(idsWallets, transactionObjId, idsToChange) {
-
+        
         await controllerWalletDB.moveToMoneyExp(idsToChange, idsWallets[1], this.UniRewardId)
 
         await controllerUniPointDB.updatePurchasePoints(idsToChange)
@@ -88,6 +95,20 @@ class SmartContract {
         await controllerUniRewardDB.updatePurchaseField(this.UniRewardId)
 
         await controllerSContractDB.updateStateSC(this.UniRewardId)
+
+
+        var idFrom = await controllerWalletDB.obtainIdFromAddress(this.walletIdObserver)
+        var idTo = await controllerWalletDB.obtainIdFromAddress(this.walletIdDemander)
+
+        var privateKeyFrom = await controllerWalletDB.obtainPrivateKeyId(idFrom)
+        var privateKeyTo = await controllerWalletDB.obtainPrivateKeyId(idTo)
+        this.signContract(privateKeyTo, 0)
+        this.signContract(privateKeyFrom, 1)
+
+        var signatures = [this.signatureFrom, this.signatureTo]
+        
+        console.log("Signatures:" + signatures + signatures.length)
+        await controllerSContractDB.updateSignatures(signatures, this.UniRewardId)
         this.state = true
     }
 

@@ -35,8 +35,8 @@ module.exports = {
         })
     },
 
-    async createUniReward(req, walletId) {
-        var isUniRewardNameUsed = await this.isUniRewardCreated(req.hash)
+    async createUniReward(req,hashBlock) {
+        var isUniRewardNameUsed = await this.isUniRewardCreated(hashBlock)
         if (isUniRewardNameUsed != true && isUniRewardNameUsed != null) {
             return db.UniRewards
                 .create({

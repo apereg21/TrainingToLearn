@@ -64,6 +64,17 @@ module.exports = {
             }
         })
     },
+    obtainIdFromAddress(publicAddress){
+        return db.Wallets.findOne({
+            where: {
+                publicKey: publicAddress
+            }
+        }).then((result) => {
+            if (result != null) {
+                return result.id
+            }
+        })
+    },
     createWallet(req) {
         return db.Wallets.create({
             publicKey: req.keyPublic,

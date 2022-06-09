@@ -2,6 +2,19 @@ const db = require('../../models')
 const controllerUniRewardDB = require('./controllerUniRewardDB');
 const controllerWalletDB = require('./controllerWalletDB');
 module.exports = {
+    async updateSignatures(signatures, uniRewardId){
+        return db.SmartContract.update({
+            signatureObserver: signatures[0],
+            signatureDemander: signatures[1]
+        }, {
+            where: {
+                UniRewardId: uniRewardId
+            }
+        }).then((result) => {
+            console.log("SmartContract found it")
+            return result.deliveredUniPoints
+        }).catch((val) => { console.log(val) });
+    },
     async createSmartContract(sContract) {
         return db.SmartContract.create({
             walletIdObserver: sContract.walletIdObserver,

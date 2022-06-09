@@ -313,7 +313,9 @@ async function periodicFunction() {
     validBlockchain = await isValidBlockchain()
     console.log(validBlockchain)
     if (pendingTransactions.length > 0 && validBlockchain && !finalFlag) {
-
+        console.log(pendingIdsTransactions)
+        console.log(pendingTransactions)
+        console.log(pendingUniRewards)
         console.log("YES, there are pending Transactions")
         var newBlock = await controllerBlockchain.createBlockObject(pendingIdsTransactions)
 

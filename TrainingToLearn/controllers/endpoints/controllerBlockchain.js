@@ -16,6 +16,7 @@ module.exports = {
 
         let newBlock = new Block(lastIndex, new Date(), pendingIdsTransactions, prevHash)
         newBlock.hash = newBlock.calculateHash()
+        console.log("Haaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaash"+newBlock.hash)
         return await controllerBlockchainDB.createBlock(newBlock)
     },
     async isBlockchainValid() {
