@@ -8,16 +8,20 @@ const controllerSContractDB = require('../database/controllerSContractDB');
 const controllerUniPointDB = require('../database/controllerUniPointDB');
 
 module.exports = {
-    proveParametersForTransaction(isUserToDeleted,isUserFromDeleted,typeUserTo,typeUserFrom,userInstructorDeleted,userInstructorId,userToId){
-        if(isUserToDeleted == null || isUserToDeleted != false){
+    proveParametersForTransaction(isUserToDeleted, isUserFromDeleted, typeUserTo, typeUserFrom, userInstructorDeleted, userInstructorId, userToId) {
+        if (isUserToDeleted == null || isUserToDeleted != false) {
             return false
-        } if (isUserFromDeleted == null || isUserFromDeleted != false) {
+        }
+        if (isUserFromDeleted == null || isUserFromDeleted != false) {
             return false
-        } if (typeUserTo == "N" && typeUserFrom == "N") {
+        }
+        if (typeUserTo == "N" && typeUserFrom == "N") {
             return false
-        } if (userInstructorId == userToId){
+        }
+        if (userInstructorId == userToId) {
             return false
-        } if(userInstructorDeleted==true){
+        }
+        if (userInstructorDeleted == true) {
             return false
         }
         return true
@@ -44,7 +48,7 @@ module.exports = {
             let typeUserFrom = userInstructorData.typeUser
             let userInstructorDeleted = userInstructorData.deleted
 
-            if (this.proveParametersForTransaction(isUserToDeleted,isUserFromDeleted,typeUserTo,typeUserFrom,userInstructorDeleted,userInstructorId,userToId)) {
+            if (this.proveParametersForTransaction(isUserToDeleted, isUserFromDeleted, typeUserTo, typeUserFrom, userInstructorDeleted, userInstructorId, userToId)) {
 
                 if (req.body.typeT == "M") {
                     if (userFromId != userToId) {
@@ -120,17 +124,9 @@ module.exports = {
 
                         } else {
 
-                            if (isDeletedWallet1 == true || isDeletedWallet2 == true) {
+                            console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
+                            res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
 
-                                console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
-                                res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
-
-                            } else {
-
-                                console.log("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
-                                res.send("Can't finish the Transaction - Reason: Something gone wrong during the creation of transaction")
-
-                            }
                         }
 
                     } else {
@@ -170,16 +166,16 @@ module.exports = {
 
                 } else {
 
-                    console.log("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't exist")
-                    res.send("Can't finish the Transaction - Reason: Destiny user or Emisor user dosen't exist")
+                    console.log("Can't finish the Transaction - Reason: Emisor user dosen't exist")
+                    res.send("Can't finish the Transaction - Reason: Emisor user dosen't exist")
 
                 }
 
             }
         } else {
 
-            console.log("Some isn't with username or password of Instructor")
-            res.send("Some isn't with username or password of Instructor")
+            console.log("Some isn't correct with username or password of Instructor")
+            res.send("Some isn't correct with username or password of Instructor")
 
         }
     },

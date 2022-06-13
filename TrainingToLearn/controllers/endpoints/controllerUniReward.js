@@ -144,8 +144,8 @@ module.exports = {
                                     return response
 
                                 } else {
-                                    console.log("Can't do the payment - Reason: Something go wrong during the sign of transaction")
-                                    res.send("Can't do the payment - Reason: Something go wrong during the sign of transaction")
+                                    console.log("Can't do the creation - Reason: Something go wrong during the sign of transaction")
+                                    res.send("Can't do the creation - Reason: Something go wrong during the sign of transaction")
                                 }
                             } else {
 
@@ -155,8 +155,8 @@ module.exports = {
                             }
                         } else {
 
-                            console.log("Reward not created - UniReward hash corrupted during the creation of object")
-                            res.send("Reward not created - UniReward hash corrupted during the creation of object")
+                            console.log("Reward not created - UniReward corrupted during the creation of object")
+                            res.send("Reward not created - UniReward corrupted during the creation of object")
 
                         }
                     } else {
@@ -166,8 +166,8 @@ module.exports = {
 
                 } else {
                     if (uniRewardReciverAddress == null) {
-                        console.log("Reward not created - Reason: User for course dosen't exist")
-                        res.send("Reward not created - Reason: User for course dosen't exist")
+                        console.log("Reward not created - Reason: User of course dosen't exist")
+                        res.send("Reward not created - Reason: User of course dosen't exist")
                     } else {
                         console.log("Reward not created - Reason: System User for points transation dosen't exist")
                         res.send("Reward not created - Reason: System User for points transation dosen't exist")

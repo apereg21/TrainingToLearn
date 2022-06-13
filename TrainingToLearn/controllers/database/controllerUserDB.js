@@ -306,7 +306,7 @@ module.exports = {
                     await this.modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId)
                     return true
                 } else {
-                    res.send("Already exists a user with this username")
+                    res.send("User data dont change - Reason: Already exists a user with this username")
                 }
             } else {
                 await this.modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId)
@@ -314,8 +314,8 @@ module.exports = {
             }
 
         } else {
-            console.log("Already exists a user with this username")
-            res.send("Already exists a user with this username")
+            console.log("User data dont change - Reason: Already exists a user with this username")
+            res.send("User data dont change - Reason: Already exists a user with this username")
         }
     },
     async modifyData(usNameN, usFullSurnameN, usUserNameN, usPasswordN, userId) {

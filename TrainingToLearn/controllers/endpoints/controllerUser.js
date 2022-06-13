@@ -67,18 +67,10 @@ module.exports = {
 
         if (user != null && !user.deleted) {
 
-            const deletedUser = user.deleted
-            const idWallet = user.id
-            const deletedWallet = await controllerUserDB.obtainDeleteField(idWallet, 1)
+            controllerUserDB.deleteUser(user.id)
+            console.log("OK - " + user.username + "'s data eliminated")
+            res.send(user.username)
 
-            if ((!deletedUser) && ((!deletedWallet) || deletedWallet != null)) {
-                controllerUserDB.deleteUser(user.id)
-                console.log("OK - " + user.username + "'s data eliminated")
-                res.send(user.username)
-            } else {
-                console.log(user.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
-                res.send(user.username + "'s data can't be eliminated - Reason: Exist but is Deleted")
-            }
         } else {
             if (user == null) {
                 console.log(user.username + "'s data can't be eliminated - Reason: User Not Exist")
@@ -101,17 +93,10 @@ module.exports = {
                 const ownerId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
                 const hasWallet = await controllerWalletDB.userHasWallet(ownerId)
 
-                if (!hasWallet) {
-
-                    const newWallet = new Wallet(ownerId)
-                    controllerWalletDB.createWallet(newWallet)
-                    console.log("OK - Wallet Created")
-                    res.send("OK - Acount created")
-
-                } else {
-                    console.log("Wallet dont created - Reason: User has a Wallet already")
-                    res.send("Wallet dont created - Reason: User has a Wallet already")
-                }
+                const newWallet = new Wallet(ownerId)
+                controllerWalletDB.createWallet(newWallet)
+                console.log("OK - Wallet Created")
+                res.send("OK - Acount created")
 
             } else {
                 console.log("User not created dont created - Reason: User role invalid")

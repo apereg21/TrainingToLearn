@@ -66,8 +66,12 @@ router.get('/getUserRole/:id', async function(req, res) {
 });
 
 router.get('/getUserID/:username', async function(req, res) {
-    var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
-    res.send("" + userId)
+    if (typeof req.params.username != 'string') {
+        var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
+        res.send("" + userId)
+    } else {
+        res.send("User username don't located - Reason: Not correct type of parameter")
+    }
 });
 
 router.post('/loginUser', async function(req, res) {
@@ -96,7 +100,7 @@ router.post('/loginUser', async function(req, res) {
 router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (!isNaN(id) || typeof req.params.purch === 'boolean') {
         var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
         res.send(rewardsList)
     } else {
@@ -128,18 +132,6 @@ router.get('/getSpecificUser/:id', async function(req, res) {
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
-});
-
-router.post('/getSpecificUserID', async function(req, res) {
-
-    var userID = await controllerUserDB.getSpecificUserID(req.body.username, req.body.password)
-
-    if (userID != null) {
-        res.send("" + userID)
-    } else {
-        res.send(null)
-    }
-
 });
 
 router.get('/getSpecificWallet/:id', async function(req, res) {
@@ -181,7 +173,6 @@ router.post('/createNewReward', async function(req, res) {
             if (responseServer != undefined && responseServer.length == 1) {
                 addPendingTransaction(responseServer[0])
                 addPendingIds(responseServer[0].id)
-                sleep(2000)
                 console.log("OK - Reward will be created")
                 res.send("OK - Reward will be created")
             }
@@ -236,14 +227,19 @@ router.post('/createNewTransaction', async function(req, res) {
         }
     } else {
 
-        console.log("Transaction not created - Reason: Blockchain isn't valid")
-        res.send("Transaction not created - Reason: Blockchain isn't valid")
+        if (finalFlag) {
+            console.log("Transaction not created - Reason: Server is doing a restart")
+            res.send("Transaction not created - Reason: Server is doing a restart")
+        } else {
+            console.log("Transaction not created - Reason: Blockchain isn't valid")
+            res.send("Transaction not created - Reason: Blockchain isn't valid")
+        }
 
     }
 });
 
 router.post('/createNewUser', async function(req, res) {
-    if (validBlockchain && !finalFlag) {
+    if (!finalFlag) {
 
         let isNameExist = exportsC.proveKey('name', 'string', req.body)
         let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
@@ -260,8 +256,8 @@ router.post('/createNewUser', async function(req, res) {
             res.send("User dont created - Reason: The data of parameters isn't correct")
         }
     } else {
-        console.log("User dont created - Reason: The blockchain isn't valid")
-        res.send("User dont created - Reason: The blockchain isn't valid")
+        console.log("User not created - Reason: Server is doing a restart")
+        res.send("User not created - Reason: Server is doing a restart")
     }
 });
 
@@ -271,17 +267,22 @@ router.post('/changeUserData', async function(req, res) {
     let isPasswordExist = exportsC.proveKey('password', 'string', req.body)
     let isChangesExist = exportsC.proveKey('changes', 'object', req.body)
 
-    if (isUserNameExist && isPasswordExist && isChangesExist) {
+    if (isUserNameExist && isPasswordExist && isChangesExist && !finalFlag) {
         var userModify = await controllerUser.modifyUserData(req, res)
 
         if (userModify == true) {
-            console.log("User data changed")
-            res.send("User data changed")
+            console.log("OK - User data changed")
+            res.send("OK - User data changed")
         }
 
     } else {
-        console.log("User not modify - Reason: Parameters are not corrects")
-        res.send("User not modify - Reason: Parameters are not corrects")
+        if (finalFlag) {
+            console.log("User data not changed - Reason: Server is doing a restart")
+            res.send("User data not changed - Reason: Server is doing a restart")
+        } else {
+            console.log("User not modified - Reason: Parameters are not corrects")
+            res.send("User not modified - Reason: Parameters are not corrects")
+        }
     }
 });
 
@@ -360,7 +361,4 @@ async function isValidBlockchain() {
     return controllerBlockchain.isBlockchainValid()
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 module.exports = router;

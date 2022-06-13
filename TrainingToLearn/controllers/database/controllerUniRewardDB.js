@@ -35,7 +35,7 @@ module.exports = {
         })
     },
 
-    async createUniReward(req,hashBlock) {
+    async createUniReward(req, hashBlock) {
         var isUniRewardNameUsed = await this.isUniRewardCreated(hashBlock)
         if (isUniRewardNameUsed != true && isUniRewardNameUsed != null) {
             return db.UniRewards
@@ -105,6 +105,7 @@ module.exports = {
         })
     },
     async getUniRewardId(uniRewardN) {
+
         return db.UniRewards.findOne({
                 where: {
                     nameUR: uniRewardN
@@ -112,7 +113,11 @@ module.exports = {
             })
             .then((result) => {
                 if (result != null) {
-                    return result.id
+                    if (result.deleted != true) {
+                        return result.id
+                    } else {
+                        return null
+                    }
                 } else {
                     return null
                 }
