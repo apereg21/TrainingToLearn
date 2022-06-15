@@ -15,7 +15,9 @@ module.exports = {
                 arrayOfUniRewards.push(await controllerUniRewardDB.createUniReward(pendingUniRewards[i], newBlockHash))
             }
         }
+        //Prove that UniReward is really created for the creation of UniPoints
         if (!arrayOfUniRewards.includes(false)) {
+            console.log("Creating new UniPoints")
             await controllerUniPointDB.createPoints(arrayPoints)
         }
     },

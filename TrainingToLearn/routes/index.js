@@ -39,8 +39,12 @@ router.get('/', (req) => {
 
 router.get('/getAllUsersList', async function(req, res) {
     var usersList = await controllerUserDB.getAllUsers()
-    res.send(usersList)
-
+    if (usersList != null) {
+        res.send(usersList)
+    } else {
+        console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+        res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+    }
 });
 
 router.get('/getUsersName/:id', async function(req, res) {
@@ -48,7 +52,13 @@ router.get('/getUsersName/:id', async function(req, res) {
     console.log(id)
     if (!isNaN(id)) {
         var userName = await controllerUserDB.getUsername(id)
-        res.send(userName)
+        if (userName != null) {
+            res.send(userName)
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
+
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
@@ -59,16 +69,30 @@ router.get('/getUserRole/:id', async function(req, res) {
     console.log(id)
     if (!isNaN(id)) {
         var user = await controllerUserDB.getUserData(id)
-        res.send(user.typeUser)
+        if (user != null) {
+            res.send(user.typeUser)
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
+
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
 });
 
 router.get('/getUserID/:username', async function(req, res) {
-    if (typeof req.params.username != 'string') {
+    console.log("Hiiiiiiiiiiiiiiiiiiiiiiiiii: " + req.params.username)
+    console.log("Hiiiiiiiiiiiiiiiiiiiiii" + typeof((req.params.username).replace(':', '')))
+    if (typeof((req.params.username).replace(':', '')) == 'string') {
         var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
-        res.send("" + userId)
+        console.log("Hiiiiiiiiiiiiiiiiiiiiiiiiii" + userId)
+        if (userId != null) {
+            res.send("" + userId)
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
     } else {
         res.send("User username don't located - Reason: Not correct type of parameter")
     }
@@ -79,7 +103,7 @@ router.post('/loginUser', async function(req, res) {
     var isPasswordExist = exportsC.proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
         var userId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
-        if (userId != null) {
+        if (userId != null && typeof userId != 'string') {
             var userData = await controllerUserDB.getUserData(userId)
             console.log("Userdata: " + userData.deleted)
             if (!userData.deleted) {
@@ -89,7 +113,13 @@ router.post('/loginUser', async function(req, res) {
             }
 
         } else {
-            res.send("Can't login - Reason: Don't exist an user with this password or username")
+            if (typeof userId == "string") {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("Can't login - Reason: The database isn't correct, try to restore DB")
+            } else {
+
+                res.send("Can't login - Reason: Don't exist an user with this password or username")
+            }
         }
 
     } else {
@@ -100,9 +130,15 @@ router.post('/loginUser', async function(req, res) {
 router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id) || typeof req.params.purch === 'boolean') {
+    if (!isNaN(id) || typeof((req.params.purch).replace(':', '')) == 'boolean') {
         var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
-        res.send(rewardsList)
+        if (rewardsList != null) {
+            res.send(rewardsList)
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
+
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
@@ -113,9 +149,15 @@ router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
     console.log(id)
     if (!isNaN(id)) {
         var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
-        console.log("This is smartContracts: " + smartContractsList)
-        console.log(smartContractsList.length)
-        smartContractsList.length != 0 ? res.send(smartContractsList) : res.send("No courses are activated for the user")
+        if (smartContractsList != null) {
+            console.log("This is smartContracts: " + smartContractsList)
+            console.log(smartContractsList.length)
+            smartContractsList.length != 0 ? res.send(smartContractsList) : res.send("No courses are activated for the user")
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
+
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
@@ -128,7 +170,13 @@ router.get('/getSpecificUser/:id', async function(req, res) {
     console.log(id + " " + isNaN(id))
     if (!isNaN(id)) {
         var userData = await controllerUserDB.getUserData(id)
-        res.send(userData)
+        if (userData != null) {
+            res.send(userData)
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
+
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
@@ -142,8 +190,14 @@ router.get('/getSpecificWallet/:id', async function(req, res) {
         console.log(id)
 
         var walletData = await controllerWalletDB.getUserWalletData(id)
+        if (walletData != null) {
+            res.send(walletData)
+        } else {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+        }
 
-        res.send(walletData)
+
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
     }
@@ -273,6 +327,15 @@ router.post('/changeUserData', async function(req, res) {
         if (userModify == true) {
             console.log("OK - User data changed")
             res.send("OK - User data changed")
+        } else {
+            if (userModify == false) {
+                console.log("User data dont change - Reason: Username or password ins't correct")
+                res.send("User data dont change - Reason: Username or password ins't correct")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
+
         }
 
     } else {
@@ -310,22 +373,23 @@ function addPendingIds(id) {
 
 async function periodicFunction() {
 
-    console.log("Time has passed, time for block creation. ¿There are pending transactions?")
+    console.log("Time has passed, time for execute periodicFunction")
     validBlockchain = await isValidBlockchain()
     console.log(validBlockchain)
     if (pendingTransactions.length > 0 && validBlockchain && !finalFlag) {
+        console.log("There are pending transactions and elements to create")
         console.log(pendingIdsTransactions)
         console.log(pendingTransactions)
         console.log(pendingUniRewards)
-        console.log("YES, there are pending Transactions")
         var newBlock = await controllerBlockchain.createBlockObject(pendingIdsTransactions)
 
         if (pendingUniRewards.length > 0) {
-
+            console.log("Creating a new UniReward")
             await controllerUniReward.createUniReward(pendingUniRewards, arrayPoints, newBlock.hash)
 
         }
 
+        console.log("Creating or update rest of elements")
         await controllerTransaction.createAndUpdateTransactions(pendingTransactions, pendingIdsTransactions, newBlock.hash)
 
         arrayPoints.splice(0, arrayPoints.length)
@@ -341,7 +405,7 @@ async function periodicFunction() {
             if (finalFlag) {
                 console.log("Can't operate on platform because there is a reset of database")
             } else {
-                console.log("NO, there aren't pending Transactions")
+                console.log("There aren't pending Transactions")
             }
         }
     }
@@ -349,7 +413,7 @@ async function periodicFunction() {
     console.log("Maintenance ====================================== " + exportsC.getFlag())
 
     finalFlag = exportsC.getFlag()
-    console.log("Can visualice Smart Contracts?" + validBlockchain + finalFlag)
+    console.log("Can visualice Smart Contracts?" + validBlockchain == finalFlag)
     if (validBlockchain && !finalFlag) {
         controllerSContract.proveStateSC()
     }
@@ -358,7 +422,8 @@ async function periodicFunction() {
 async function isValidBlockchain() {
 
     console.log("¿Is Blockchain valid?")
-    return controllerBlockchain.isBlockchainValid()
+    console.log(await controllerBlockchain.isBlockchainValid())
+    return await controllerBlockchain.isBlockchainValid()
 }
 
 module.exports = router;

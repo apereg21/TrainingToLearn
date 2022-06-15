@@ -6,7 +6,7 @@ const cors = require("cors")
 
 
 var routes = require('./routes/index');
-var mantenimiento = require('./routes/maintenance');
+var maintenance = require('./routes/maintenance');
 var allowedOrigins = ['http://localhost:8080', 'http://localhost:8081'];
 
 if (process.env.NODE_ENV !== 'production') {
@@ -31,7 +31,7 @@ app.use(cors({
 
 app.use(express.json())
 app.use('/', routes)
-app.use('/mantenimiento', mantenimiento)
+app.use('/maintenance', maintenance)
 
 
 app.listen(port, () => {

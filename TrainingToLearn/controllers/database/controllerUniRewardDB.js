@@ -32,6 +32,9 @@ module.exports = {
             }
         }).then((result) => {
             return result
+        }).catch(() => {
+            console.log("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            return null
         })
     },
 

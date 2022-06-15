@@ -16,14 +16,11 @@ module.exports = {
 
         let newBlock = new Block(lastIndex, new Date(), pendingIdsTransactions, prevHash)
         newBlock.hash = newBlock.calculateHash()
-        console.log("Haaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaash"+newBlock.hash)
         return await controllerBlockchainDB.createBlock(newBlock)
     },
     async isBlockchainValid() {
         var blockchainLength = await controllerBlockchainDB.getLastBlockIndex()
-
         if (blockchainLength > 0) {
-
             const genesisBlock = await controllerBlockchainDB.getBlock(0)
             var genesisBlockObj = new Block(genesisBlock.index, genesisBlock.timestamp, genesisBlock.idsTransactions, "0")
 
@@ -49,11 +46,19 @@ module.exports = {
                     console.log("NO, the blockchain isn't valid")
                     return false;
                 }
+                console.log("YES, the blockchain is valid")
+                return true;
+            }
+        } else {
+            if (blockchainLength == 0) {
+                console.log("YES, the blockchain is valid")
+                return true;
+            } else {
+                console.log("No blockchain localizated. You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                return false
             }
         }
 
-        console.log("YES, the blockchain is valid")
-        validBlockchain = true
-        return true;
+
     }
 }

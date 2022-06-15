@@ -12,12 +12,17 @@ module.exports = {
             } else {
                 return null
             }
+        }).catch(() => {
+            return null
         })
     },
 
     async getAllUsers() {
         return db.Users.findAll({ where: { deleted: false } }).then((result) => {
             return result
+        }).catch(() => {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            return null
         })
     },
     async createUser(req) {
@@ -29,8 +34,10 @@ module.exports = {
             typeUser: req.typeUser
         }).then(() => {
             console.log("Created")
+            return true
         }).catch((val) => {
             console.log("Something go wrong with user creation: " + val);
+            return false
         });
     },
     async createSystem(req) {
@@ -157,6 +164,9 @@ module.exports = {
                 console.log("User not find it")
                 return null
             }
+        }).catch(() => {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            return "error"
         })
     },
 
@@ -195,6 +205,9 @@ module.exports = {
                 console.log("User not find it")
                 return false
             }
+        }).catch(() => {
+            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+            return null
         })
     },
     async isUserDeleted(idUser) {
@@ -232,6 +245,8 @@ module.exports = {
                     console.log("User data not find it")
                     return null
                 }
+            }).catch(() => {
+                return null
             })
         } else {
             console.log("idUser isn't a number")
@@ -348,8 +363,9 @@ module.exports = {
                 console.log("User data not find it")
                 return null
             }
-        }).catch((val) => {
-            console.log("Error: " + val);
+        }).catch(() => {
+            console.log("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            return null
         });
     },
 }

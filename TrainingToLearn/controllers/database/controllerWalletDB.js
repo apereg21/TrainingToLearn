@@ -64,7 +64,7 @@ module.exports = {
             }
         })
     },
-    obtainIdFromAddress(publicAddress){
+    obtainIdFromAddress(publicAddress) {
         return db.Wallets.findOne({
             where: {
                 publicKey: publicAddress
@@ -106,6 +106,8 @@ module.exports = {
             }
         }).then((result) => {
             return result.publicKey
+        }).catch(() => {
+            return null
         })
     },
 
@@ -163,6 +165,9 @@ module.exports = {
                     console.log("User wallet data not find it")
                     return null
                 }
+            }).catch(() => {
+                console.log("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+                return null
             })
         } else {
             console.log("idUser isn't a number")

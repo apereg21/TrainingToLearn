@@ -6,7 +6,7 @@ const controllerWalletDB = require('../controllers/database/controllerWalletDB')
 const Wallet = require('../wallet')
 const exportsC = require('../exportsClass');
 
-router.get('/restaurarDB', async function(req, res) {
+router.get('/restoreDB', async function(req, res) {
     exportsC.setFlag(true)
     models.sequelize.sync({ force: true }).then(async() => {
         var jsonReq = {
@@ -23,7 +23,7 @@ router.get('/restaurarDB', async function(req, res) {
         exportsC.setFlag(false)
         res.send({ ok: true });
     }).catch((val) => {
-        res.send({ ok: false, error: val });
+        res.send({ ok: false, error: "You need to create a database with the name in config.json file" });
     });
 });
 
@@ -36,24 +36,30 @@ router.get('/createUI', async function(req, res) {
         password: "123456",
         typeUser: "N"
     }
-    await controllerUserDB.createUser(jsonReq)
-    const ownerId = await controllerUserDB.obtainUserId(jsonReq.username, jsonReq.password)
-    var newWallet = new Wallet(ownerId)
-    await controllerWalletDB.createWallet(newWallet)
+    var isUserCreateDB = await controllerUserDB.createUser(jsonReq)
+    if (isUserCreateDB != false) {
+        const ownerId = await controllerUserDB.obtainUserId(jsonReq.username, jsonReq.password)
+        var newWallet = new Wallet(ownerId)
+        await controllerWalletDB.createWallet(newWallet)
 
-    var jsonReq2 = {
-        name: "instructor",
-        fullSurname: "instructor",
-        username: "instructor",
-        password: "123456",
-        typeUser: "I"
+        var jsonReq2 = {
+            name: "instructor",
+            fullSurname: "instructor",
+            username: "instructor",
+            password: "123456",
+            typeUser: "I"
+        }
+        await controllerUserDB.createUser(jsonReq2)
+        const ownerId2 = await controllerUserDB.obtainUserId(jsonReq2.username, jsonReq2.password)
+        var newWallet2 = new Wallet(ownerId2)
+        await controllerWalletDB.createWallet(newWallet2)
+        exportsC.setFlag(false)
+        res.send({ ok: true })
+    } else {
+        console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+        res.send({ ok: false, reason: "You need to fill the DB to continue working, you can do it manually typing localhost:3000/maintenance/restoreDB" })
     }
-    await controllerUserDB.createUser(jsonReq2)
-    const ownerId2 = await controllerUserDB.obtainUserId(jsonReq2.username, jsonReq2.password)
-    var newWallet2 = new Wallet(ownerId2)
-    await controllerWalletDB.createWallet(newWallet2)
-    exportsC.setFlag(false)    
-    res.send({ ok: true })
+
 });
 
 module.exports = router

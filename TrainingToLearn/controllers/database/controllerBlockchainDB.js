@@ -16,7 +16,10 @@ module.exports = {
                 console.log("LastBlock in blockchain found it: " + result)
                 return result
             })
-            .catch((error) => console.log("Error: " + error));
+            .catch((error) => {
+                console.log("Error: " + error)
+                return null
+            });
     },
     async createBlock(req) {
         return db.Blockchain.create({

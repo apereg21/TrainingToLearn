@@ -6,7 +6,7 @@ module.exports = {
     async modifyUserData(req, res) {
         const userID = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
 
-        if (userID != null) {
+        if (userID != null && typeof userID != 'string') {
 
             const userData = await controllerUserDB.getUserData(userID)
             if (!userData.deleted) {
@@ -56,29 +56,37 @@ module.exports = {
             }
 
         } else {
+            if (typeof userID == "string") {
+                return "error"
+            } else {
+                return false
+            }
 
-            console.log("User data dont change - Reason: Username or password ins't correct")
-            res.send("User data dont change - Reason: Username or password ins't correct")
+
 
         }
     },
     async deleteUser(req, res) {
-        const user = await controllerUserDB.getUserData(req.body.id)
-
-        if (user != null && !user.deleted) {
-
-            controllerUserDB.deleteUser(user.id)
-            console.log("OK - " + user.username + "'s data eliminated")
-            res.send(user.username)
-
-        } else {
-            if (user == null) {
-                console.log(user.username + "'s data can't be eliminated - Reason: User Not Exist")
-                res.send(user.username + "'s data can't be eliminated - Reason: User Not Exist")
+        var user = await controllerUserDB.getUserData(req.body.id)
+        if (user != null) {
+            if (!user.deleted) {
+                controllerUserDB.deleteUser(user.id)
+                console.log("OK - " + user.username + "'s data eliminated")
+                res.send(user.username)
             } else {
                 console.log(user.username + "'s data can't be eliminated - Reason: Already deleted")
                 res.send(user.username + "'s data can't be eliminated - Reason: Already deleted")
             }
+
+        } else {
+            if (user == null) {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            } else {
+                console.log(user.username + "'s data can't be eliminated - Reason: User Not Exist")
+                res.send(user.username + "'s data can't be eliminated - Reason: User Not Exist")
+            }
+
         }
     },
     async createNewUser(req, res) {
@@ -104,8 +112,14 @@ module.exports = {
             }
 
         } else {
-            console.log("Acount dont created - Reason: Username already is used")
-            res.send("Acount dont created - Reason: Username already is used")
+            if (userAlreadyCreated != true) {
+                console.log("Can't login - Reason: The database isn't correct, try to restore DB")
+                res.send("Can't login - Reason: The database isn't correct, try to restore DB")
+            } else {
+                console.log("Acount dont created - Reason: Username already is used")
+                res.send("Acount dont created - Reason: Username already is used")
+            }
+
         }
     }
 }
