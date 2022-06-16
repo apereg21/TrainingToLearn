@@ -40,8 +40,13 @@ const proveKey = (nameKey, variableType, reqJson) => {
                 if (typeof reqJson[nameKey] == 'number') {
 
                     if (reqJson[nameKey] >= 0) {
-                        console.log("Correct Type - Can continue\n")
-                        return true
+                        if(!(reqJson[nameKey] > 10000 )){
+                            console.log("Correct Type - Can continue\n")
+                            return true
+                        }else{
+                            console.log("Incorrect Type - Reason: The structure of number, it's a high value\n")
+                            return false
+                        }
                     } else {
                         console.log("Incorrect Type - Reason: The structure of number, ins't correct. Positive values\n")
                         return false

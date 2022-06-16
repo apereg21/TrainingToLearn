@@ -7,7 +7,7 @@ module.exports = {
         return db.UniPoints
             .count()
             .then((result) => {
-                console.log("LastUnipointId in database found it: " + result)
+                console.log("LastUnipointId in database found it: " + result + 1)
                 return result + 1
             })
             .catch((error) => console.log("Error: " + error));
@@ -40,6 +40,8 @@ module.exports = {
             .then((points) => {
                 console.log("OK - All points craeted")
                 return points.map((point) => point.id)
+            }).catch((val) => {
+                console.log(val)
             });
     },
 

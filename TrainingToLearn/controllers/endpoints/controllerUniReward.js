@@ -42,22 +42,23 @@ module.exports = {
                     if (idUserInstructor != userToId) {
 
                         var uniReward = new UniReward(req.body, userToId)
-                        uniReward.getAndSetLastId()
+                        var lastID = await controllerUniRewardDB.getLastUniRewardIndex()
                         console.log("=================uniReward.id first======================")
                         console.log(uniReward.id)
                         console.log("==================================================")
                         var alreadyExistURId = false
-                        var lastIdUniReward = await controllerUniRewardDB.getLastUniRewardIndex()
                         if (uniReward.proveNotNullObject() != true) {
 
                             for (var i = 0; i < pendingUniRewards.length; i++) {
-                                if (pendingUniRewards[i].id == lastIdUniReward) {
+                                if (pendingUniRewards[i].id ==  uniReward.id) {
                                     alreadyExistURId = true
                                 }
                             }
 
                             if (alreadyExistURId) {
                                 uniReward.id = (pendingUniRewards[pendingUniRewards.length - 1].id) + 1
+                            }else{
+                                uniReward.id = lastID
                             }
                             console.log("=================uniReward.id second======================")
                             console.log(uniReward.id)
@@ -91,30 +92,16 @@ module.exports = {
                                 var arrayUniPointsIds = []
                                 for (var i = 0; i < req.body.costReward; i++) {
 
-                                    var alreadyExistUPId = false
-                                    var realIdUniPoint
-
-                                    for (var j = 0; j < arrayPoints.length; j++) {
-                                        if (arrayPoints[j].id == lastIdUniPoint) {
-                                            alreadyExistUPId = true
-                                        }
-                                    }
-
-
-                                    if (alreadyExistUPId) {
-                                        realIdUniPoint = arrayPoints[arrayPoints.length - 1].id + 1
-                                    } else {
-                                        realIdUniPoint = lastIdUniPoint
-                                    }
 
                                     var jsonObj = {
-                                        id: realIdUniPoint,
+
                                         timestamp: new Date(),
                                         UniRewardId: uniReward.id,
                                         WalletId: userWalletId
+                                        
                                     }
                                     arrayPoints.push(jsonObj)
-                                    arrayUniPointsIds.push(jsonObj.id)
+                                    arrayUniPointsIds.push(i+lastIdUniPoint)
                                 }
                                 console.log("=================arrayUniPointsIds======================")
                                 console.log(arrayUniPointsIds)

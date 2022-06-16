@@ -22,9 +22,5 @@ class UniReward {
         this.hash = hash
     }
 
-    async getAndSetLastId() {
-        var lastID = await controllerDB.getLastUniRewardIndex()
-        this.id = lastID
-    }
 }
 module.exports = UniReward
