@@ -3,25 +3,43 @@ const Transaction = require("../../transaction")
 const controllerUniRewardDB = require("../database/controllerUniRewardDB");
 const controllerWalletDB = require("../database/controllerWalletDB");
 const controllerUserDB = require("../database/controllerUserDB");
-const controllerTransactionDB = require("../database/controllerTransactionsDB");
 const controllerUniPointDB = require("../database/controllerUniPointDB");
 
 module.exports = {
-    async createUniReward(pendingUniRewards, arrayPoints, newBlockHash) {
+    async createUniReward(pendingUniRewards, newBlockHash) {
+
         var arrayOfUniRewards = []
+        var arrayUniPoints = []
         for (var i = 0; i < pendingUniRewards.length; i++) {
             var userWalletDeleted = await controllerUserDB.isUserDeleted(pendingUniRewards[i].WalletId)
             if (!userWalletDeleted) {
+                pendingUniRewards[i].id = await controllerUniRewardDB.getLastUniRewardIndex()
                 arrayOfUniRewards.push(await controllerUniRewardDB.createUniReward(pendingUniRewards[i], newBlockHash))
+
+
+                //Prove that UniReward is really created for the creation of UniPoints
+
+                if (!arrayOfUniRewards.includes(false)) {
+                    console.log("Creating new UniPoints")
+                    for (var j = 0; j < pendingUniRewards[i].cost; j++) {
+
+
+                        var jsonObj = {
+                            timestamp: new Date(),
+                            UniRewardId: pendingUniRewards[i].id,
+                            WalletId: pendingUniRewards[i].WalletId
+
+                        }
+                        arrayUniPoints.push(jsonObj)
+                    }
+                }
             }
         }
-        //Prove that UniReward is really created for the creation of UniPoints
-        if (!arrayOfUniRewards.includes(false)) {
-            console.log("Creating new UniPoints")
-            await controllerUniPointDB.createPoints(arrayPoints)
-        }
+
+        return await controllerUniPointDB.createPoints(arrayUniPoints)
+
     },
-    async createUniRewardObject(res, req, pendingUniRewards, arrayPoints, pendingTransactions) {
+    async createUniRewardObject(res, req, pendingUniRewards, arrayPoints) {
         let idUserInstructor = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
         let userInstructoDeleted = await controllerUserDB.isUserDeleted(idUserInstructor)
         let isUserDelete = await controllerUserDB.isUserDeleted(idUserInstructor)
@@ -42,27 +60,9 @@ module.exports = {
                     if (idUserInstructor != userToId) {
 
                         var uniReward = new UniReward(req.body, userToId)
-                        var lastID = await controllerUniRewardDB.getLastUniRewardIndex()
-                        console.log("=================uniReward.id first======================")
-                        console.log(uniReward.id)
-                        console.log("==================================================")
-                        var alreadyExistURId = false
+
                         if (uniReward.proveNotNullObject() != true) {
 
-                            for (var i = 0; i < pendingUniRewards.length; i++) {
-                                if (pendingUniRewards[i].id ==  uniReward.id) {
-                                    alreadyExistURId = true
-                                }
-                            }
-
-                            if (alreadyExistURId) {
-                                uniReward.id = (pendingUniRewards[pendingUniRewards.length - 1].id) + 1
-                            }else{
-                                uniReward.id = lastID
-                            }
-                            console.log("=================uniReward.id second======================")
-                            console.log(uniReward.id)
-                            console.log("==================================================")
                             pendingUniRewards.push(uniReward)
                             var idsWallets = [userFromId, userFromId]
 
@@ -73,47 +73,7 @@ module.exports = {
                             if (!isDeletedWallet1 && !isDeletedWallet2) {
 
                                 let newTransac = new Transaction(systemAddress, systemAddress, uniReward.cost, uniReward.id, "U", idsWallets, concept)
-                                newTransac.getAndSetLastTransactionId()
-                                var lastIdTrans = await controllerTransactionDB.getLastTransactionId()
-                                var alreadyExistTransId = false
 
-                                for (var j = 0; j < pendingTransactions.length; j++) {
-                                    if (pendingTransactions[j].id == lastIdTrans) {
-                                        alreadyExistTransId = true
-                                    }
-                                }
-                                if (alreadyExistTransId) {
-                                    newTransac.id = pendingTransactions[pendingTransactions.length - 1].id + 1
-                                }
-
-                                let userWalletId = await controllerWalletDB.obtainWalletId(userFromId)
-
-                                var lastIdUniPoint = await controllerUniPointDB.getLastIdUP()
-                                var arrayUniPointsIds = []
-                                for (var i = 0; i < req.body.costReward; i++) {
-
-
-                                    var jsonObj = {
-
-                                        timestamp: new Date(),
-                                        UniRewardId: uniReward.id,
-                                        WalletId: userWalletId
-                                        
-                                    }
-                                    arrayPoints.push(jsonObj)
-                                    arrayUniPointsIds.push(i+lastIdUniPoint)
-                                }
-                                console.log("=================arrayUniPointsIds======================")
-                                console.log(arrayUniPointsIds)
-                                console.log("==================================================")
-
-                                newTransac.setUniPointIds(arrayUniPointsIds)
-
-                                console.log("=================arrayUniPointsIds======================")
-                                console.log(newTransac.uniPointIds)
-                                console.log("==================================================")
-
-                                arrayUniPointsIds.splice(0, arrayUniPointsIds.length)
                                 var privateKeyFrom = await controllerWalletDB.obtainPrivateKeyId(userFromId)
                                 newTransac.signTransaction(privateKeyFrom, 0)
                                 var privateKeyTo = await controllerWalletDB.obtainPrivateKeyId(userFromId)

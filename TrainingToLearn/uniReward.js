@@ -10,7 +10,7 @@ class UniReward {
             this.WalletId = userFromId
     }
     proveNotNullObject() {
-        if (this.nameUR != null && this.descriptionUR != null && this.imageUR != null && this.cost != null  && this.WalletId != null) {
+        if (this.nameUR != null && this.descriptionUR != null && this.imageUR != null && this.cost != null && this.WalletId != null) {
             return false
         } else {
 

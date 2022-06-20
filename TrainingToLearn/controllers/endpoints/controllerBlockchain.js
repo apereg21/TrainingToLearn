@@ -3,7 +3,10 @@ const controllerBlockchainDB = require('../database/controllerBlockchainDB')
 module.exports = {
     async createBlockObject(pendingIdsTransactions) {
         let lastIndex = await controllerBlockchainDB.getLastBlockIndex()
-
+        var idsForBlock = []
+        for (var i = 0; i < pendingIdsTransactions.length; i++) {
+            idsForBlock.push(pendingIdsTransactions[i].id)
+        }
         if (lastIndex == 0) {
 
             var genesisBlock = new Block(lastIndex, new Date(), [], "0")
@@ -13,8 +16,12 @@ module.exports = {
         }
 
         let prevHash = await controllerBlockchainDB.getHashLastBlock(lastIndex - 1)
+        var pendingIdsTransactionsFinal = []
+        for (i in pendingIdsTransactions) {
+            pendingIdsTransactionsFinal.push(pendingIdsTransactions[i].id)
+        }
 
-        let newBlock = new Block(lastIndex, new Date(), pendingIdsTransactions, prevHash)
+        let newBlock = new Block(lastIndex, new Date(), pendingIdsTransactionsFinal, prevHash)
         newBlock.hash = newBlock.calculateHash()
         return await controllerBlockchainDB.createBlock(newBlock)
     },

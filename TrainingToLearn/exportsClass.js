@@ -40,10 +40,10 @@ const proveKey = (nameKey, variableType, reqJson) => {
                 if (typeof reqJson[nameKey] == 'number') {
 
                     if (reqJson[nameKey] >= 0) {
-                        if(!(reqJson[nameKey] > 10000 )){
+                        if (!(reqJson[nameKey] > 7500)) {
                             console.log("Correct Type - Can continue\n")
                             return true
-                        }else{
+                        } else {
                             console.log("Incorrect Type - Reason: The structure of number, it's a high value\n")
                             return false
                         }
@@ -80,6 +80,6 @@ const proveNormalString = (string, nameKey) => {
 module.exports = {
     setFlag,
     getFlag,
-    proveKey, 
+    proveKey,
     proveNormalString
 }

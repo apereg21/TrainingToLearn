@@ -14,7 +14,6 @@ module.exports = {
         var smartContractList = await controllerSContractDB.getAllNotTerminatedSC()
         for (var i = 0; i < smartContractList.length; i++) {
             var sContract = new SmartContract(smartContractList[i].walletIdObserver, smartContractList[i].walletIdDemander, smartContractList[i].condition, smartContractList[i].UniRewardId)
-            console.log("Im the Smart Contract: \n" + sContract)
             sContract.setDeliveredUniPoints(smartContractList[i].deliveredUniPoints)
 
             var userFromId = await controllerWalletDB.findUserAddressID(sContract.walletIdObserver)
@@ -24,7 +23,6 @@ module.exports = {
 
             var idsWallets = [userFromId, userToId]
             if (sContract.state != 1) {
-                console.log(sContract)
                 if (sContract.proveCompleteContract()) {
 
                     if (userFromId != null && userToId != null && userFromDeleted != true && userToDeleted != true) {
@@ -51,11 +49,9 @@ module.exports = {
 
                             let transactionObjId = await controllerTransactionsDB.createTransaction(newTransac)
 
-                            console.log("=================================================================")
                             let newBlockSC = new Block(lastNewIndex, new Date(), [transactionObjId], prevNewHash)
                             newBlockSC.hash = newBlockSC.calculateHash()
                             await controllerBlockchainDB.createBlock(newBlockSC)
-                            console.log("=================================================================")
 
                             await controllerTransactionsDB.updateTransactionHash(transactionObjId, newBlockSC.hash)
                             await controllerUniPointDB.updateHashUniPoint(transactionObjId, sContract.UniRewardId, newBlockSC.hash)
@@ -63,7 +59,7 @@ module.exports = {
 
                             sContract.endSmartContract(idsWallets, transactionObjId, idsToChange)
                             smartContractList.splice(i, 1)
-                            console.log("OK - Transaction created")
+                            console.log("OK - Smart Contract finalized, well done!")
 
                         } else {
                             console.log("UniReward already purchase or uniRewardId dosent exists. The contract is terminated")
@@ -77,8 +73,7 @@ module.exports = {
                     }
                 } else {
 
-                    console.log("User " + userFromId + " is " + userFromDeleted)
-                    console.log("User " + userToId + " is " + userToDeleted)
+                    console.log("The comprobation of Smart Contracts finalized")
 
                     if (userFromId == null || userToId == null || userFromDeleted == true || userToDeleted == true) {
                         console.log("One of the users dosent exists. The contract is terminated")

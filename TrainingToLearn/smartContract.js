@@ -16,23 +16,23 @@ class SmartContract {
             this.state = 0,
             this.condition = [...dUnipoint],
             this.deliveredUniPoints = [],
-            this.signatureFrom="",
-            this.signatureTo="",
-        this.UniRewardId = uniRewardId;
+            this.signatureFrom = "",
+            this.signatureTo = "",
+            this.UniRewardId = uniRewardId;
     }
     setDeliveredUniPoints(deliveredUniPoints) {
         this.deliveredUniPoints = [...deliveredUniPoints];
     }
 
     calHashTransaction() {
-        return crypto.createHash('sha256').update(this.walletIdDemander + this.walletIdObserver + this.state + this.condition + this.deliveredUniPoints +this.UniRewardId).digest('hex');
+        return crypto.createHash('sha256').update(this.walletIdDemander + this.walletIdObserver + this.state + this.condition + this.deliveredUniPoints + this.UniRewardId).digest('hex');
     }
 
     signContract(signingKey, type) {
         console.log("With the private key: " + signingKey)
         const signingKeyInterna = ec.keyFromPrivate(signingKey, 'hex');
-        
-            //Prove if is the key of correct user 
+
+        //Prove if is the key of correct user 
         if (type == 0) {
             console.log("We compare if: " + signingKeyInterna.getPublic('hex') + "\nis equal to: " + this.walletIdObserver)
             if (signingKeyInterna.getPublic('hex') != this.walletIdDemander) {
@@ -68,8 +68,6 @@ class SmartContract {
     }
 
     proveCompleteContract() {
-        console.log('==============================================================')
-        console.log(this.deliveredUniPoints + "is equals to " + this.condition)
         if (this.deliveredUniPoints.length != this.condition.length) {
             return false
         } else {
@@ -82,7 +80,7 @@ class SmartContract {
     }
 
     async endSmartContract(idsWallets, transactionObjId, idsToChange) {
-        
+
         await controllerWalletDB.moveToMoneyExp(idsToChange, idsWallets[1], this.UniRewardId)
 
         await controllerUniPointDB.updatePurchasePoints(idsToChange)
@@ -106,7 +104,7 @@ class SmartContract {
         this.signContract(privateKeyFrom, 1)
 
         var signatures = [this.signatureFrom, this.signatureTo]
-        
+
         console.log("Signatures:" + signatures + signatures.length)
         await controllerSContractDB.updateSignatures(signatures, this.UniRewardId)
         this.state = true

@@ -328,6 +328,7 @@ module.exports = {
     },
 
     async getUserMoney(userWalletId, idUniReward) {
+        console.log("The data in petition is" + userWalletId + " and" + idUniReward)
         return db.Wallets.findOne({
             where: {
                 id: userWalletId
@@ -370,7 +371,6 @@ module.exports = {
             //Load info about Dest's Wallet
             if (points != null) {
                 pointsToChange = points.map((point) => point.id)
-                console.log(pointsToChange)
                 return db.Wallets.findOne({
                     where: {
                         id: userToWalletId

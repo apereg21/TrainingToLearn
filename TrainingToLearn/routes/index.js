@@ -16,6 +16,7 @@ const controllerUniRewardDB = require('../controllers/database/controllerUniRewa
 const controllerUserDB = require('../controllers/database/controllerUserDB')
 
 const exportsC = require('../exportsClass');
+const controllerUniPointDB = require('../controllers/database/controllerUniPointDB');
 var finalFlag = exportsC.setFlag(false);
 
 var router = express.Router();
@@ -222,11 +223,11 @@ router.post('/createNewReward', async function(req, res) {
         if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist && isCostRewardExist && isUserCourseExist) {
 
             var responseServer = []
-            responseServer = await controllerUniReward.createUniRewardObject(res, req, pendingUniRewards, arrayPoints, pendingTransactions)
+            responseServer = await controllerUniReward.createUniRewardObject(res, req, pendingUniRewards, arrayPoints)
             console.log("I'm response server: " + responseServer[0] + "\n" + responseServer[0].id)
             if (responseServer != undefined && responseServer.length == 1) {
                 addPendingTransaction(responseServer[0])
-                addPendingIds(responseServer[0].id)
+
                 console.log("OK - Reward will be created")
                 res.send("OK - Reward will be created")
             }
@@ -262,13 +263,12 @@ router.post('/createNewTransaction', async function(req, res) {
         if (isFromAddressNameExist && isToAddresNameExist && isTypeTransactionExist && isPasswordFromExist && isConceptExist && isMoneyExist && isUniRewardId) {
 
             var responseServer = []
-            responseServer = await controllerTransaction.createTransactionObject(req, res)
+            responseServer = await controllerTransaction.createTransaction(req, res)
 
             if (!(typeof responseServer === 'string')) {
-                if (responseServer != undefined && responseServer.length == 2) {
-                    console.log("Hello im the responseServer vector" + responseServer[0] + "and " + responseServer[1])
+                if (responseServer != undefined && responseServer.length == 1) {
+                    console.log("Hello im the responseServer vector" + responseServer[0])
                     addPendingTransaction(responseServer[0])
-                    addPendingIds(responseServer[1])
                     res.send("OK - Delivery complete")
                 }
             }
@@ -367,10 +367,6 @@ function addPendingTransaction(transaction) {
     pendingTransactions.push(transaction)
 }
 
-function addPendingIds(id) {
-    pendingIdsTransactions.push(id)
-}
-
 async function periodicFunction() {
 
     console.log("Time has passed, time for execute periodicFunction")
@@ -378,19 +374,21 @@ async function periodicFunction() {
     console.log(validBlockchain)
     if (pendingTransactions.length > 0 && validBlockchain && !finalFlag) {
         console.log("There are pending transactions and elements to create")
-        console.log(pendingIdsTransactions)
-        console.log(pendingTransactions)
-        console.log(pendingUniRewards)
-        var newBlock = await controllerBlockchain.createBlockObject(pendingIdsTransactions)
 
+        //The transactions came without some values, this is the place where pending transactions are updated in these fields
+        var pendingIdsTransaction = await controllerTransaction.obtainAndUpdateAllPendingTransactions(pendingTransactions)
+
+        var newBlock = await controllerBlockchain.createBlockObject(pendingTransactions)
         if (pendingUniRewards.length > 0) {
+
             console.log("Creating a new UniReward")
-            await controllerUniReward.createUniReward(pendingUniRewards, arrayPoints, newBlock.hash)
+            await controllerUniReward.createUniReward(pendingUniRewards, newBlock.hash)
 
         }
 
+        await controllerTransaction.updateIdsUniPointsField(pendingTransactions, pendingIdsTransaction)
         console.log("Creating or update rest of elements")
-        await controllerTransaction.createAndUpdateTransactions(pendingTransactions, pendingIdsTransactions, newBlock.hash)
+        await controllerTransaction.createAndUpdateTransactions(pendingTransactions, newBlock.hash)
 
         arrayPoints.splice(0, arrayPoints.length)
         pendingUniRewards.splice(0, pendingUniRewards.length)

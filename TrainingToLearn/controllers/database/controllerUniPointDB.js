@@ -26,9 +26,6 @@ module.exports = {
             ]
         }).then((uniPoints) => {
             pointsToChange = uniPoints.map((uniPoint) => uniPoint.id)
-            console.log("==============================================")
-            console.log(pointsToChange)
-            console.log("==============================================")
             return pointsToChange
 
         }).catch((val) => {
@@ -38,7 +35,7 @@ module.exports = {
     async createPoints(pointsArray) {
         return db.UniPoints.bulkCreate(pointsArray)
             .then((points) => {
-                console.log("OK - All points craeted")
+                console.log("OK - All points created")
                 return points.map((point) => point.id)
             }).catch((val) => {
                 console.log(val)
@@ -66,9 +63,7 @@ module.exports = {
                 UniRewardId: uniRewardId
             }
         }).then((result) => {
-            console.log("===========================================")
-            console.log(result.uniPointIds)
-            console.log("===========================================")
+
             return db.UniPoints.update({
                 hash: SHA256(transactionObjId + hashBlock).toString()
             }, {
@@ -78,6 +73,18 @@ module.exports = {
             }).then(() => {
                 console.log(SHA256(transactionObjId + hashBlock).toString())
             })
+        })
+    },
+    async getAllUniPointsForTransaction(uniRewardId) {
+        return db.UniPoints.findAll({
+            where: {
+                UniRewardId: uniRewardId
+            }
+        }).then((uniPoints) => {
+            return uniPoints.map((point) => point.id)
+
+        }).catch((val) => {
+            console.log(val)
         })
     }
 }

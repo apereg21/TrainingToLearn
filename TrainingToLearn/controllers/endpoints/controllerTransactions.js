@@ -26,11 +26,22 @@ module.exports = {
         }
         return true
     },
-    async createTransactionObject(req, res) {
-        let userToId, userDestAdd, userFromId, userInstructorId, userFromAdd
+    //Update the field of idsUniPoints in one transaction
+    async updateIdsUniPointsField(pendingTransactions) {
 
-        userDestAdd = await controllerWalletDB.findUserAddress(req.body.toAddressUN)
-        userToId = await controllerWalletDB.findUserAddressID(userDestAdd)
+        for (var i = 0; i < pendingTransactions.length; i++) {
+            var idsUPToInclude = await controllerUniPointDB.getAllUniPointsForTransaction(pendingTransactions[i].UniRewardId);
+            if (idsUPToInclude != null) {
+                pendingTransactions[i].uniPointIds = idsUPToInclude
+            }
+
+        }
+    },
+    async createTransaction(req, res) {
+        let userToId, userToAdd, userFromId, userInstructorId, userFromAdd
+
+        userToAdd = await controllerWalletDB.findUserAddress(req.body.toAddressUN)
+        userToId = await controllerWalletDB.findUserAddressID(userToAdd)
         userFromAdd = await controllerWalletDB.findUserAddress("System")
         userFromId = await controllerWalletDB.findUserAddressID(userFromAdd)
         userInstructorId = await controllerUserDB.obtainUserId(req.body.fromAddressUN, req.body.password)
@@ -55,7 +66,7 @@ module.exports = {
 
                         var idsWallets = [userFromId, userToId]
                         var idUniReward = await controllerUniRewardDB.getUniRewardId(req.body.uniRewardId)
-                        let newTransac = new Transaction(userFromAdd, userDestAdd, req.body.moneyTo, idUniReward, req.body.typeT, idsWallets, req.body.concept)
+                        let newTransac = new Transaction(userFromAdd, userToAdd, req.body.moneyTo, idUniReward, req.body.typeT, idsWallets, req.body.concept)
 
                         let userMoneyWallet = await controllerWalletDB.getUserMoney(userFromId, idUniReward)
 
@@ -88,13 +99,12 @@ module.exports = {
 
                                 if (newTransac.isValid(1)) {
                                     let transactionObjId = await controllerTransactionsDB.createTransaction(newTransac)
-
+                                    newTransac.id = transactionObjId
                                     await controllerWalletDB.updateTransactionIds(idsWallets[0], transactionObjId)
                                     await controllerWalletDB.updateTransactionIds(idsWallets[1], transactionObjId)
 
                                     var response = []
                                     response.push(newTransac)
-                                    response.push(transactionObjId)
                                     return response
 
                                 } else {
@@ -108,7 +118,7 @@ module.exports = {
 
 
                         } else if (userMoneyWallet < req.body.moneyTo) {
-
+                            console.log(userMoneyWallet + " equals to " + req.body.moneyTo)
                             console.log("Can't do the payment - Reason: Amount of money in wallet is insuficient")
                             res.send("Can't do the payment - Reason: Amount of money in wallet is insuficient")
 
@@ -179,12 +189,50 @@ module.exports = {
 
         }
     },
-    async createAndUpdateTransactions(pendingTransactions, pendingIdsTransactions, newBlockHash) {
+    async obtainAndUpdateAllPendingTransactions(pendingTransactions) {
+        var idsAlreadyUsed = []
+        var idsAlreadyUsedTransactions = []
         for (var i = 0; i < pendingTransactions.length; i++) {
-            console.log("=====================================================")
-            console.log(pendingTransactions[i])
-            console.log("=====================================================")
-            var isExistTransaction = await controllerTransactionsDB.isExistTransaction(pendingIdsTransactions[i])
+            var lastID = await controllerTransactionsDB.getLastTransactionId()
+            var isExistTransaction = await controllerTransactionsDB.isExistTransaction(lastID)
+            var lastIDUniR = await controllerUniRewardDB.getLastUniRewardIndex()
+
+            if (pendingTransactions[i].id == null) {
+
+
+                if (isExistTransaction) {
+                    pendingTransactions[i].id = lastID + 1
+                } else {
+                    if (idsAlreadyUsedTransactions.includes(lastID)) {
+                        pendingTransactions[i].id = lastID + 1
+                    } else {
+                        pendingTransactions[i].id = lastID
+                    }
+
+                }
+
+                idsAlreadyUsedTransactions.push(lastID)
+            }
+
+            if (pendingTransactions[i].UniRewardId == null) {
+
+                if (idsAlreadyUsed.includes(lastIDUniR)) {
+                    pendingTransactions[i].UniRewardId = lastIDUniR + 1
+                } else {
+                    pendingTransactions[i].UniRewardId = lastIDUniR
+                }
+
+                idsAlreadyUsed.push(pendingTransactions[i].UniRewardId)
+            }
+        }
+
+        return idsAlreadyUsedTransactions
+    },
+    async createAndUpdateTransactions(pendingTransactions, newBlockHash) {
+        for (var i = 0; i < pendingTransactions.length; i++) {
+            console.log("=================== Prove Transaction" + pendingTransactions[i].id + "=======================")
+
+            var isExistTransaction = await controllerTransactionsDB.isExistTransaction(pendingTransactions[i].id)
             var userFrom, userTo, transaction
             userFrom = await controllerUserDB.getUserData(pendingTransactions[i].idWalletFrom)
             userTo = await controllerUserDB.getUserData(pendingTransactions[i].idWalletTo)
@@ -198,7 +246,7 @@ module.exports = {
                     userTo = await controllerUserDB.getUserData(transaction.idWalletTo)
 
                     await controllerWalletDB.paymentToSystem(userFrom.id, transaction.uniPointIds, transaction.id)
-                    await controllerUniRewardDB.updateHashUniReward(pendingIdsTransactions[i], transaction.UniRewardId, newBlockHash)
+                    await controllerUniRewardDB.updateHashUniReward(pendingTransactions[i].id, transaction.UniRewardId, newBlockHash)
 
                     var uniReward = await controllerUniRewardDB.getUniReward(transaction.UniRewardId)
                     var addressTo = await controllerWalletDB.getUserWalletAddress(uniReward.WalletId)
@@ -210,7 +258,7 @@ module.exports = {
             } else {
                 //Transaction already created --> Transaction only for update fields
                 if (userFrom != null && userTo != null) {
-                    transaction = await controllerTransactionsDB.updateTransactionHash(pendingIdsTransactions[i], newBlockHash)
+                    transaction = await controllerTransactionsDB.updateTransactionHash(pendingTransactions[i].id, newBlockHash)
                     userFrom = await controllerUserDB.getUserData(transaction.idWalletFrom)
                     userTo = await controllerUserDB.getUserData(transaction.idWalletTo)
                     if (transaction.typeTransaction == "U") {
