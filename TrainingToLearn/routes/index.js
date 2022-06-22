@@ -16,13 +16,11 @@ const controllerUniRewardDB = require('../controllers/database/controllerUniRewa
 const controllerUserDB = require('../controllers/database/controllerUserDB')
 
 const exportsC = require('../exportsClass');
-const controllerUniPointDB = require('../controllers/database/controllerUniPointDB');
 var finalFlag = exportsC.setFlag(false);
 
 var router = express.Router();
 var pendingTransactions = [];
 var pendingUniRewards = [];
-var pendingIdsTransactions = [];
 var arrayPoints = [];
 var validBlockchain = true
 var finalFlag = false
@@ -384,16 +382,18 @@ async function periodicFunction() {
             console.log("Creating a new UniReward")
             await controllerUniReward.createUniReward(pendingUniRewards, newBlock.hash)
 
+            pendingUniRewards.splice(0, pendingUniRewards.length)
+            arrayPoints.splice(0, arrayPoints.length)
+
         }
 
         await controllerTransaction.updateIdsUniPointsField(pendingTransactions, pendingIdsTransaction)
         console.log("Creating or update rest of elements")
         await controllerTransaction.createAndUpdateTransactions(pendingTransactions, newBlock.hash)
 
-        arrayPoints.splice(0, arrayPoints.length)
-        pendingUniRewards.splice(0, pendingUniRewards.length)
+
         pendingTransactions.splice(0, pendingTransactions.length)
-        pendingIdsTransactions.splice(0, pendingIdsTransactions.length)
+        pendingIdsTransaction.splice(0, pendingIdsTransaction.length)
 
 
     } else {
