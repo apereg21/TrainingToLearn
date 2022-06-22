@@ -24,7 +24,7 @@ var pendingUniRewards = [];
 var arrayPoints = [];
 var validBlockchain = true
 var finalFlag = false
-var periodicFunct = setInterval(() => periodicFunction(), 5000);
+var periodicFunct = setInterval(() => periodicFunction(), 15000);
 
 
 /*
@@ -36,7 +36,7 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function(req, res) {
+router.get('/getAllUsersList', async function (req, res) {
     var usersList = await controllerUserDB.getAllUsers()
     if (usersList != null) {
         res.send(usersList)
@@ -46,7 +46,7 @@ router.get('/getAllUsersList', async function(req, res) {
     }
 });
 
-router.get('/getUsersName/:id', async function(req, res) {
+router.get('/getUsersName/:id', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
     if (!isNaN(id)) {
@@ -63,7 +63,7 @@ router.get('/getUsersName/:id', async function(req, res) {
     }
 });
 
-router.get('/getUserRole/:id', async function(req, res) {
+router.get('/getUserRole/:id', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
     if (!isNaN(id)) {
@@ -80,10 +80,10 @@ router.get('/getUserRole/:id', async function(req, res) {
     }
 });
 
-router.get('/getUserID/:username', async function(req, res) {
+router.get('/getUserID/:username', async function (req, res) {
     console.log("Hiiiiiiiiiiiiiiiiiiiiiiiiii: " + req.params.username)
-    console.log("Hiiiiiiiiiiiiiiiiiiiiii" + typeof((req.params.username).replace(':', '')))
-    if (typeof((req.params.username).replace(':', '')) == 'string') {
+    console.log("Hiiiiiiiiiiiiiiiiiiiiii" + typeof ((req.params.username).replace(':', '')))
+    if (typeof ((req.params.username).replace(':', '')) == 'string') {
         var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
         console.log("Hiiiiiiiiiiiiiiiiiiiiiiiiii" + userId)
         if (userId != null) {
@@ -97,7 +97,7 @@ router.get('/getUserID/:username', async function(req, res) {
     }
 });
 
-router.post('/loginUser', async function(req, res) {
+router.post('/loginUser', async function (req, res) {
     var isUsernameExist = exportsC.proveKey('username', 'string', req.body)
     var isPasswordExist = exportsC.proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
@@ -126,10 +126,10 @@ router.post('/loginUser', async function(req, res) {
     }
 });
 
-router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
+router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id) || typeof((req.params.purch).replace(':', '')) == 'boolean') {
+    if (!isNaN(id) || typeof ((req.params.purch).replace(':', '')) == 'boolean') {
         var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
         if (rewardsList != null) {
             res.send(rewardsList)
@@ -143,7 +143,7 @@ router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     }
 });
 
-router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
+router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
     if (!isNaN(id)) {
@@ -163,7 +163,7 @@ router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
 
 });
 
-router.get('/getSpecificUser/:id', async function(req, res) {
+router.get('/getSpecificUser/:id', async function (req, res) {
 
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id + " " + isNaN(id))
@@ -181,7 +181,7 @@ router.get('/getSpecificUser/:id', async function(req, res) {
     }
 });
 
-router.get('/getSpecificWallet/:id', async function(req, res) {
+router.get('/getSpecificWallet/:id', async function (req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
     if (!isNaN(id)) {
@@ -206,7 +206,7 @@ router.get('/getSpecificWallet/:id', async function(req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function(req, res) {
+router.post('/createNewReward', async function (req, res) {
 
     if (validBlockchain && !finalFlag) {
 
@@ -247,7 +247,7 @@ router.post('/createNewReward', async function(req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function(req, res) {
+router.post('/createNewTransaction', async function (req, res) {
     if (validBlockchain && !finalFlag) {
 
         var isFromAddressNameExist = exportsC.proveKey('fromAddressUN', 'string', req.body)
@@ -290,7 +290,7 @@ router.post('/createNewTransaction', async function(req, res) {
     }
 });
 
-router.post('/createNewUser', async function(req, res) {
+router.post('/createNewUser', async function (req, res) {
     if (!finalFlag) {
 
         let isNameExist = exportsC.proveKey('name', 'string', req.body)
@@ -313,7 +313,7 @@ router.post('/createNewUser', async function(req, res) {
     }
 });
 
-router.post('/changeUserData', async function(req, res) {
+router.post('/changeUserData', async function (req, res) {
 
     let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
     let isPasswordExist = exportsC.proveKey('password', 'string', req.body)
@@ -347,7 +347,7 @@ router.post('/changeUserData', async function(req, res) {
     }
 });
 
-router.post('/deleteUser', async function(req, res) {
+router.post('/deleteUser', async function (req, res) {
 
     let isUserIdExist = exportsC.proveKey('id', 'number', req.body)
 
@@ -372,11 +372,11 @@ async function periodicFunction() {
     console.log(validBlockchain)
     if (pendingTransactions.length > 0 && validBlockchain && !finalFlag) {
         console.log("There are pending transactions and elements to create")
-
+        
         //The transactions came without some values, this is the place where pending transactions are updated in these fields
         var pendingIdsTransaction = await controllerTransaction.obtainAndUpdateAllPendingTransactions(pendingTransactions)
 
-        var newBlock = await controllerBlockchain.createBlockObject(pendingTransactions)
+        var newBlock = await controllerBlockchain.createBlock(pendingTransactions)
         if (pendingUniRewards.length > 0) {
 
             console.log("Creating a new UniReward")
@@ -386,15 +386,12 @@ async function periodicFunction() {
             arrayPoints.splice(0, arrayPoints.length)
 
         }
-
         await controllerTransaction.updateIdsUniPointsField(pendingTransactions, pendingIdsTransaction)
         console.log("Creating or update rest of elements")
         await controllerTransaction.createAndUpdateTransactions(pendingTransactions, newBlock.hash)
 
-
         pendingTransactions.splice(0, pendingTransactions.length)
         pendingIdsTransaction.splice(0, pendingIdsTransaction.length)
-
 
     } else {
         if (validBlockchain == false) {

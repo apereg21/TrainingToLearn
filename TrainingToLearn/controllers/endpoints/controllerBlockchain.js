@@ -16,12 +16,8 @@ module.exports = {
         }
 
         let prevHash = await controllerBlockchainDB.getHashLastBlock(lastIndex - 1)
-        var pendingIdsTransactionsFinal = []
-        for (i in pendingIdsTransactions) {
-            pendingIdsTransactionsFinal.push(pendingIdsTransactions[i].id)
-        }
 
-        let newBlock = new Block(lastIndex, new Date(), pendingIdsTransactionsFinal, prevHash)
+        let newBlock = new Block(lastIndex, new Date(), idsForBlock, prevHash)
         newBlock.hash = newBlock.calculateHash()
         return await controllerBlockchainDB.createBlock(newBlock)
     },

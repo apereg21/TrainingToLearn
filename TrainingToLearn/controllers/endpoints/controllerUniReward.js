@@ -16,27 +16,27 @@ module.exports = {
                 pendingUniRewards[i].id = await controllerUniRewardDB.getLastUniRewardIndex()
                 arrayOfUniRewards.push(await controllerUniRewardDB.createUniReward(pendingUniRewards[i], newBlockHash))
 
-
                 //Prove that UniReward is really created for the creation of UniPoints
 
                 if (!arrayOfUniRewards.includes(false)) {
                     console.log("Creating new UniPoints")
                     for (var j = 0; j < pendingUniRewards[i].cost; j++) {
 
-
                         var jsonObj = {
+
                             timestamp: new Date(),
                             UniRewardId: pendingUniRewards[i].id,
                             WalletId: pendingUniRewards[i].WalletId
 
                         }
+                        
                         arrayUniPoints.push(jsonObj)
                     }
                 }
             }
         }
 
-        return await controllerUniPointDB.createPoints(arrayUniPoints)
+        await controllerUniPointDB.createPoints(arrayUniPoints)
 
     },
     async createUniRewardObject(res, req, pendingUniRewards, arrayPoints) {
