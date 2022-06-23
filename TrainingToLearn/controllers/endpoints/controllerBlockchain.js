@@ -1,7 +1,7 @@
 const Block = require('../../block')
 const controllerBlockchainDB = require('../database/controllerBlockchainDB')
 module.exports = {
-    async createBlockObject(pendingIdsTransactions) {
+    async createBlock(pendingIdsTransactions) {
         let lastIndex = await controllerBlockchainDB.getLastBlockIndex()
         var idsForBlock = []
         for (var i = 0; i < pendingIdsTransactions.length; i++) {
