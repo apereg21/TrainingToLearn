@@ -8,12 +8,17 @@ module.exports = {
             }
         }).then((result) => {
             if (result != null) {
-                return result.username
+                if (result.deleted != true) {
+                    return result.username
+                } else {
+                    return null
+                }
+
             } else {
                 return null
             }
         }).catch(() => {
-            return null
+            return false
         })
     },
 
@@ -158,8 +163,13 @@ module.exports = {
             }
         }).then((result) => {
             if (result != null) {
-                console.log("User find it")
-                return result.id
+                if (result.deleted != true) {
+                    console.log("User find it")
+                    return result.id
+                } else {
+                    console.log("User not find it")
+                    return null
+                }
             } else {
                 console.log("User not find it")
                 return null
@@ -239,8 +249,13 @@ module.exports = {
                 }
             }).then((result) => {
                 if (result != null) {
-                    console.log("User data find it")
-                    return result
+                    if (result.deleted != true) {
+                        console.log("User data find it")
+                        return result
+                    } else {
+                        console.log("User data not find it")
+                        return false
+                    }
                 } else {
                     console.log("User data not find it")
                     return null
@@ -357,8 +372,14 @@ module.exports = {
             }
         }).then((result) => {
             if (result != null) {
-                console.log("User data find it")
-                return result.id
+                if (result.deleted != true) {
+                    console.log("User data find it")
+                    return result.id
+                } else {
+                    console.log("User data not find it")
+                    return false
+                }
+
             } else {
                 console.log("User data not find it")
                 return null

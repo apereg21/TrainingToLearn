@@ -105,7 +105,15 @@ module.exports = {
                 UserId: idUser
             }
         }).then((result) => {
-            return result.publicKey
+            if (result != null) {
+                if (result.deleted != true) {
+                    return result.publicKey
+                } else {
+                    return false
+                }
+            } else {
+                return null
+            }
         }).catch(() => {
             return null
         })
@@ -121,53 +129,57 @@ module.exports = {
                 }
             }).then(async(result) => {
                 if (result != null) {
-                    console.log("User wallet data find it")
-                    resultF = result
-                    return db.UniPoints.findAll({
-                        where: {
-                            id: result.money,
-                            alPurchase: 0
-                        }
-                    }).then(async(result2) => {
-                        vectorURTransac.push(result2.length)
-                        if (!(resultF.idsUniRewards.length <= 0)) {
-                            var uniRewardsList = []
-                            for (var i = 0; i < resultF.idsUniRewards.length; i++) {
-                                var uniReward = await controllerUniRewardDB.getSpecificUR(resultF.idsUniRewards[i])
-                                if (uniReward.purchase != 0) {
-                                    uniRewardsList.push(uniReward)
+                    if (result.deleted != true) {
+                        console.log("User wallet data find it")
+                        resultF = result
+                        return db.UniPoints.findAll({
+                            where: {
+                                id: result.money,
+                                alPurchase: 0
+                            }
+                        }).then(async(result2) => {
+                            vectorURTransac.push(result2.length)
+                            if (!(resultF.idsUniRewards.length <= 0)) {
+                                var uniRewardsList = []
+                                for (var i = 0; i < resultF.idsUniRewards.length; i++) {
+                                    var uniReward = await controllerUniRewardDB.getSpecificUR(resultF.idsUniRewards[i])
+                                    if (uniReward.purchase != 0) {
+                                        uniRewardsList.push(uniReward)
+                                    }
                                 }
+                                vectorURTransac.push(uniRewardsList)
+                                var transactionList = await controllerTransactionsDB.getUserWalletTransaction(resultF.UserId)
+                                for (var i = 0; i < transactionList.length; i++) {
+                                    var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
+                                    var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
+                                    var nameUniReward = await controllerUniRewardDB.getUniRewardName(transactionList[i].UniRewardId)
+                                    transactionList[i].fromAddress = nameAddress
+                                    transactionList[i].toAddress = nameAddress2
+                                    transactionList[i].UniRewardId = nameUniReward
+                                }
+                                vectorURTransac.push(transactionList)
+                            } else {
+                                var transactionList = await controllerTransactionsDB.getUserWalletTransaction(resultF.UserId)
+                                for (var i = 0; i < transactionList.length; i++) {
+                                    var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
+                                    var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
+                                    transactionList[i].fromAddress = nameAddress
+                                    transactionList[i].toAddress = nameAddress2
+                                }
+                                vectorURTransac.push(transactionList);
                             }
-                            vectorURTransac.push(uniRewardsList)
-                            var transactionList = await controllerTransactionsDB.getUserWalletTransaction(resultF.UserId)
-                            for (var i = 0; i < transactionList.length; i++) {
-                                var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
-                                var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
-                                var nameUniReward = await controllerUniRewardDB.getUniRewardName(transactionList[i].UniRewardId)
-                                transactionList[i].fromAddress = nameAddress
-                                transactionList[i].toAddress = nameAddress2
-                                transactionList[i].UniRewardId = nameUniReward
-                            }
-                            vectorURTransac.push(transactionList)
-                        } else {
-                            var transactionList = await controllerTransactionsDB.getUserWalletTransaction(resultF.UserId)
-                            for (var i = 0; i < transactionList.length; i++) {
-                                var nameAddress = await this.getNameAdressWallet(transactionList[i].fromAddress)
-                                var nameAddress2 = await this.getNameAdressWallet(transactionList[i].toAddress)
-                                transactionList[i].fromAddress = nameAddress
-                                transactionList[i].toAddress = nameAddress2
-                            }
-                            vectorURTransac.push(transactionList);
-                        }
-                        return vectorURTransac
-                    })
+                            return vectorURTransac
+                        })
+                    } else {
+                        return false
+                    }
                 } else {
                     console.log("User wallet data not find it")
                     return null
                 }
             }).catch(() => {
                 console.log("User data don't loaded - Reason: The database isn't correct, try to restore DB")
-                return null
+                return "error"
             })
         } else {
             console.log("idUser isn't a number")

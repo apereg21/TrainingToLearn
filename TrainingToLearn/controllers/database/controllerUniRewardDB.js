@@ -25,13 +25,27 @@ module.exports = {
     },
 
     async getAllRewards(idUser, pruch) {
-        return db.UniRewards.findAll({
+        return db.Users.findOne({
             where: {
-                WalletId: idUser,
-                purchase: pruch
+                id: idUser
             }
         }).then((result) => {
-            return result
+            if (result != null) {
+                if (result.deleted != true) {
+                    return db.UniRewards.findAll({
+                        where: {
+                            WalletId: idUser,
+                            purchase: pruch
+                        }
+                    }).then((result2) => {
+                        return result2
+                    })
+                } else {
+                    return false
+                }
+            } else {
+                return false
+            }
         }).catch(() => {
             console.log("User data don't loaded - Reason: The database isn't correct, try to restore DB")
             return null

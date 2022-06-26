@@ -36,9 +36,10 @@ router.get('/', (req) => {
 });
 
 
-router.get('/getAllUsersList', async function (req, res) {
+router.get('/getAllUsersList', async function(req, res) {
     var usersList = await controllerUserDB.getAllUsers()
     if (usersList != null) {
+        usersList.splice(0, 1);
         res.send(usersList)
     } else {
         console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
@@ -46,33 +47,53 @@ router.get('/getAllUsersList', async function (req, res) {
     }
 });
 
-router.get('/getUsersName/:id', async function (req, res) {
+router.get('/getUsersName/:id', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id)) {
+    if (!isNaN(id) && id != 1) {
         var userName = await controllerUserDB.getUsername(id)
         if (userName != null) {
             res.send(userName)
         } else {
-            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
-            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            if (userName != false) {
+                console.log("User data don't loaded - Reason: No user located with this id")
+                res.send("User data don't loaded - Reason: No user located with this id")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
         }
 
     } else {
-        res.send("User data don't loaded - Reason: No user to load data")
+        if (id == 1) {
+            console.log("User data don't loaded - Reason: No user located with this id")
+            res.send("User data don't loaded - Reason: No user located with this id")
+        } else {
+            res.send("User data don't loaded - Reason: No user to load data")
+        }
     }
 });
 
-router.get('/getUserRole/:id', async function (req, res) {
+router.get('/getUserRole/:id', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
-    console.log(id)
     if (!isNaN(id)) {
         var user = await controllerUserDB.getUserData(id)
-        if (user != null) {
-            res.send(user.typeUser)
+        if (user != null && user != false) {
+            if (user.id != 1) {
+                res.send(user.typeUser)
+            } else {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            }
         } else {
-            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
-            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            if (user == false) {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
+
         }
 
     } else {
@@ -80,29 +101,33 @@ router.get('/getUserRole/:id', async function (req, res) {
     }
 });
 
-router.get('/getUserID/:username', async function (req, res) {
-    console.log("Hiiiiiiiiiiiiiiiiiiiiiiiiii: " + req.params.username)
-    console.log("Hiiiiiiiiiiiiiiiiiiiiii" + typeof ((req.params.username).replace(':', '')))
-    if (typeof ((req.params.username).replace(':', '')) == 'string') {
+router.get('/getUserID/:username', async function(req, res) {
+
+    if (typeof((req.params.username).replace(':', '')) == 'string') {
         var userId = await controllerUserDB.getUserID((req.params.username).replace(':', ''))
-        console.log("Hiiiiiiiiiiiiiiiiiiiiiiiiii" + userId)
-        if (userId != null) {
+
+        if (userId != null && userId != false && userId != 1) {
             res.send("" + userId)
         } else {
-            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
-            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            if (userId == false || userId == 1) {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
         }
     } else {
         res.send("User username don't located - Reason: Not correct type of parameter")
     }
 });
 
-router.post('/loginUser', async function (req, res) {
+router.post('/loginUser', async function(req, res) {
     var isUsernameExist = exportsC.proveKey('username', 'string', req.body)
     var isPasswordExist = exportsC.proveKey('password', 'string', req.body)
     if (isUsernameExist && isPasswordExist) {
         var userId = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
-        if (userId != null && typeof userId != 'string') {
+        if (userId != null && typeof userId != 'string' && userId != 1) {
             var userData = await controllerUserDB.getUserData(userId)
             console.log("Userdata: " + userData.deleted)
             if (!userData.deleted) {
@@ -116,7 +141,6 @@ router.post('/loginUser', async function (req, res) {
                 console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
                 res.send("Can't login - Reason: The database isn't correct, try to restore DB")
             } else {
-
                 res.send("Can't login - Reason: Don't exist an user with this password or username")
             }
         }
@@ -126,16 +150,21 @@ router.post('/loginUser', async function (req, res) {
     }
 });
 
-router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
+router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
-    if (!isNaN(id) || typeof ((req.params.purch).replace(':', '')) == 'boolean') {
+    if (!isNaN(id) || typeof((req.params.purch).replace(':', '')) == 'boolean') {
         var rewardsList = await controllerUniRewardDB.getAllRewards((req.params.id).replace(':', ''), (req.params.purch).replace(':', ''))
-        if (rewardsList != null) {
+        if (rewardsList != null && rewardsList != false) {
             res.send(rewardsList)
         } else {
-            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
-            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            if (rewardsList == false) {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
         }
 
     } else {
@@ -143,18 +172,23 @@ router.get('/getAllRewardsList/:id/:purch', async function (req, res) {
     }
 });
 
-router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
+router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
     if (!isNaN(id)) {
         var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
-        if (smartContractsList != null) {
+        if (smartContractsList != null && smartContractsList != false && typeof smartContractsList != 'string') {
             console.log("This is smartContracts: " + smartContractsList)
             console.log(smartContractsList.length)
             smartContractsList.length != 0 ? res.send(smartContractsList) : res.send("No courses are activated for the user")
         } else {
-            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
-            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            if (smartContractsList == false || smartContractsList == null) {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
         }
 
     } else {
@@ -163,14 +197,20 @@ router.get('/getAllSmartContractsUser/:id/', async function (req, res) {
 
 });
 
-router.get('/getSpecificUser/:id', async function (req, res) {
+router.get('/getSpecificUser/:id', async function(req, res) {
 
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id + " " + isNaN(id))
     if (!isNaN(id)) {
         var userData = await controllerUserDB.getUserData(id)
         if (userData != null) {
-            res.send(userData)
+            if (userData != false) {
+                res.send(userData)
+            } else {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            }
+
         } else {
             console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
             res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
@@ -181,21 +221,30 @@ router.get('/getSpecificUser/:id', async function (req, res) {
     }
 });
 
-router.get('/getSpecificWallet/:id', async function (req, res) {
+router.get('/getSpecificWallet/:id', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
     console.log(id)
     if (!isNaN(id)) {
-        console.log(req.params.id + " is an " + typeof req.params.id)
-        console.log(id)
 
         var walletData = await controllerWalletDB.getUserWalletData(id)
-        if (walletData != null) {
-            res.send(walletData)
-        } else {
-            console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
-            res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
-        }
+        if (walletData != null && typeof walletData != 'string') {
+            if (walletData != false) {
+                res.send(walletData)
+            } else {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            }
 
+        } else {
+            if (walletData == null) {
+                console.log("User data don't loaded - Reason: Dosen't exists")
+                res.send("User data don't loaded - Reason: Dosen't exists")
+            } else {
+                console.log("You need to fill the DB to continue working. You can do it manually typing localhost:3000/maintenance/restoreDB")
+                res.send("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+            }
+
+        }
 
     } else {
         res.send("User data don't loaded - Reason: No user to load data")
@@ -206,7 +255,7 @@ router.get('/getSpecificWallet/:id', async function (req, res) {
  * Routes Creation Object
  */
 
-router.post('/createNewReward', async function (req, res) {
+router.post('/createNewReward', async function(req, res) {
 
     if (validBlockchain && !finalFlag) {
 
@@ -247,7 +296,7 @@ router.post('/createNewReward', async function (req, res) {
     }
 });
 
-router.post('/createNewTransaction', async function (req, res) {
+router.post('/createNewTransaction', async function(req, res) {
     if (validBlockchain && !finalFlag) {
 
         var isFromAddressNameExist = exportsC.proveKey('fromAddressUN', 'string', req.body)
@@ -290,7 +339,7 @@ router.post('/createNewTransaction', async function (req, res) {
     }
 });
 
-router.post('/createNewUser', async function (req, res) {
+router.post('/createNewUser', async function(req, res) {
     if (!finalFlag) {
 
         let isNameExist = exportsC.proveKey('name', 'string', req.body)
@@ -313,7 +362,7 @@ router.post('/createNewUser', async function (req, res) {
     }
 });
 
-router.post('/changeUserData', async function (req, res) {
+router.post('/changeUserData', async function(req, res) {
 
     let isUserNameExist = exportsC.proveKey('username', 'string', req.body)
     let isPasswordExist = exportsC.proveKey('password', 'string', req.body)
@@ -347,7 +396,7 @@ router.post('/changeUserData', async function (req, res) {
     }
 });
 
-router.post('/deleteUser', async function (req, res) {
+router.post('/deleteUser', async function(req, res) {
 
     let isUserIdExist = exportsC.proveKey('id', 'number', req.body)
 
@@ -372,7 +421,7 @@ async function periodicFunction() {
     console.log(validBlockchain)
     if (pendingTransactions.length > 0 && validBlockchain && !finalFlag) {
         console.log("There are pending transactions and elements to create")
-        
+
         //The transactions came without some values, this is the place where pending transactions are updated in these fields
         var pendingIdsTransaction = await controllerTransaction.obtainAndUpdateAllPendingTransactions(pendingTransactions)
 

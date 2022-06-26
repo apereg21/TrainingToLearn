@@ -29,7 +29,7 @@ module.exports = {
                             WalletId: pendingUniRewards[i].WalletId
 
                         }
-                        
+
                         arrayUniPoints.push(jsonObj)
                     }
                 }
@@ -53,7 +53,7 @@ module.exports = {
                 let systemAddress = await controllerWalletDB.findUserAddress("System")
                 let uniRewardReciverAddress = await controllerWalletDB.findUserAddress(req.body.usernameCourse)
 
-                if (systemAddress != null && uniRewardReciverAddress != null) {
+                if (systemAddress != null && uniRewardReciverAddress != null && usernameCourse != "System") {
 
                     let userFromId = await controllerWalletDB.findUserAddressID(systemAddress)
                     let userToId = await controllerWalletDB.findUserAddressID(uniRewardReciverAddress)
@@ -117,9 +117,12 @@ module.exports = {
                     if (uniRewardReciverAddress == null) {
                         console.log("Reward not created - Reason: User of course dosen't exist")
                         res.send("Reward not created - Reason: User of course dosen't exist")
-                    } else {
+                    } else if (uniRewardReciverAddress == null) {
                         console.log("Reward not created - Reason: System User for points transation dosen't exist")
                         res.send("Reward not created - Reason: System User for points transation dosen't exist")
+                    } else {
+                        console.log("Can't do the payment - Reason: Not exist destiny or sender wallet")
+                        res.send("Can't do the payment - Reason: Not exist destiny or sender wallet")
                     }
                 }
             } else {
