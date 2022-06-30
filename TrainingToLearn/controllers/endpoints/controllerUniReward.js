@@ -39,7 +39,7 @@ module.exports = {
         await controllerUniPointDB.createPoints(arrayUniPoints)
 
     },
-    async createUniRewardObject(res, req, pendingUniRewards, arrayPoints) {
+    async createUniRewardObject(res, req, pendingUniRewards) {
         let idUserInstructor = await controllerUserDB.obtainUserId(req.body.username, req.body.password)
         let userInstructoDeleted = await controllerUserDB.isUserDeleted(idUserInstructor)
         let isUserDelete = await controllerUserDB.isUserDeleted(idUserInstructor)
@@ -53,7 +53,7 @@ module.exports = {
                 let systemAddress = await controllerWalletDB.findUserAddress("System")
                 let uniRewardReciverAddress = await controllerWalletDB.findUserAddress(req.body.usernameCourse)
 
-                if (systemAddress != null && uniRewardReciverAddress != null && usernameCourse != "System") {
+                if (systemAddress != null && uniRewardReciverAddress != null && req.body.usernameCourse != "System") {
 
                     let userFromId = await controllerWalletDB.findUserAddressID(systemAddress)
                     let userToId = await controllerWalletDB.findUserAddressID(uniRewardReciverAddress)

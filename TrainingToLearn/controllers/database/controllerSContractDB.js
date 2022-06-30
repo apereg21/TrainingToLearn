@@ -74,7 +74,7 @@ module.exports = {
     },
     async getAllSmartContractsUser(userId) {
         var userDemanderPublicKey = await controllerWalletDB.getUserWalletAddress(userId)
-        if (userDemanderPublicKey != null && userDemanderPublicKey != false && typeof userDemanderPublicKey != 'string') {
+        if (userDemanderPublicKey != null && userDemanderPublicKey != false && userDemanderPublicKey != 'error') {
             return db.SmartContract.findAll({
                 where: {
                     walletIdDemander: userDemanderPublicKey
@@ -102,6 +102,7 @@ module.exports = {
 
             }).catch(() => {
                 console.log("User data don't loaded - Reason: The database isn't correct, try to restore DB")
+                return "error"
             })
         } else {
             if (userDemanderPublicKey == false) {

@@ -115,7 +115,7 @@ module.exports = {
                 return null
             }
         }).catch(() => {
-            return null
+            return "error"
         })
     },
 

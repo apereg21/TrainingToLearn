@@ -174,7 +174,6 @@ router.get('/getAllRewardsList/:id/:purch', async function(req, res) {
 
 router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
     var id = parseInt((req.params.id).replace(':', ''))
-    console.log(id)
     if (!isNaN(id)) {
         var smartContractsList = await controllerSContractDB.getAllSmartContractsUser(id)
         if (smartContractsList != null && smartContractsList != false && typeof smartContractsList != 'string') {
@@ -182,6 +181,7 @@ router.get('/getAllSmartContractsUser/:id/', async function(req, res) {
             console.log(smartContractsList.length)
             smartContractsList.length != 0 ? res.send(smartContractsList) : res.send("No courses are activated for the user")
         } else {
+            console.log(smartContractsList)
             if (smartContractsList == false || smartContractsList == null) {
                 console.log("User data don't loaded - Reason: Dosen't exists")
                 res.send("User data don't loaded - Reason: Dosen't exists")
@@ -270,7 +270,7 @@ router.post('/createNewReward', async function(req, res) {
         if (isNameURExist && isDescriptionURExist && isImageURExist && isUsernameExist && isPasswordExist && isCostRewardExist && isUserCourseExist) {
 
             var responseServer = []
-            responseServer = await controllerUniReward.createUniRewardObject(res, req, pendingUniRewards, arrayPoints)
+            responseServer = await controllerUniReward.createUniRewardObject(res, req, pendingUniRewards)
             console.log("I'm response server: " + responseServer[0] + "\n" + responseServer[0].id)
             if (responseServer != undefined && responseServer.length == 1) {
                 addPendingTransaction(responseServer[0])
